@@ -1,0 +1,15 @@
+services:
+  studio:
+    build: .
+    ports:
+      - "127.0.0.1:8002:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      INTENT_DATA_DIR: /app/data/private
+    volumes:
+      - studio-data:/app/data/private
+    restart: unless-stopped
+volumes:
+  studio-data:

@@ -1,0 +1,5 @@
+[
+  {"id": "hybrid", "name": "Mevcut hibrit", "source": "hybrid", "source_k": 40, "pool_k": 20, "candidate_k": 20, "semantic_weight": 0.5},
+  {"id": "semantic", "name": "Semantik adaylar + LLM", "source": "semantic", "source_k": 40, "pool_k": 20, "candidate_k": 20, "semantic_weight": 0.5},
+  {"id": "weighted", "name": "Semantik ağırlıklı hibrit", "source": "hybrid", "source_k": 40, "pool_k": 20, "candidate_k": 20, "semantic_weight": 0.75}
+]

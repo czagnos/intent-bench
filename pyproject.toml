@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "intent-bench"
+version = "0.1.0"
+description = "Intent recognition benchmarking and evaluation workbench"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1", "uvicorn>=0.34,<1", "pydantic>=2.10,<3",
+  "pydantic-settings>=2.7,<3", "httpx[socks]>=0.28,<1", "python-multipart>=0.0.20,<1",
+  "numpy>=2,<3"
+]
+
+[project.urls]
+Repository = "https://github.com/czagnos/intent-bench"
+Issues = "https://github.com/czagnos/intent-bench/issues"
+
+[project.optional-dependencies]
+ml = ["sentence-transformers>=3.4,<6", "transformers>=4.51,<6"]
+dev = ["pytest>=8,<10"]
+
+[tool.setuptools.packages.find]
+where = ["apps/api"]
+
+[tool.pytest.ini_options]
+pythonpath = ["apps/api"]
+testpaths = ["tests"]

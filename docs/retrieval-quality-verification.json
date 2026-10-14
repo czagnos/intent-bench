@@ -1,0 +1,136 @@
+{
+  "verified_on": "2026-09-10",
+  "protocol": "repository-retrieval-analysis-v1",
+  "command": ".venv/bin/python scripts/analyze_retrieval.py --mode lexical --catalog-sizes 48 200 800",
+  "mode": "lexical",
+  "embedding": null,
+  "llm_used": false,
+  "reranker_used": false,
+  "accuracy_benchmark": false,
+  "representation": "combined",
+  "dataset_fingerprint": "5bc0984bb92d0353",
+  "case_count": 29,
+  "audit": {
+    "protocol": "catalog-review-v1",
+    "catalog_version": "3bd5d66bf3c184ab",
+    "case_fingerprint": "5bc0984bb92d0353",
+    "intent_count": 800,
+    "case_count": 29,
+    "tested_intent_count": 26,
+    "untested_intent_count": 774,
+    "counts": {
+      "demo_scope_overlap": 148
+    },
+    "automatic_label_changes": false,
+    "semantic_audit": false
+  },
+  "results": [
+    {
+      "catalog": {
+        "version": "baf29f820f8de262",
+        "parent_version": "3bd5d66bf3c184ab",
+        "intent_count": 48,
+        "available_intent_count": 800,
+        "protected_intent_count": 48,
+        "selection_seed": 42,
+        "selection_protocol": "fixed-cohort-nested-domain-v1"
+      },
+      "routing_cases": 26,
+      "index_ms": 0.0,
+      "recall": {
+        "at_1": 0.7692307692307693,
+        "at_5": 1.0,
+        "at_20": 1.0,
+        "at_40": 1.0
+      },
+      "query_p95_ms": 1.34,
+      "missing_at_40": []
+    },
+    {
+      "catalog": {
+        "version": "47bac5cdc62e8fbd",
+        "parent_version": "3bd5d66bf3c184ab",
+        "intent_count": 200,
+        "available_intent_count": 800,
+        "protected_intent_count": 48,
+        "selection_seed": 42,
+        "selection_protocol": "fixed-cohort-nested-domain-v1"
+      },
+      "routing_cases": 26,
+      "index_ms": 0.0,
+      "recall": {
+        "at_1": 0.6153846153846154,
+        "at_5": 0.8461538461538461,
+        "at_20": 0.9230769230769231,
+        "at_40": 1.0
+      },
+      "query_p95_ms": 12.56,
+      "missing_at_40": []
+    },
+    {
+      "catalog": {
+        "version": "3bd5d66bf3c184ab",
+        "parent_version": "3bd5d66bf3c184ab",
+        "intent_count": 800,
+        "available_intent_count": 800,
+        "protected_intent_count": 48,
+        "selection_seed": 42,
+        "selection_protocol": "fixed-cohort-nested-domain-v1"
+      },
+      "routing_cases": 26,
+      "index_ms": 0.0,
+      "recall": {
+        "at_1": 0.5384615384615384,
+        "at_5": 0.7692307692307693,
+        "at_20": 0.8461538461538461,
+        "at_40": 0.8461538461538461
+      },
+      "query_p95_ms": 54.62,
+      "missing_at_40": [
+        {
+          "case_id": "seed-008",
+          "expected_intent_id": "card.online",
+          "top_intent_id": "card.debt.pay"
+        },
+        {
+          "case_id": "seed-011",
+          "expected_intent_id": "transfer.status",
+          "top_intent_id": "bank.transfer.eft.receipt"
+        },
+        {
+          "case_id": "seed-021",
+          "expected_intent_id": "loan.status",
+          "top_intent_id": "bank.loan.personal.application_status"
+        },
+        {
+          "case_id": "seed-025",
+          "expected_intent_id": "service.branch",
+          "top_intent_id": "bank.investment.equity.trading_hours"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Repository demo data; only 26 of 800 intents have held-out routing questions.",
+    "Scope-overlap findings are review candidates; no labels were changed.",
+    "Query timings are per request on a shared development CPU, not production latency.",
+    "No real embedding, LLM or reranker accuracy improvement was measured in this environment."
+  ],
+  "software_verification": {
+    "backend_suite": {
+      "passed": 182,
+      "command": ".venv/bin/python -m pytest -q"
+    },
+    "ui_suite": {
+      "passed": 18,
+      "command": "node --test tests/ui.test.mjs",
+      "environment": "React/jsdom"
+    },
+    "build": {
+      "typescript": "passed",
+      "vite": "passed"
+    },
+    "provider_tests": "Controlled responses; not a real model benchmark",
+    "visual_browser_qa": false
+  }
+}

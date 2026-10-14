@@ -1,0 +1,440 @@
+.demo-view-picker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 20px;
+}
+.demo-view-picker > span {
+  margin-right: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.demo-view-picker button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #5d7190;
+  border-radius: 8px;
+  padding: 10px 13px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  min-height: 40px;
+}
+.demo-view-picker button:hover {
+  border-color: var(--blue);
+}
+.demo-view-picker button[aria-pressed="true"] {
+  color: #fff;
+  border-color: var(--blue);
+  background: var(--blue);
+}
+.demo-grid.demo-grid-visual {
+  grid-template-columns: minmax(310px, 0.8fr) minmax(0, 1.65fr);
+}
+.demo-grid-visual .conversation,
+.demo-grid-visual .inspector {
+  min-width: 0;
+}
+.inspector-details {
+  min-width: 0;
+}
+.inspector-details > summary {
+  cursor: pointer;
+  color: #526b93;
+  font-size: 13px;
+  padding: 13px 3px;
+}
+.inspector-details.standard > summary {
+  display: none;
+}
+.inspector-details .inspector {
+  width: 100%;
+}
+.routing-visualization {
+  min-width: 0;
+}
+.routing-visual-heading {
+  flex-wrap: wrap;
+  padding: 17px 18px;
+}
+.routing-visual-heading h2 {
+  margin-bottom: 5px;
+}
+.routing-visual-heading small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.routing-map-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.routing-map-actions .button {
+  min-height: 34px;
+  padding: 7px 8px;
+  font-size: 11px;
+}
+.routing-statusbar {
+  padding: 11px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  background: #f7f9ff;
+  color: #536b91;
+}
+.routing-statusbar > span:last-child {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.routing-map {
+  width: 100%;
+  min-width: 0;
+  background: #fcfdff;
+}
+.routing-map > svg {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+}
+.routing-map text {
+  font-family: inherit;
+  font-size: 12px;
+  fill: #203858;
+  pointer-events: none;
+}
+.routing-map .routing-muted {
+  fill: #72839d;
+  font-size: 11px;
+}
+.routing-domain-label {
+  font-weight: 500;
+}
+.routing-domain > rect,
+.routing-domain > path {
+  fill: #f2f5fa;
+  stroke: #dee5f0;
+  stroke-width: 1;
+}
+.routing-domain > ellipse {
+  fill: #e7edf8;
+  stroke: none;
+  opacity: 0.6;
+}
+.routing-domain.has-candidates > rect,
+.routing-domain.has-candidates > path {
+  fill: #eef2ff;
+  stroke: #b5c7f6;
+}
+.routing-domain.has-candidates > ellipse {
+  fill: #dfe8fc;
+  opacity: 0.7;
+}
+.routing-structural-edge {
+  stroke: #dce3ef;
+  fill: none;
+  stroke-width: 1.2;
+}
+.routing-intent {
+  fill: #c4d2e7;
+  stroke: none;
+}
+.routing-intent.candidate {
+  fill: #92a9e5;
+}
+.routing-intent.selected {
+  fill: #285ce6;
+  stroke: #285ce6;
+  stroke-width: 1.2;
+}
+circle.routing-intent {
+  transition:
+    cx 0.65s ease,
+    cy 0.65s ease,
+    r 0.35s ease,
+    fill 0.2s ease;
+}
+rect.routing-intent {
+  transition:
+    x 0.65s ease,
+    y 0.65s ease,
+    width 0.65s ease,
+    height 0.65s ease,
+    fill 0.2s ease;
+}
+path.routing-intent,
+.routing-domain > path {
+  transition:
+    d 0.65s ease,
+    fill 0.2s ease;
+}
+g.routing-intent > rect {
+  fill: #fff;
+  stroke: #dfe6f1;
+  stroke-width: 1;
+}
+g.routing-intent.candidate > rect {
+  fill: #f7f9ff;
+  stroke: #bbcbee;
+}
+g.routing-intent.selected > rect {
+  fill: #edf2ff;
+  stroke: #285ce6;
+  stroke-width: 1.5;
+}
+g.routing-intent.selected text {
+  fill: #234cbd;
+  stroke: none;
+}
+.routing-edge {
+  fill: none;
+  stroke: #a9bce5;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+}
+.routing-edge.selected {
+  stroke: #285ce6;
+  stroke-width: 2;
+}
+.routing-edge.dimmed {
+  opacity: 0.24;
+}
+.routing-source > circle {
+  fill: #fff;
+  stroke: #d6e0ef;
+  stroke-width: 1.2;
+}
+.routing-source > circle.routing-source-halo {
+  fill: #edf2ff;
+  stroke: none;
+}
+.routing-source.active > circle:not(.routing-source-halo) {
+  stroke: #285ce6;
+}
+.routing-exit > path {
+  stroke: #b87a20;
+  stroke-width: 1.8;
+  fill: none;
+}
+.routing-exit > rect {
+  fill: #fff8ec;
+  stroke: #e5c998;
+}
+.routing-exit text {
+  fill: #91621f;
+}
+.routing-exit.error > path {
+  stroke: #ba5144;
+}
+.routing-exit.error > rect {
+  fill: #fff2ef;
+  stroke: #e0b8b0;
+}
+.routing-exit.error text {
+  fill: #a63f35;
+}
+.routing-packet {
+  fill: #285ce6;
+  pointer-events: none;
+}
+.routing-packet.terminal {
+  fill: #b87a20;
+}
+.routing-map.reduced-motion * {
+  transition: none !important;
+}
+.routing-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 18px 15px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.routing-map-legend > span:last-child {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.routing-map-legend i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-left: 5px;
+}
+.routing-map-legend i.candidate {
+  background: #92a9e5;
+}
+.routing-map-legend i.selected {
+  background: #285ce6;
+}
+.routing-trace {
+  border-top: 1px solid #edf0f5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 14px;
+  padding: 12px 18px;
+  font-size: 11px;
+  color: #71839d;
+}
+.routing-trace span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.routing-trace svg {
+  color: #4f8d7c;
+}
+.routing-workflow {
+  border-top: 1px solid #edf0f5;
+  padding: 18px;
+}
+.routing-workflow-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #335caa;
+}
+.routing-workflow-heading strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.routing-workflow-heading small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.routing-workflow ol {
+  list-style: none;
+  margin: 19px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 24px;
+}
+.routing-workflow li {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  color: #8190a5;
+}
+.routing-workflow li strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.routing-workflow li small {
+  display: block;
+  font-size: 11px;
+  margin-top: 4px;
+}
+.routing-workflow li.pending {
+  color: #285ce6;
+}
+.routing-workflow li.done {
+  color: #21856c;
+}
+.routing-step-point {
+  width: 15px;
+  height: 15px;
+  border: 1px solid #dbe3ef;
+  border-radius: 4px;
+  margin-top: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.routing-workflow .pending .routing-step-point {
+  border-color: #8ba9ef;
+  background: #edf2ff;
+}
+.routing-workflow .done .routing-step-point {
+  border-color: #9cd4c4;
+  background: #eef8f4;
+}
+.routing-next-message {
+  margin-top: 17px;
+  font-size: 13px;
+  background: #f5f8fe;
+  padding: 12px 14px;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.routing-clarification {
+  border-top: 1px solid #edf0f5;
+  padding: 16px 18px;
+  font-size: 13px;
+}
+.routing-clarification p {
+  margin-bottom: 10px;
+}
+.routing-clarification > span {
+  display: inline-block;
+  font-size: 12px;
+  border: 1px solid #e5d3b3;
+  background: #fff9ef;
+  border-radius: 6px;
+  padding: 6px 9px;
+  margin: 0 7px 6px 0;
+}
+.routing-error {
+  font-size: 12px;
+  color: #aa4c3e;
+  padding: 15px 18px;
+}
+.routing-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  border-top: 1px solid #edf0f5;
+  font-size: 11px;
+  color: #8290a5;
+}
+@media (max-width: 1250px) {
+  .demo-grid.demo-grid-visual {
+    grid-template-columns: minmax(285px, 0.8fr) minmax(0, 1.25fr);
+  }
+  .routing-statusbar {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 1000px) {
+  .demo-grid.demo-grid-visual {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 540px) {
+  .demo-view-picker {
+    gap: 6px;
+  }
+  .demo-view-picker > span {
+    flex-basis: 100%;
+  }
+  .demo-view-picker button {
+    min-height: 44px;
+    padding: 8px 10px;
+  }
+  .routing-map-actions .button {
+    min-height: 40px;
+  }
+  .routing-visual-heading,
+  .routing-statusbar {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .routing-caption {
+    flex-wrap: wrap;
+  }
+}

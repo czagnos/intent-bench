@@ -1,0 +1,17 @@
+{
+  "verified_on": "2026-09-08",
+  "llms": [
+    {"id": "qwen35-35b", "name": "Qwen3.5 35B A3B", "model": "qwen/qwen3.5-35b-a3b", "license": "Apache-2.0", "weights_url": "https://huggingface.co/Qwen/Qwen3.5-35B-A3B", "description": "Mevcut Qwen referansı; düşünme kapalı.", "reasoning": "disabled"},
+    {"id": "gpt-oss-20b", "name": "GPT-OSS 20B", "model": "openai/gpt-oss-20b", "license": "Apache-2.0", "weights_url": "https://huggingface.co/openai/gpt-oss-20b", "description": "Küçük MoE alternatifi; düşük reasoning düzeyi.", "reasoning": "low", "max_tokens": 4096},
+    {"id": "gpt-oss-120b", "name": "GPT-OSS 120B", "model": "openai/gpt-oss-120b", "license": "Apache-2.0", "weights_url": "https://huggingface.co/openai/gpt-oss-120b", "description": "Daha büyük GPT-OSS karşılaştırması; düşük reasoning düzeyi.", "reasoning": "low", "max_tokens": 4096},
+    {"id": "qwen3-30b-instruct", "name": "Qwen3 30B A3B Instruct", "model": "qwen/qwen3-30b-a3b-instruct-2507", "license": "Apache-2.0", "weights_url": "https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507", "description": "Düşünme modu olmayan çok dilli Qwen alternatifi.", "reasoning": "none"},
+    {"id": "deepseek-v32", "name": "DeepSeek V3.2", "model": "deepseek/deepseek-v3.2", "license": "MIT", "weights_url": "https://huggingface.co/deepseek-ai/DeepSeek-V3.2", "description": "Büyük model karşılaştırması; on-prem için daha fazla donanım gerektirir.", "reasoning": "disabled"},
+    {"id": "glm47-flash", "name": "GLM 4.7 Flash", "model": "z-ai/glm-4.7-flash", "license": "MIT", "weights_url": "https://huggingface.co/zai-org/GLM-4.7-Flash", "description": "Z.ai alternatifi; Türkçe başarısı bu deneylerde ölçülecek.", "reasoning": "disabled"}
+  ],
+  "embeddings": [
+    {"id": "qwen3-8b", "name": "Qwen3 Embedding 8B", "model": "qwen/qwen3-embedding-8b", "license": "Apache-2.0", "weights_url": "https://huggingface.co/Qwen/Qwen3-Embedding-8B", "description": "Çok dilli Qwen; Nebius sağlayıcısı seçili.", "profile": "qwen3", "provider_only": ["nebius"]},
+    {"id": "qwen3-4b", "name": "Qwen3 Embedding 4B", "model": "qwen/qwen3-embedding-4b", "license": "Apache-2.0", "weights_url": "https://huggingface.co/Qwen/Qwen3-Embedding-4B", "description": "Daha küçük Qwen; sağlayıcı kapasitesi erişimi etkileyebilir.", "profile": "qwen3"},
+    {"id": "bge-m3", "name": "BGE-M3", "model": "baai/bge-m3", "license": "MIT", "weights_url": "https://huggingface.co/BAAI/bge-m3", "description": "Çok dilli alternatif; dense vektörleri kullanılır.", "profile": "plain"},
+    {"id": "multilingual-e5-large", "name": "Multilingual E5 Large", "model": "intfloat/multilingual-e5-large", "license": "MIT", "weights_url": "https://huggingface.co/intfloat/multilingual-e5-large", "description": "Çok dilli E5; query/passage önekleri otomatik uygulanır.", "profile": "e5"}
+  ]
+}

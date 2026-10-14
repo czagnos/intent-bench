@@ -1,0 +1,153 @@
+{
+  "intents": [
+    {
+      "intent_id": "card.pin",
+      "name": "Kart şifresi",
+      "domain": "Kartlar",
+      "description": "Kart PIN oluşturma, unutulan PIN veya değiştirme.",
+      "examples": [
+        "ATM kartımın şifresini hatırlamıyorum.",
+        "Kart PIN kodumu değiştireceğim."
+      ],
+      "exclusions": [
+        "Mobil veya internet bankacılığı giriş şifresi yenileme."
+      ],
+      "confusable_with": [
+        "digital.password"
+      ],
+      "workflow_id": "workflow.card.pin",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information"
+    },
+    {
+      "intent_id": "transfer.status",
+      "name": "Transfer durum sorgusu",
+      "domain": "Ödemeler",
+      "description": "Yapılmış transferin alıcıya ulaşıp ulaşmadığını sorgulama.",
+      "examples": [
+        "Gönderdiğim havale hâlâ karşıya ulaşmadı.",
+        "Son EFT işleminin durumunu kontrol edelim."
+      ],
+      "exclusions": [
+        "EFT, havale veya FAST ile alıcıya para gönderme.",
+        "Yanlış gönderilen veya bekleyen transferi geri alma."
+      ],
+      "confusable_with": [
+        "transfer.create",
+        "transfer.cancel"
+      ],
+      "workflow_id": "workflow.transfer.status",
+      "required_slots": [
+        "transfer_reference"
+      ],
+      "slot_questions": {
+        "transfer_reference": "Transfer referans numarasını paylaşır mısınız?"
+      },
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction"
+    },
+    {
+      "intent_id": "bank.card.debit.pin_reset",
+      "name": "Banka kartı - PIN yenileme",
+      "domain": "Kartlar",
+      "description": "Banka kartı kapsamında pin yenileme isteği. Kullanıcı bu ürünü veya kanalı açıkça belirtir. Unuttuğum kart PIN kodunu nasıl yenilerim?",
+      "examples": [
+        "Banka kartı için unuttuğum kart PIN kodunu nasıl yenilerim?",
+        "Bu kart için yeni PIN belirlemek istiyorum: Banka kartı."
+      ],
+      "exclusions": [
+        "Ürün belirtilmeden sorulan genel kartlar talepleri.",
+        "Banka kartı: i̇lk kullanım aktivasyonu.",
+        "Banka kartı: temassız kullanım ayarı."
+      ],
+      "confusable_with": [
+        "bank.card.debit.activate",
+        "bank.card.debit.contactless"
+      ],
+      "workflow_id": "workflow.bank.card.debit.pin_reset",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction"
+    },
+    {
+      "intent_id": "bank.transfer.eft.status",
+      "name": "EFT transferi - Mevcut transfer takibi",
+      "domain": "Ödemeler",
+      "description": "EFT transferi kapsamında mevcut transfer takibi isteği. Kullanıcı bu ürünü veya kanalı açıkça belirtir. Gönderdiğim paranın durumu nedir?",
+      "examples": [
+        "EFT transferi için gönderdiğim paranın durumu nedir?",
+        "Bu yöntemle yaptığım gönderimi takip etmek istiyorum: EFT transferi."
+      ],
+      "exclusions": [
+        "Ürün belirtilmeden sorulan genel ödemeler talepleri.",
+        "EFT transferi: tahmini ulaşma süresi.",
+        "EFT transferi: transfer dekontu."
+      ],
+      "confusable_with": [
+        "bank.transfer.eft.arrival_time",
+        "bank.transfer.eft.receipt"
+      ],
+      "workflow_id": "workflow.bank.transfer.eft.status",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information"
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "seed-007",
+      "conversation_id": "seed-007",
+      "question": "Bankamatik kartının PIN kodunu unuttum",
+      "source": "seed",
+      "dataset_version": "seed-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "card.pin",
+      "context": {}
+    },
+    {
+      "case_id": "seed-011",
+      "conversation_id": "seed-011",
+      "question": "Yaptığım EFT alıcının hesabına geçmedi",
+      "source": "seed",
+      "dataset_version": "seed-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "transfer.status",
+      "context": {}
+    },
+    {
+      "case_id": "seed-020",
+      "conversation_id": "seed-020",
+      "question": "Telefonumu değiştirdim SIM bloke oldu",
+      "source": "seed",
+      "dataset_version": "seed-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "digital.device",
+      "context": {}
+    }
+  ]
+}

@@ -1,0 +1,1068 @@
+[
+  {
+    "intent_id": "card.limit.change",
+    "name": "Kart limit değişikliği",
+    "domain": "Kartlar",
+    "description": "Kredi kartı harcama limitini artırma veya azaltma.",
+    "examples": [
+      "Kredi kartımın limitini artırmak istiyorum.",
+      "Kart harcama limitini düşürmek istiyorum."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.card.limit.change",
+    "required_slots": [
+      "new_limit"
+    ],
+    "slot_questions": {
+      "new_limit": "Yeni kart limitiniz kaç TL olsun?"
+    },
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "transaction",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Toplam kredi kartı limiti değişikliğidir; günlük harcama sınırı ayrı işlemdir."
+  },
+  {
+    "intent_id": "card.debt.pay",
+    "name": "Kart borcu ödeme",
+    "domain": "Kartlar",
+    "description": "Kredi kartı borcunu veya asgari tutarı ödeme.",
+    "examples": [
+      "Kartıma borç ödemesi yapacağım.",
+      "Kredi kartımın asgarisini yatıracağım."
+    ],
+    "exclusions": [
+      "Kredi kartı güncel borcu, asgari ödeme ve hesap kesimi."
+    ],
+    "confusable_with": [
+      "card.debt.query"
+    ],
+    "workflow_id": "workflow.card.debt.pay",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "card.debt.query",
+    "name": "Kart borcu ve ekstre",
+    "domain": "Kartlar",
+    "description": "Kredi kartı güncel borcu, asgari ödeme ve hesap kesimi.",
+    "examples": [
+      "Kartımda ne kadar borç kaldı?",
+      "Son ekstrede asgari ödeme kaç lira?"
+    ],
+    "exclusions": [
+      "Kredi kartı borcunu veya asgari tutarı ödeme."
+    ],
+    "confusable_with": [
+      "card.debt.pay"
+    ],
+    "workflow_id": "workflow.card.debt.query",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "card.lost",
+    "name": "Kayıp veya çalıntı kart",
+    "domain": "Kartlar",
+    "description": "Kaybolan veya çalınan kartı bildirme.",
+    "examples": [
+      "Cüzdanım çalındı ve kartım içinde.",
+      "Kartımı kaybettim acilen kapattırmalıyım."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.card.lost",
+    "required_slots": [
+      "card_last4"
+    ],
+    "slot_questions": {
+      "card_last4": "Kaybolan kartınızın son dört hanesi nedir?"
+    },
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "transaction",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Banka kartı, Ek kredi kartı, Ticari kredi kartı. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "card.cancel",
+    "name": "Kartı kalıcı iptal etme",
+    "domain": "Kartlar",
+    "description": "Kartı tamamen iptal etme ve üyeliğini sonlandırma.",
+    "examples": [
+      "Kredi kartımı tamamen iptal ettirmek istiyorum.",
+      "Kart üyeliğini sonlandıralım."
+    ],
+    "exclusions": [
+      "Kart kullanımını geçici durdurma; kalıcı iptal değildir."
+    ],
+    "confusable_with": [
+      "card.temporary_block"
+    ],
+    "workflow_id": "workflow.card.cancel",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "card.temporary_block",
+    "name": "Kartı geçici kapatma",
+    "domain": "Kartlar",
+    "description": "Kart kullanımını geçici durdurma; kalıcı iptal değildir.",
+    "examples": [
+      "Kartımı bir süreliğine dondurabilir miyim?",
+      "Kartı geçici olarak işlemlere kapatacağım."
+    ],
+    "exclusions": [
+      "Kartı tamamen iptal etme ve üyeliğini sonlandırma."
+    ],
+    "confusable_with": [
+      "card.cancel"
+    ],
+    "workflow_id": "workflow.card.temporary_block",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "card.unblock",
+    "name": "Kartı kullanıma açma",
+    "domain": "Kartlar",
+    "description": "Geçici kapalı veya bloke kartı tekrar kullanıma açma.",
+    "examples": [
+      "Kartımdaki blokeyi kaldıracağım.",
+      "Dondurduğum kartı yeniden kullanacağım."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.card.unblock",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "card.pin",
+    "name": "Kart şifresi",
+    "domain": "Kartlar",
+    "description": "Kart PIN oluşturma, unutulan PIN veya değiştirme.",
+    "examples": [
+      "Kart için belirlediğim gizli kodu yenilemek istiyorum.",
+      "Kart PIN kodumu değiştireceğim."
+    ],
+    "exclusions": [
+      "Mobil veya internet bankacılığı giriş şifresi yenileme."
+    ],
+    "confusable_with": [
+      "digital.password"
+    ],
+    "workflow_id": "workflow.card.pin",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Banka kartı, Ek kredi kartı, Ticari kredi kartı. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "card.online",
+    "name": "İnternet alışveriş izni",
+    "domain": "Kartlar",
+    "description": "Kartı internet alışverişine açma veya kapama.",
+    "examples": [
+      "Kartın internet alışveriş izinlerini açalım.",
+      "Kartımı online alışverişe kapatacağım."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.card.online",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Banka kartı, Ek kredi kartı, Sanal kredi kartı, Ticari kredi kartı. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "card.delivery",
+    "name": "Kart teslimatı",
+    "domain": "Kartlar",
+    "description": "Kartın kargo ve teslimat durumu.",
+    "examples": [
+      "Yeni kredi kartım ne zaman ulaşır?",
+      "Kartımın kurye takibini yapabilir miyiz?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.card.delivery",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Banka kartı, Ek kredi kartı, Ticari kredi kartı. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "card.fee",
+    "name": "Kart aidatı",
+    "domain": "Kartlar",
+    "description": "Kart yıllık üyelik ücreti, aidat itirazı ve iadesi.",
+    "examples": [
+      "Kartıma yıllık aidat yansımış.",
+      "Kredi kartı üyelik ücretine itiraz edeceğim."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.card.fee",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "card.apply",
+    "name": "Kart başvurusu",
+    "domain": "Kartlar",
+    "description": "Yeni kredi kartı veya ek kart başvurusu.",
+    "examples": [
+      "Yeni kredi kartına başvuracağım.",
+      "Adıma yeni kart çıkarılması için başvuru oluşturabilir miyiz?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.card.apply",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Banka kartı, Ek kredi kartı, Sanal kredi kartı, Ticari kredi kartı. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "card.rewards",
+    "name": "Puan ve mil",
+    "domain": "Kartlar",
+    "description": "Puan/mil bakiyesi, kullanım şartları ve geçerlilik.",
+    "examples": [
+      "Biriktirdiğim milleri nerede kullanabilirim?",
+      "Kart puanlarının geçerlilik süresi nedir?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.card.rewards",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "card.dispute",
+    "name": "Harcama itirazı",
+    "domain": "Kartlar",
+    "description": "Tanınmayan kart işlemi, çift çekim veya harcama itirazı.",
+    "examples": [
+      "Kartımdan bilgim dışında ödeme alınmış.",
+      "Bu alışverişi ben yapmadım, itiraz edeceğim."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.card.dispute",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "transfer.create",
+    "name": "Para transferi",
+    "domain": "Ödemeler",
+    "description": "EFT, havale veya FAST ile alıcıya para gönderme.",
+    "examples": [
+      "Bir IBAN numarasına para yollayacağım.",
+      "Bir alıcı hesabına para gönderme işlemi başlatalım."
+    ],
+    "exclusions": [
+      "Yapılmış transferin alıcıya ulaşıp ulaşmadığını sorgulama."
+    ],
+    "confusable_with": [
+      "transfer.status"
+    ],
+    "workflow_id": "workflow.transfer.create",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Düzenli havale talimatı, EFT transferi, FAST transferi, Havale transferi, SWIFT transferi, İleri tarihli EFT. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "transfer.status",
+    "name": "Transfer durum sorgusu",
+    "domain": "Ödemeler",
+    "description": "Yapılmış transferin alıcıya ulaşıp ulaşmadığını sorgulama.",
+    "examples": [
+      "Gönderdiğim para karşı hesaba ulaşmış mı?",
+      "Son para gönderimimin takibini yapmak istiyorum."
+    ],
+    "exclusions": [
+      "EFT, havale veya FAST ile alıcıya para gönderme.",
+      "Yanlış gönderilen veya bekleyen transferi geri alma."
+    ],
+    "confusable_with": [
+      "transfer.create",
+      "transfer.cancel"
+    ],
+    "workflow_id": "workflow.transfer.status",
+    "required_slots": [
+      "transfer_reference"
+    ],
+    "slot_questions": {
+      "transfer_reference": "Transfer referans numarasını paylaşır mısınız?"
+    },
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "transaction",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Düzenli havale talimatı, EFT transferi, FAST transferi, Havale transferi, SWIFT transferi, İleri tarihli EFT. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "transfer.cancel",
+    "name": "Transfer iptali ve iadesi",
+    "domain": "Ödemeler",
+    "description": "Yanlış gönderilen veya bekleyen transferi geri alma.",
+    "examples": [
+      "Yanlış IBAN'a para yolladım, geri alabilir miyim?",
+      "Henüz tamamlanmayan para gönderim emrini geri çekelim."
+    ],
+    "exclusions": [
+      "Yapılmış transferin alıcıya ulaşıp ulaşmadığını sorgulama."
+    ],
+    "confusable_with": [
+      "transfer.status"
+    ],
+    "workflow_id": "workflow.transfer.cancel",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Düzenli havale talimatı, EFT transferi, FAST transferi, Havale transferi, SWIFT transferi, İleri tarihli EFT. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "transfer.limit",
+    "name": "Transfer limitleri",
+    "domain": "Ödemeler",
+    "description": "EFT/FAST/havale işlem tutarı ve günlük limitleri.",
+    "examples": [
+      "Para gönderiminde günlük toplam tutar sınırı nedir?",
+      "Bir seferde gönderebileceğim para miktarını öğrenmek istiyorum."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.transfer.limit",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Düzenli havale talimatı, EFT transferi, FAST transferi, Havale transferi, SWIFT transferi, İleri tarihli EFT. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "transfer.fee",
+    "name": "Transfer ücretleri",
+    "domain": "Ödemeler",
+    "description": "EFT, havale veya FAST işlem ücretleri.",
+    "examples": [
+      "Para gönderirken alınan ücretleri öğrenebilir miyim?",
+      "Yaptığım para transferinden neden masraf kesildi?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.transfer.fee",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Düzenli havale talimatı, EFT transferi, FAST transferi, Havale transferi, SWIFT transferi, İleri tarihli EFT. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "bill.autopay.create",
+    "name": "Otomatik ödeme talimatı",
+    "domain": "Ödemeler",
+    "description": "Fatura için otomatik ödeme talimatı verme.",
+    "examples": [
+      "Elektrik faturası her ay otomatik ödensin.",
+      "Telefon faturamı otomatik ödemeye bağlayacağım."
+    ],
+    "exclusions": [
+      "Mevcut fatura otomatik ödeme talimatını kaldırma."
+    ],
+    "confusable_with": [
+      "bill.autopay.cancel"
+    ],
+    "workflow_id": "workflow.bill.autopay.create",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "bill.autopay.cancel",
+    "name": "Otomatik talimat iptali",
+    "domain": "Ödemeler",
+    "description": "Mevcut fatura otomatik ödeme talimatını kaldırma.",
+    "examples": [
+      "Su faturamın otomatik talimatını kaldıracağım.",
+      "Otomatik fatura ödemesini durduracağım."
+    ],
+    "exclusions": [
+      "Fatura için otomatik ödeme talimatı verme."
+    ],
+    "confusable_with": [
+      "bill.autopay.create"
+    ],
+    "workflow_id": "workflow.bill.autopay.cancel",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "bill.pay",
+    "name": "Fatura ödeme",
+    "domain": "Ödemeler",
+    "description": "Elektrik, su, telefon faturasını tek sefer ödeme.",
+    "examples": [
+      "Bu ayki doğalgaz faturamı ödeyeceğim.",
+      "Telefon faturasını şimdi yatırabilir miyiz?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.bill.pay",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "tax.pay",
+    "name": "Vergi ve kamu ödemeleri",
+    "domain": "Ödemeler",
+    "description": "Vergi, harç ve kamu kurumu ödemeleri.",
+    "examples": [
+      "Motorlu taşıtlar vergisini yatıracağım.",
+      "Pasaport harcını nereden ödeyebilirim?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.tax.pay",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "toll.balance",
+    "name": "HGS ve geçiş bakiyesi",
+    "domain": "Ödemeler",
+    "description": "HGS bakiyesi, yükleme ve otoyol geçişleri.",
+    "examples": [
+      "HGS etiketimin bakiyesini kontrol edelim.",
+      "Geçiş kartına para yükleyeceğim."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.toll.balance",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "account.balance",
+    "name": "Hesap bakiyesi",
+    "domain": "Hesaplar",
+    "description": "Vadesiz hesap bakiyesi ve kullanılabilir tutar.",
+    "examples": [
+      "Hesabımda kaç lira var?",
+      "Vadesiz hesabın kullanılabilir bakiyesi nedir?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.account.balance",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Maaş hesabı, Ortak hesap, Vadesiz TL hesabı, Vadesiz döviz hesabı, Yurt dışında yerleşik müşteri hesabı, Çocuk hesabı. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "account.statement",
+    "name": "Hesap hareketleri ve belge",
+    "domain": "Hesaplar",
+    "description": "Hesap hareketleri, hesap özeti veya dekont temini.",
+    "examples": [
+      "Son üç aylık hesap dökümünü istiyorum.",
+      "Hesap hareketlerini belge olarak alabilir miyim?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.account.statement",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Maaş hesabı, Ortak hesap, Vadesiz TL hesabı, Vadesiz döviz hesabı, Yurt dışında yerleşik müşteri hesabı, Çocuk hesabı. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "account.iban",
+    "name": "IBAN bilgisi",
+    "domain": "Hesaplar",
+    "description": "Kendi hesap IBAN veya hesap numarasını öğrenme.",
+    "examples": [
+      "Kendi IBAN numaramı bulamıyorum.",
+      "Hesap numaramı nerede görebilirim?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.account.iban",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "account.open",
+    "name": "Hesap açılışı",
+    "domain": "Hesaplar",
+    "description": "Yeni hesap açma veya uzaktan müşteri olma.",
+    "examples": [
+      "Görüntülü görüşmeyle müşteri olmak istiyorum.",
+      "Şubeye gitmeden yeni hesap açabilir miyim?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.account.open",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Birikimli mevduat hesabı, Katılma hesabı, Maaş hesabı, Ortak hesap, Vadeli TL hesabı, Vadeli altın hesabı, Vadeli döviz hesabı, Vadesiz TL hesabı, Vadesiz döviz hesabı, Yurt dışında yerleşik müşteri hesabı, Çocuk hesabı. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "account.close",
+    "name": "Hesap kapatma",
+    "domain": "Hesaplar",
+    "description": "Vadesiz veya vadeli banka hesabını kapatma.",
+    "examples": [
+      "Kullanmadığım banka hesabını kapatacağım.",
+      "Bu vadesiz hesabı tamamen kapatmak istiyorum."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.account.close",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Birikimli mevduat hesabı, Katılma hesabı, Vadeli TL hesabı, Vadeli altın hesabı, Vadeli döviz hesabı. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "deposit.rate",
+    "name": "Mevduat faizi",
+    "domain": "Hesaplar",
+    "description": "Vadeli hesap faiz oranları, vade ve getiri.",
+    "examples": [
+      "Vadeli hesaba yatırınca ne kadar faiz kazanırım?",
+      "Bir aylık mevduat oranları nedir?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.deposit.rate",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Birikimli mevduat hesabı, Katılma hesabı, Vadeli TL hesabı, Vadeli altın hesabı, Vadeli döviz hesabı. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "loan.apply",
+    "name": "Kredi başvurusu",
+    "domain": "Krediler",
+    "description": "İhtiyaç, konut veya taşıt kredisine başvuru.",
+    "examples": [
+      "Kredi için başvuru sürecini başlatabilir miyiz?",
+      "Bankanızdan kredi kullanmak üzere talep oluşturmak istiyorum."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.loan.apply",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Borç transfer kredisi, Eğitim kredisi, Konut kredisi, Taşıt kredisi, Ticari yatırım kredisi, İhtiyaç kredisi. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "loan.status",
+    "name": "Kredi başvuru durumu",
+    "domain": "Krediler",
+    "description": "Yapılmış kredi başvurusunun değerlendirme durumu.",
+    "examples": [
+      "Dünkü kredi başvurum onaylandı mı?",
+      "Kredi talebimin sonucunu öğrenmek istiyorum."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.loan.status",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Borç transfer kredisi, Eğitim kredisi, Konut kredisi, Taşıt kredisi, Ticari yatırım kredisi, İhtiyaç kredisi. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "loan.payment",
+    "name": "Kredi taksiti ve kapama",
+    "domain": "Krediler",
+    "description": "Kredi taksit ödeme, kalan borç ve erken kapama.",
+    "examples": [
+      "Kredimin taksitini ödemek istiyorum.",
+      "Kalan kredi borcunu erken kapatabilir miyim?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.loan.payment",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Borç transfer kredisi, Eğitim kredisi, Konut kredisi, Taşıt kredisi, Ticari yatırım kredisi, İhtiyaç kredisi. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "loan.rate",
+    "name": "Kredi faiz ve maliyeti",
+    "domain": "Krediler",
+    "description": "Kredi faiz oranı, maliyet ve ödeme planı.",
+    "examples": [
+      "Kredi seçeneklerinizin faiz oranları hakkında bilgi istiyorum.",
+      "Kredi için aylık ödeme planı nasıl hesaplanıyor?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.loan.rate",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Borç transfer kredisi, Eğitim kredisi, Konut kredisi, Taşıt kredisi, Ticari yatırım kredisi, İhtiyaç kredisi. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "digital.password",
+    "name": "Dijital bankacılık şifresi",
+    "domain": "Dijital bankacılık",
+    "description": "Mobil veya internet bankacılığı giriş şifresi yenileme.",
+    "examples": [
+      "Bankacılık hesabıma giriş parolasını yenileyeceğim.",
+      "Bankanın dijital hizmetlerinde kullandığım şifreyi değiştirmek istiyorum."
+    ],
+    "exclusions": [
+      "Kart PIN oluşturma, unutulan PIN veya değiştirme."
+    ],
+    "confusable_with": [
+      "card.pin"
+    ],
+    "workflow_id": "workflow.digital.password",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Kurumsal internet bankacılığı, Kurumsal mobil bankacılık, Mobil bankacılık, Telefon bankacılığı, İnternet bankacılığı. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "digital.login",
+    "name": "Giriş ve doğrulama sorunu",
+    "domain": "Dijital bankacılık",
+    "description": "Mobil uygulamaya giriş, SMS kodu veya oturum sorunu.",
+    "examples": [
+      "Uygulamaya girişte hata alıyorum.",
+      "Doğrulama SMS'i telefonuma ulaşmıyor."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.digital.login",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Kurumsal internet bankacılığı, Kurumsal mobil bankacılık, Mobil bankacılık, Telefon bankacılığı, İnternet bankacılığı. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "digital.device",
+    "name": "Telefon ve SIM değişikliği",
+    "domain": "Dijital bankacılık",
+    "description": "Telefon değişimi, SIM blokesi ve cihaz eşleştirmesi.",
+    "examples": [
+      "Yeni telefon aldım, mobil bankacılığı taşıyacağım.",
+      "SIM değiştiği için bloke oluştu."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.digital.device",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır. Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: Kurumsal internet bankacılığı, Kurumsal mobil bankacılık, Mobil bankacılık, Telefon bankacılığı, İnternet bankacılığı. Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma."
+  },
+  {
+    "intent_id": "digital.accessibility",
+    "name": "Uygulama görünüm ayarları",
+    "domain": "Dijital bankacılık",
+    "description": "Yazı boyutu, ekran okuyucu ve görünüm ayarları.",
+    "examples": [
+      "Uygulamadaki yazıları büyütmek istiyorum.",
+      "Ekran okuyucu ayarı nerede?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.digital.accessibility",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "investment.fx.rate",
+    "name": "Döviz kurları",
+    "domain": "Yatırım",
+    "description": "Döviz alış/satış kuru ve kur farkı.",
+    "examples": [
+      "Euro alış ve satış fiyatı nedir?",
+      "Dolar alım satım makası nedir?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.investment.fx.rate",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "investment.fx.trade",
+    "name": "Döviz alım satımı",
+    "domain": "Yatırım",
+    "description": "Döviz hesabından yabancı para alma veya satma.",
+    "examples": [
+      "Hesabımdaki lirayla euro alacağım.",
+      "Dolarlarımı Türk lirasına çevireceğim."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.investment.fx.trade",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "investment.gold",
+    "name": "Altın işlemleri",
+    "domain": "Yatırım",
+    "description": "Altın hesabı ve gram altın alım satımı.",
+    "examples": [
+      "Altın hesabımdan gram altın satın alacağım.",
+      "Bankadaki altınımı satabilir miyim?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.investment.gold",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "investment.fund",
+    "name": "Yatırım fonları",
+    "domain": "Yatırım",
+    "description": "Fon bilgisi, alım satımı ve düzenli alım.",
+    "examples": [
+      "Yatırım fonlarını nasıl alıp satarım?",
+      "Fon için düzenli alım talimatı vereceğim."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.investment.fund",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "investment.bond",
+    "name": "Tahvil, bono ve repo",
+    "domain": "Yatırım",
+    "description": "Devlet tahvili, hazine bonosu, DİBS ve repo.",
+    "examples": [
+      "Hazine bonosunun işleyişi nedir?",
+      "Repo yatırımı yapmak istiyorum."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.investment.bond",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "service.branch",
+    "name": "Şube bilgileri",
+    "domain": "Destek",
+    "description": "Şube konumu, çalışma saati, erişilebilirlik ve randevu.",
+    "examples": [
+      "Yakınımdaki şube kaçta kapanıyor?",
+      "Şubeden randevu almak istiyorum."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.service.branch",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "service.atm",
+    "name": "ATM işlemleri",
+    "domain": "Destek",
+    "description": "ATM para çekme/yatırma, QR ve cihaz sorunu.",
+    "examples": [
+      "ATM paramı yuttu.",
+      "Kartsız QR ile nakit nasıl çekebilirim?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.service.atm",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "service.human",
+    "name": "Temsilciye bağlanma",
+    "domain": "Destek",
+    "description": "Canlı müşteri temsilcisi ile görüşme.",
+    "examples": [
+      "Bir müşteri temsilcisine bağlar mısınız?",
+      "Gerçek bir insanla görüşmek istiyorum."
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.service.human",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "campaign.query",
+    "name": "Kampanya bilgileri",
+    "domain": "Diğer hizmetler",
+    "description": "Banka veya kart kampanyalarının koşulları.",
+    "examples": [
+      "Kredi kartı kampanyalarını nereden takip edebilirim?",
+      "Alışveriş kampanyasına nasıl katılırım?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.campaign.query",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  },
+  {
+    "intent_id": "pension.insurance",
+    "name": "Emeklilik ve sigorta",
+    "domain": "Diğer hizmetler",
+    "description": "Bireysel emeklilik, otomatik katılım ve sigorta.",
+    "examples": [
+      "Bireysel emeklilik hesabı açtıracağım.",
+      "Otomatik katılım sisteminin şartları nedir?"
+    ],
+    "exclusions": [],
+    "confusable_with": [],
+    "workflow_id": "workflow.pension.insurance",
+    "required_slots": [],
+    "slot_questions": {},
+    "channels": [
+      "chat",
+      "voice"
+    ],
+    "kind": "information",
+    "selection_rule": "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+  }
+]

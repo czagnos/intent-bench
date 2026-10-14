@@ -1,0 +1,69 @@
+{
+  "date": "2026-09-08",
+  "dataset": "seed-v1",
+  "dataset_fingerprint": "5bc0984bb92d0353",
+  "catalog_version": "baf29f820f8de262",
+  "catalog_intents": 48,
+  "routing_cases": 26,
+  "oos_cases": 3,
+  "customer_accuracy": null,
+  "live_qwen_tested": false,
+  "evaluation_conditions": {
+    "concurrency": 1,
+    "device": "CPU",
+    "embedding_cpu_threads": 4,
+    "includes_first_model_and_index_load": true
+  },
+  "results": {
+    "lexical": {
+      "model": "char-tfidf+bm25-v1",
+      "metrics": {
+        "total": 29,
+        "correct": 20,
+        "routing_total": 26,
+        "routing_correct": 20,
+        "routing_accuracy": 0.7692307692307693,
+        "decision_accuracy": 0.6896551724137931,
+        "macro_f1": 0.7243589743589743,
+        "recall_at_k": 1.0,
+        "k": 20,
+        "oos_false_accept_rate": 1.0,
+        "errors": 0,
+        "latency_ms": {
+          "p50": 1.15,
+          "p95": 1.4,
+          "p99": 1.4272
+        }
+      }
+    },
+    "e5": {
+      "model": "intfloat/multilingual-e5-base",
+      "metrics": {
+        "total": 29,
+        "correct": 23,
+        "routing_total": 26,
+        "routing_correct": 23,
+        "routing_accuracy": 0.8846153846153846,
+        "decision_accuracy": 0.7931034482758621,
+        "macro_f1": 0.8589743589743589,
+        "recall_at_k": 1.0,
+        "k": 20,
+        "oos_false_accept_rate": 1.0,
+        "errors": 0,
+        "latency_ms": {
+          "p50": 40.28,
+          "p95": 83.08799999999991,
+          "p99": 7773.186399999989
+        }
+      }
+    }
+  },
+  "validation": {
+    "api_tests_passed": 31,
+    "frontend_build_passed": true,
+    "browser_e2e_run": false,
+    "docker_build_run": false,
+    "live_qwen_tested": false,
+    "real_e5_inference_tested": true
+  }
+}
