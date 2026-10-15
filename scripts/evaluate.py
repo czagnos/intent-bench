@@ -6,7 +6,9 @@ import sqlite3
 import sys
 import time
 from collections.abc import Sequence
+from contextlib import ExitStack
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from types import FrameType
 from typing import TypedDict
 
@@ -19,6 +21,7 @@ from app.contracts import EvaluationRequest
 from app.evaluation_types import EvaluationMetrics
 from app.execution import ExecutionLimits
 from app.service import Studio
+from app.synthetic_samples import load_sample_pack, sample_cases, sample_metadata
 
 
 class EvaluationSummary(TypedDict):
@@ -34,7 +37,10 @@ class CommandError(TypedDict):
 def main(argv: Sequence[str] | None = None, *, settings: Settings | None = None,
          transport: httpx.BaseTransport | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", choices=["seed", "customer", "all"], default="seed")
+    parser.add_argument("--source", choices=["seed", "customer", "all"],
+                        help="Case source for ordinary runs (default: seed); incompatible with --sample-pack.")
+    parser.add_argument("--sample-pack", choices=["synthetic-v1"],
+                        help="Run authored sector samples in a temporary isolated workspace.")
     parser.add_argument("--methods", nargs="+", choices=["lexical", "e5", "hybrid_llm"], default=["lexical"])
     parser.add_argument("--semantic-rejection", choices=["calibrated", "off"], default="calibrated")
     parser.add_argument("--embedding-ids", nargs="+", default=["default"])
@@ -51,7 +57,9 @@ def main(argv: Sequence[str] | None = None, *, settings: Settings | None = None,
     parser.add_argument("--max-duration-seconds", type=float, help="Cooperative duration limit including preparation (1–86400 seconds).")
     parser.add_argument("--max-reported-cost-usd", type=float, help="Soft OpenRouter reported USD threshold (>0–10000); in-flight work may exceed it.")
     args = parser.parse_args(argv)
-    studio = Studio(settings or Settings())
+    if args.sample_pack and args.source is not None:
+        parser.error("--source cannot be combined with --sample-pack; samples use an isolated authored cohort.")
+    resources = ExitStack()
     interrupted = False
 
     def request_cancel(signum: int, frame: FrameType | None) -> None:
@@ -62,9 +70,11 @@ def main(argv: Sequence[str] | None = None, *, settings: Settings | None = None,
     previous_handler = signal.signal(signal.SIGINT, request_cancel)
     exit_code = 1
     try:
+        pack = load_sample_pack(args.sample_pack, args.workspace) if args.sample_pack else None
         profiles = json.loads(args.retrieval_profiles.read_text()) if args.retrieval_profiles else None
         options = EvaluationRequest(
-            source=args.source, methods=args.methods, limit=args.limit, semantic_rejection=args.semantic_rejection,
+            source="customer" if pack else (args.source or "seed"), methods=args.methods, limit=args.limit,
+            semantic_rejection=args.semantic_rejection,
             embedding_ids=args.embedding_ids, llm_ids=args.llm_ids, catalog_sizes=args.catalog_sizes,
             catalog_seed=args.catalog_seed, scale_calibration_source=args.scale_calibration_source,
             scale_max_oos_false_accept_rate=args.scale_max_oos_far, retrieval_profiles=profiles,
@@ -73,8 +83,17 @@ def main(argv: Sequence[str] | None = None, *, settings: Settings | None = None,
                 max_reported_cost_usd=args.max_reported_cost_usd,
             ),
         )
+        metadata = sample_metadata(pack, options.limit) if pack else None
+        current_settings = settings or Settings()
+        if pack:
+            directory = resources.enter_context(TemporaryDirectory(prefix="intent-bench-synthetic-"))
+            current_settings = current_settings.model_copy(update={"data_dir": Path(directory)})
+        studio = Studio(current_settings)
+        resources.callback(studio.close)
         studio.embeddings.transport = studio.selector.transport = studio.reranker.transport = transport
         studio.ensure_workspace(args.workspace)
+        if pack:
+            studio.store.save_cases(args.workspace, sample_cases(pack))
         job = studio.start_evaluation(args.workspace, options)
         cancellation_sent = False
         while job["status"] in ("queued", "running"):
@@ -86,12 +105,15 @@ def main(argv: Sequence[str] | None = None, *, settings: Settings | None = None,
                     break
             time.sleep(.2)
             job = studio.store.job(args.workspace, job["id"])
+        if metadata:
+            job["sample_pack"] = metadata.model_dump()
         destination = Path("artifacts/runs") / (job["id"] + ".json")
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(json.dumps(job, ensure_ascii=False, indent=2), encoding="utf-8")
         summary: EvaluationSummary = {"status": job["status"], "file": str(destination),
                                       "results": {key: value["metrics"] for key, value in job.get("results", {}).items()}}
-        print(json.dumps(summary, ensure_ascii=False, indent=2))
+        print(json.dumps({**summary, **({"sample_pack": metadata.model_dump()} if metadata else {})},
+                         ensure_ascii=False, indent=2))
         exit_code = {"completed": 0, "stopped": 2, "cancelled": 130, "failed": 1}[job["status"]]
     except ValidationError as exc:
         error: CommandError = {"error": "Invalid evaluation options: " + "; ".join(
@@ -106,7 +128,7 @@ def main(argv: Sequence[str] | None = None, *, settings: Settings | None = None,
         print(json.dumps(error), file=sys.stderr)
     finally:
         try:
-            studio.close()
+            resources.close()
         finally:
             signal.signal(signal.SIGINT, previous_handler)
     return 130 if interrupted else exit_code
