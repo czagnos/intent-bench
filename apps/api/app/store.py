@@ -2,14 +2,18 @@ import hashlib
 import json
 import sqlite3
 import time
+from collections.abc import Iterable
 from contextlib import contextmanager
 from pathlib import Path
+from typing import cast
 from uuid import uuid4
 
 from .catalog_presets import PresetRevision, PresetRevisionReport, SeedCase
 from .contracts import Intent
 from .execution import StopReason
 from .evaluation_types import EvaluationCheckpoint, EvaluationTerminalStatus
+from .importer import CaseSplit, ImportedCaseData, ImportReportData
+from .transcript_data import ConversationSplitData, StoredCaseData, StoredImportReportData, same_imported_turn
 
 
 def fingerprint(value) -> str:
@@ -313,7 +317,103 @@ class Store:
         with self.connect() as db:
             for case in cases:
                 # Reimporting the same source must not erase human review.
-                db.execute("INSERT OR IGNORE INTO cases VALUES(?,?,?,?,?,?,?)", (workspace, case["case_id"], case["source"], case["dataset_version"], int(case["reviewed"]), case["split"], json.dumps(case, ensure_ascii=False)))
+                self._insert_case(db, workspace, cast(StoredCaseData, case))
+
+    @staticmethod
+    def _insert_case(db: sqlite3.Connection, workspace: str, case: StoredCaseData) -> None:
+        db.execute("INSERT OR IGNORE INTO cases VALUES(?,?,?,?,?,?,?)",
+                   (workspace, case["case_id"], case["source"], case["dataset_version"],
+                    int(case["reviewed"]), case["split"], json.dumps(case, ensure_ascii=False)))
+
+    def import_cases(self, workspace: str, cases: list[ImportedCaseData],
+                     report: ImportReportData) -> StoredImportReportData:
+        """Persist parsed cases and their actual insertion counts together."""
+        result: StoredImportReportData = {**report, "inserted": 0, "already_present": 0}
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            current_splits = self._conversation_splits(db, workspace, {case["conversation_id"] for case in cases})
+            for splits in current_splits.values():
+                if len(splits) > 1:
+                    raise ValueError("The conversation spans multiple splits. Use the whole-conversation split action.")
+            pending: list[ImportedCaseData] = []
+            for case in cases:
+                existing = db.execute("SELECT payload FROM cases WHERE workspace=? AND case_id=?",
+                                      (workspace, case["case_id"])).fetchone()
+                if existing:
+                    stored = cast(StoredCaseData, json.loads(existing[0]))
+                    if not same_imported_turn(stored, case):
+                        raise ValueError("Conflicting source turn identity or immutable transcript content.")
+                    result["already_present"] += 1
+                else:
+                    pending.append(case)
+            resolved = {conversation_id: next(iter(splits)) for conversation_id, splits in current_splits.items()}
+            for case in pending:
+                if case["split_explicit"]:
+                    previous = resolved.get(case["conversation_id"])
+                    if previous is not None and previous != case["split"]:
+                        raise ValueError("The conversation has a conflicting explicit split. Use the whole-conversation split action.")
+                    resolved[case["conversation_id"]] = case["split"]
+            for case in pending:
+                stored_case = cast(StoredCaseData, {**case, "split": resolved.get(case["conversation_id"], "test")})
+                self._insert_case(db, workspace, stored_case)
+            result["inserted"] = len(pending)
+            db.execute("INSERT OR REPLACE INTO imports VALUES(?,?,?,?)",
+                       (workspace, report["dataset_version"], time.time(), json.dumps(result, ensure_ascii=False)))
+        return result
+
+    @staticmethod
+    def _conversation_cases(db: sqlite3.Connection, workspace: str,
+                            conversation_ids: set[str]) -> list[StoredCaseData]:
+        cases: list[StoredCaseData] = []
+        for row in db.execute("SELECT payload FROM cases WHERE workspace=?", (workspace,)):
+            case = cast(StoredCaseData, json.loads(row[0]))
+            conversation_id = case.get("conversation_id")
+            if conversation_id and conversation_id in conversation_ids:
+                cases.append(case)
+        return cases
+
+    @classmethod
+    def _conversation_splits(cls, db: sqlite3.Connection, workspace: str,
+                             conversation_ids: set[str]) -> dict[str, set[CaseSplit]]:
+        splits: dict[str, set[CaseSplit]] = {}
+        for case in cls._conversation_cases(db, workspace, conversation_ids):
+            conversation_id = case.get("conversation_id")
+            if conversation_id:
+                splits.setdefault(conversation_id, set()).add(case["split"])
+        return splits
+
+    def update_conversation_split(self, workspace: str, conversation_id: str,
+                                  split: CaseSplit) -> ConversationSplitData:
+        """Move every conversation turn together without changing human labels."""
+        if split not in ("dev", "calibration", "test"):
+            raise ValueError("The conversation split must be dev, calibration or test.")
+        updated_count = 0
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            cases = self._conversation_cases(db, workspace, {conversation_id})
+            if not cases:
+                raise KeyError(conversation_id)
+            for case in cases:
+                if case["split"] == split:
+                    continue
+                self._archive_case(db, workspace, case, "conversation_split:before")
+                case["split"] = split
+                db.execute("UPDATE cases SET split=?,payload=? WHERE workspace=? AND case_id=?",
+                           (split, json.dumps(case, ensure_ascii=False), workspace, case["case_id"]))
+                self._archive_case(db, workspace, case, "conversation_split:after")
+                updated_count += 1
+        return {"conversation_id": conversation_id, "split": split, "updated_count": updated_count}
+
+    def validate_conversation_separation(self, workspace: str,
+                                         conversation_ids: Iterable[str | None]) -> None:
+        """Reject leakage for a selected cohort, including manually saved older rows."""
+        selected = {conversation_id for conversation_id in conversation_ids if conversation_id}
+        if not selected:
+            return
+        with self.connect() as db:
+            splits = self._conversation_splits(db, workspace, selected)
+        if any(len(values) > 1 for values in splits.values()):
+            raise ValueError("A selected conversation spans multiple splits. Use the whole-conversation split action.")
 
     def cases(self, workspace: str, source="all", reviewed: bool | None = None, split: str | None = None):
         query, values = "SELECT payload FROM cases WHERE workspace=?", [workspace]
@@ -331,6 +431,12 @@ class Store:
             if not row:
                 raise KeyError(case_id)
             case = json.loads(row[0])
+            conversation_id = case.get("conversation_id")
+            if conversation_id:
+                split = review.get("split", case["split"])
+                siblings = self._conversation_cases(db, workspace, {conversation_id})
+                if any(sibling["case_id"] != case_id and sibling["split"] != split for sibling in siblings):
+                    raise ValueError("This review would split a conversation. Use the whole-conversation split action first.")
             self._archive_case(db, workspace, case, "human_review:before")
             case.update(review, reviewed=True, reviewed_at=time.time())
             db.execute("UPDATE cases SET reviewed=1,split=?,payload=? WHERE workspace=? AND case_id=?", (case["split"], json.dumps(case, ensure_ascii=False), workspace, case_id))
