@@ -8,6 +8,8 @@ from uuid import uuid4
 
 from .catalog_presets import PresetRevision, PresetRevisionReport, SeedCase
 from .contracts import Intent
+from .execution import StopReason
+from .evaluation_types import EvaluationCheckpoint, EvaluationTerminalStatus
 
 
 def fingerprint(value) -> str:
@@ -387,6 +389,57 @@ class Store:
         with self.connect() as db:
             return [json.loads(r[0]) for r in db.execute("SELECT payload FROM jobs WHERE workspace=? AND kind=? ORDER BY created DESC LIMIT 30", (workspace, kind))]
 
+    @contextmanager
+    def _evaluation_transaction(self, workspace: str, job_id: str):
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute("SELECT payload FROM jobs WHERE workspace=? AND job_id=? AND kind='evaluation'",
+                             (workspace, job_id)).fetchone()
+            if row is None:
+                raise KeyError(job_id)
+            job = json.loads(row[0])
+            yield job
+            db.execute("UPDATE jobs SET status=?,payload=? WHERE workspace=? AND job_id=?",
+                       (job["status"], json.dumps(job, ensure_ascii=False), workspace, job_id))
+
+    def claim_evaluation(self, workspace: str, job_id: str):
+        with self._evaluation_transaction(workspace, job_id) as job:
+            if job["status"] != "queued" or job.get("cancel_requested"):
+                return None
+            job.update(status="running", started=time.time())
+        return job
+
+    def cancel_evaluation(self, workspace: str, job_id: str):
+        with self._evaluation_transaction(workspace, job_id) as job:
+            if job["status"] in ("queued", "running"):
+                job["cancel_requested"] = True
+                if job["status"] == "queued":
+                    job.update(status="cancelled", stop_reason="user_cancelled", phase="complete")
+        return job
+
+    def checkpoint_evaluation(self, workspace: str, job_id: str, updates: EvaluationCheckpoint):
+        # Progress cannot replace lifecycle state, including cancellation accepted concurrently.
+        with self._evaluation_transaction(workspace, job_id) as job:
+            if job["status"] == "running":
+                job.update({key: value for key, value in updates.items()
+                            if key not in ("status", "cancel_requested", "stop_reason", "started", "accounting")})
+                if "accounting" in updates:
+                    job["accounting"] = updates["accounting"].model_dump()
+        return job
+
+    def finalize_evaluation(self, workspace: str, job_id: str,
+                            status: EvaluationTerminalStatus,
+                            *, stop_reason: StopReason | None = None, error: str | None = None):
+        with self._evaluation_transaction(workspace, job_id) as job:
+            if job["status"] != "running":
+                return job
+            if job.get("cancel_requested"):
+                job.update(status="cancelled", stop_reason="user_cancelled", error=None)
+            else:
+                job.update(status=status, stop_reason=stop_reason, error=error)
+            job.update(phase="complete", elapsed_ms=round((time.time()-job["started"])*1000, 2))
+        return job
+
     def save_import(self, workspace: str, report: dict):
         with self.connect() as db:
             db.execute("INSERT OR REPLACE INTO imports VALUES(?,?,?,?)", (workspace, report["dataset_version"], time.time(), json.dumps(report, ensure_ascii=False)))
@@ -397,11 +450,16 @@ class Store:
 
     def recover_interrupted_jobs(self):
         with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
             rows = db.execute("SELECT workspace,job_id,payload FROM jobs WHERE status IN ('queued','running')").fetchall()
             for row in rows:
                 job = json.loads(row["payload"])
                 job.update(status="failed", error="The run could not complete because the service restarted.")
-                db.execute("UPDATE jobs SET status='failed',payload=? WHERE workspace=? AND job_id=?", (json.dumps(job, ensure_ascii=False), row["workspace"], row["job_id"]))
+                if job["kind"] == "evaluation":
+                    job.update(stop_reason="interrupted", phase="complete")
+                    if job.get("cancel_requested"):
+                        job.update(status="cancelled", stop_reason="user_cancelled", error=None)
+                db.execute("UPDATE jobs SET status=?,payload=? WHERE workspace=? AND job_id=?", (job["status"], json.dumps(job, ensure_ascii=False), row["workspace"], row["job_id"]))
 
     def save_calibration(self, workspace, calibration):
         with self.connect() as db:

@@ -3,6 +3,8 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from .execution import ExecutionLimits
+
 Method = Literal["lexical", "e5", "hybrid_llm"]
 ModelId = Annotated[str, Field(pattern=r"^[a-zA-Z0-9_.-]{1,80}$")]
 DecisionType = Literal["route", "continue", "clarify", "cancel", "out_of_scope", "handoff", "error"]
@@ -129,6 +131,7 @@ class Review(BaseModel):
 
 class EvaluationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    execution_limits: ExecutionLimits = Field(default_factory=ExecutionLimits)
     methods: list[Method] = Field(default=["lexical"], min_length=1, max_length=3)
     embedding_ids: list[ModelId] = Field(default=["default"], min_length=1, max_length=8)
     llm_ids: list[ModelId] = Field(default=["default"], min_length=1, max_length=12)

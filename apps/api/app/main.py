@@ -63,6 +63,10 @@ def create_app(settings: Settings | None = None):
             return JSONResponse(status_code=422, content={"detail": "Invalid model form. Check the fields and key variable name.",
                 "fields": [".".join(str(v) for v in error["loc"][1:]) for error in exc.errors()
                            if error["type"] != "extra_forbidden"]})
+        if request.url.path == "/v1/evaluations":
+            # Echoing nonfinite invalid input would itself fail JSON serialization.
+            return JSONResponse(status_code=422, content={"detail": "Invalid evaluation options.",
+                "fields": [".".join(str(value) for value in error["loc"][1:]) for error in exc.errors()]})
         return await request_validation_exception_handler(request, exc)
     app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_methods=["GET", "POST", "PATCH"], allow_headers=["Content-Type"])
     app.add_middleware(LocalRequestMiddleware, allowed_origins=settings.cors_origins, trusted_hosts=settings.trusted_hosts)
@@ -310,7 +314,7 @@ def create_app(settings: Settings | None = None):
                     if event["id"] > last:
                         yield f"id: {event['id']}\nevent: stage\ndata: {json.dumps(event, ensure_ascii=False)}\n\n"
                         last = event["id"]
-                if job["status"] in ("completed", "failed", "superseded"):
+                if job["status"] in ("completed", "failed", "superseded", "stopped", "cancelled"):
                     yield f"event: result\ndata: {json.dumps(job, ensure_ascii=False)}\n\n"
                     break
                 yield ": heartbeat\n\n"
@@ -336,6 +340,13 @@ def create_app(settings: Settings | None = None):
         if not job or job["kind"] != "evaluation":
             raise HTTPException(404, "Evaluation not found.")
         return job
+
+    @app.post("/v1/evaluations/{evaluation_id}/cancel")
+    def cancel_evaluation(evaluation_id: str, workspace: Workspace = "demo"):
+        try:
+            return studio.store.cancel_evaluation(workspace, evaluation_id)
+        except KeyError as exc:
+            raise HTTPException(404, "Evaluation not found.") from exc
 
     # A production web build can be served by the same on-prem API process.
     dist = ROOT / "apps/web/dist"

@@ -10,8 +10,11 @@ from .catalog_scope import core_ids, select_catalogs
 from .catalog_presets import workspace_preset
 from .contracts import Intent
 from .evaluation import summarize, diagnose
+from .evaluation_types import EvaluationResult
+from .execution import EvaluationController, EvaluationStopped, ExecutionAccounting, ExecutionLimits, activate_execution, execution_checkpoint, execution_stage
 from .model_catalog import MAX_VARIANTS, ModelCatalog, embedding_key, embedding_runtime_key, llm_metadata
 from .policy import apply_decision, baseline_decision, context_decision, explicit_workflow_slots
+from .providers import is_openrouter
 from .retrieval import Embeddings, ModelUnavailable, Retriever, tokens
 from .reranker import Reranker
 from .selector import Selector, prompt_version
@@ -242,6 +245,17 @@ class Studio:
 
     def start_evaluation(self, workspace, options):
         variants = self.model_catalog.expand(options, workspace)
+        if options.execution_limits.max_reported_cost_usd is not None:
+            for variant in variants:
+                settings = variant.settings
+                unsupported_embedding = (variant.method != "lexical" and settings.embedding_mode == "http"
+                                         and not is_openrouter(settings.embedding_base_url))
+                unsupported_llm = (variant.method == "hybrid_llm"
+                                   and (settings.llm_protocol != "openai" or not is_openrouter(settings.llm_base_url)))
+                unsupported_reranker = (variant.retrieval and variant.retrieval.reranker_id
+                                        and settings.reranker_mode == "http")
+                if unsupported_embedding or unsupported_llm or unsupported_reranker:
+                    raise ValueError("Reported USD limits require supported OpenRouter remote inference. Local models are allowed.")
         all_cases = self.store.cases(workspace, options.source, split=options.split)
         cases = [c for c in all_cases if c["reviewed"]][:options.limit]
         if not cases:
@@ -272,6 +286,7 @@ class Studio:
             "dataset_fingerprint": fingerprint(cases), "dataset_versions": sorted({c["dataset_version"] for c in cases}),
             "selected_count": len(cases), "unreviewed_excluded": sum(not c["reviewed"] for c in all_cases),
             "progress": 0, "total": len(cases)*len(runs), "results": {}, "calibrations": calibrations,
+            "cancel_requested": False, "stop_reason": None, "accounting": ExecutionAccounting().model_dump(),
             "scale_calibration": {"source": options.scale_calibration_source, "sample_count": len(fit_cases),
                                   "dataset_fingerprint": data_fingerprint(fit_cases), "max_oos_false_accept_rate": options.scale_max_oos_false_accept_rate} if scale_fit else None,
             "latency_protocol": "sequential-warm-index-v2", "source_counts": dict(__import__('collections').Counter(c['source'] for c in cases))})
@@ -279,14 +294,35 @@ class Studio:
         return job
 
     def run_evaluation(self, workspace, job_id, cases, runs, calibrations, fit_cases):
+        job = self.store.claim_evaluation(workspace, job_id)
+        if job is None:
+            return
+        controller = EvaluationController(
+            ExecutionLimits.model_validate(job["options"].get("execution_limits", {})),
+            cancel_requested=lambda: self.store.job(workspace, job_id).get("cancel_requested", False),
+            on_checkpoint=lambda accounting: self.store.checkpoint_evaluation(workspace, job_id, {"accounting": accounting}),
+        )
+        with activate_execution(controller):
+            self._execute_evaluation(workspace, job_id, cases, runs, calibrations, fit_cases)
+
+    def _execute_evaluation(self, workspace, job_id, cases, runs, calibrations, fit_cases):
         job = self.store.job(workspace, job_id)
-        self.store.patch_job(workspace, job_id, {"status": "running"})
-        results, progress, index_errors, fitted, fit_errors, baselines = {}, 0, {}, {}, {}, {}
+        results: dict[str, EvaluationResult] = {}
+        progress, index_errors, fitted, fit_errors, baselines = 0, {}, {}, {}, {}
         pinned_retrievers: dict[tuple[str, str, str], Retriever] = {}
         try:
             for variant, scope, metadata in runs:
+                execution_checkpoint()
                 method, run_id = variant.method, metadata["id"]
-                self.store.patch_job(workspace, job_id, {"active_variant": run_id, "phase": "index"})
+                records = []
+                result: EvaluationResult = {**metadata, "complete": False, "completed_count": 0, "selected_count": len(cases),
+                          "records": records, "metrics": summarize(records, variant.settings.candidate_k),
+                          "model": None, "calibration": calibrations.get(run_id), "calibration_build_ms": 0,
+                          "reranker_prepare_ms": 0, "index_preparation": None, "index_build_ms": 0,
+                          "index_cache_hit": False, "index_error": None, "preparation_error": None,
+                          "scaling": {"baseline_intent_count": None, "accuracy_delta_pp": None, "p95_ratio": None}}
+                results[run_id] = result
+                self.store.checkpoint_evaluation(workspace, job_id, {"active_variant": run_id, "phase": "index", "results": results})
                 started = time.perf_counter()
                 model_key = embedding_key(variant.settings)
                 cache_key = (workspace, scope["version"], embedding_runtime_key(variant.settings))
@@ -294,13 +330,15 @@ class Studio:
                 if cache_key not in pinned_retrievers:
                     pinned_retrievers[cache_key] = self.retriever(workspace, scope["version"], variant.settings)
                 retriever = pinned_retrievers[cache_key]
+                execution_checkpoint()
                 cache_hit = retriever_cached if method == "lexical" else False
                 index_preparation = None
                 preparation_key = (model_key, scope["version"])
                 preparation_error = index_errors.get(preparation_key) if method != "lexical" else None
                 if method != "lexical" and preparation_error is None:
                     try:
-                        index_preparation = retriever.prepare_index()
+                        with execution_stage("index"):
+                            index_preparation = retriever.prepare_index()
                         cache_hit = index_preparation.source in ("memory", "disk")
                     except ModelUnavailable as exc:
                         preparation_error = index_errors[preparation_key] = exc
@@ -309,30 +347,39 @@ class Studio:
                 if variant.retrieval and variant.retrieval.reranker_id and preparation_error is None:
                     started = time.perf_counter()
                     try:
-                        self.get_reranker(variant.settings).prepare()
+                        with execution_stage("index"):
+                            self.get_reranker(variant.settings).prepare()
                     except ModelUnavailable as exc:
                         preparation_error = exc
                     reranker_ms = round((time.perf_counter()-started)*1000, 2)
                 calibration_ms = 0
                 if method == "e5" and fit_cases and preparation_error is None:
-                    self.store.patch_job(workspace, job_id, {"phase": "calibration"})
+                    self.store.checkpoint_evaluation(workspace, job_id, {"phase": "calibration"})
                     started = time.perf_counter()
                     if preparation_key not in fitted and preparation_key not in fit_errors:
                         try:
-                            fitted[preparation_key] = self.calibrator.fit_snapshot(retriever, fit_cases, job["scale_calibration"]["source"], job["scale_calibration"]["max_oos_false_accept_rate"], variant.settings.candidate_k)
+                            with execution_stage("calibration"):
+                                fitted[preparation_key] = self.calibrator.fit_snapshot(retriever, fit_cases, job["scale_calibration"]["source"], job["scale_calibration"]["max_oos_false_accept_rate"], variant.settings.candidate_k)
                         except (ModelUnavailable, ValueError) as exc:
                             fit_errors[preparation_key] = exc
                     preparation_error = fit_errors.get(preparation_key)
                     if preparation_key in fitted:
                         calibrations[run_id] = public_calibration(fitted[preparation_key])
                     calibration_ms = round((time.perf_counter()-started)*1000, 2)
-                    self.store.patch_job(workspace, job_id, {"calibrations": calibrations, "calibration_fits": list(fitted.values())})
-                self.store.patch_job(workspace, job_id, {"phase": "cases"})
-                records = []
+                    self.store.checkpoint_evaluation(workspace, job_id, {"calibrations": calibrations, "calibration_fits": list(fitted.values())})
+                result.update(calibration=calibrations.get(run_id), calibration_build_ms=calibration_ms,
+                              reranker_prepare_ms=reranker_ms,
+                              index_preparation=index_preparation.model_dump() if index_preparation else None,
+                              index_build_ms=index_ms, index_cache_hit=cache_hit,
+                              index_error=str(index_errors[preparation_key]) if method != "lexical" and preparation_key in index_errors else None,
+                              preparation_error=str(preparation_error) if preparation_error else None)
+                self.store.checkpoint_evaluation(workspace, job_id, {"phase": "cases", "results": results})
                 for case in cases:
+                    execution_checkpoint()
                     # The labels select the fixed evaluation cohort, never the per-query candidate ranking or LLM input.
                     state = {"active_intent": None, "slots": {}, "pending_slot": None, "pending_confirmation": False, "clarification_options": [], "messages": [], **case.get("context", {})}
-                    output, _ = self.compute(case["question"], state, method, retriever, variant=variant, preparation_error=preparation_error, calibration=calibrations.get(run_id))
+                    with execution_stage("cases"):
+                        output, _ = self.compute(case["question"], state, method, retriever, variant=variant, preparation_error=preparation_error, calibration=calibrations.get(run_id))
                     expected = case["expected_decision"]
                     correct = output["decision"] == expected and (expected != "route" or output["intent_id"] == case["expected_intent_id"])
                     record = {"case_id": case["case_id"], "question": case["question"], "expected_decision": expected, "expected_intent_id": case["expected_intent_id"], "decision": output["decision"], "intent_id": output["intent_id"], "correct": correct, "candidate_hit": case["expected_intent_id"] in [c["intent_id"] for c in output["candidates"]], "total_ms": output["timings_ms"]["compute_total"], "timings_ms": output["timings_ms"], "usage": output["usage"], "reason_code": output["reason_code"], "message": output["message"], "diagnostics": output.get("diagnostics"), "rejection_score": output.get("rejection_score"), "error": output["message"] if output["decision"] == "error" else None,
@@ -341,21 +388,22 @@ class Studio:
                     record["analysis"] = diagnose(record)
                     records.append(record)
                     progress += 1
-                    if progress % 5 == 0 or progress == job["total"]:
-                        self.store.patch_job(workspace, job_id, {"progress": progress})
+                    result.update(completed_count=len(records), complete=len(records) == len(cases),
+                                  metrics=summarize(records, variant.settings.candidate_k), model=output["model"])
+                    self.store.checkpoint_evaluation(workspace, job_id, {"progress": progress, "results": results})
+                    execution_checkpoint()
                 metrics = summarize(records, variant.settings.candidate_k)
                 baseline = baselines.setdefault(variant.id, (scope["metadata"]["intent_count"], metrics))
                 accuracy, base_accuracy = metrics["routing_accuracy"], baseline[1]["routing_accuracy"]
                 base_p95 = baseline[1]["latency_ms"]["p95"]
-                results[run_id] = {**metadata, "metrics": metrics, "records": records, "model": output["model"],
-                    "calibration": calibrations.get(run_id), "calibration_build_ms": calibration_ms,
-                    "reranker_prepare_ms": reranker_ms,
-                    "index_preparation": index_preparation.model_dump() if index_preparation else None,
-                    "index_build_ms": index_ms, "index_cache_hit": cache_hit, "index_error": str(index_errors.get(preparation_key)) if method != "lexical" and preparation_key in index_errors else None,
-                    "preparation_error": str(preparation_error) if preparation_error else None,
-                    "scaling": {"baseline_intent_count": baseline[0], "accuracy_delta_pp": 100*(accuracy-base_accuracy) if accuracy is not None and base_accuracy is not None else None,
-                                "p95_ratio": metrics["latency_ms"]["p95"]/base_p95 if base_p95 and not metrics["errors"] and not baseline[1]["errors"] else None}}
-                self.store.patch_job(workspace, job_id, {"progress": progress, "results": results})
-            self.store.patch_job(workspace, job_id, {"status": "completed", "phase": "complete", "progress": progress, "results": results, "elapsed_ms": round((time.time()-job["created"])*1000, 2)})
+                result["scaling"] = {"baseline_intent_count": baseline[0],
+                                     "accuracy_delta_pp": 100*(accuracy-base_accuracy) if accuracy is not None and base_accuracy is not None else None,
+                                     "p95_ratio": metrics["latency_ms"]["p95"]/base_p95 if base_p95 and not metrics["errors"] and not baseline[1]["errors"] else None}
+                self.store.checkpoint_evaluation(workspace, job_id, {"progress": progress, "results": results})
+            self.store.finalize_evaluation(workspace, job_id, "completed")
+        except EvaluationStopped as exc:
+            self.store.checkpoint_evaluation(workspace, job_id, {"results": results, "progress": progress})
+            self.store.finalize_evaluation(workspace, job_id, "stopped", stop_reason=exc.stop_reason)
         except Exception:
-            self.store.patch_job(workspace, job_id, {"status": "failed", "results": results, "error": "The evaluation could not complete. Check the model and data configuration."})
+            self.store.checkpoint_evaluation(workspace, job_id, {"results": results, "progress": progress})
+            self.store.finalize_evaluation(workspace, job_id, "failed", error="The evaluation could not complete. Check the model and data configuration.")
