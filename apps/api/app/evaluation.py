@@ -80,9 +80,9 @@ def summarize(records: list[dict], k=20):
     labels = sorted({r["expected_intent_id"] for r in routing})
     f1s, per_intent = [], []
     for label in labels:
-        tp = sum(r["expected_intent_id"] == label and r["intent_id"] == label and r["decision"] == "route" for r in records)
-        fp = sum(r["expected_intent_id"] != label and r["intent_id"] == label and r["decision"] == "route" for r in records)
-        fn = sum(r["expected_intent_id"] == label and not (r["intent_id"] == label and r["decision"] == "route") for r in records)
+        tp = sum(r["expected_intent_id"] == label and r["intent_id"] == label and r["decision"] == "route" for r in routing)
+        fp = sum((r["expected_decision"] != "route" or r["expected_intent_id"] != label) and r["intent_id"] == label and r["decision"] == "route" for r in records)
+        fn = sum(r["expected_intent_id"] == label and not (r["intent_id"] == label and r["decision"] == "route") for r in routing)
         f1 = 2*tp/(2*tp+fp+fn) if 2*tp+fp+fn else 0
         f1s.append(f1)
         per_intent.append({"intent_id": label, "support": tp+fn, "recall": tp/(tp+fn) if tp+fn else None, "f1": f1})
