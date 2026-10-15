@@ -104,6 +104,16 @@ INTENT_EMBEDDING_MODE=disabled INTENT_LLM_BASE_URL= \
 
 Use `demo`, `insurance`, or `ecommerce` for another sector. Results are written under ignored `artifacts/runs/`. **Experiments** uses the same engine and compares method/model, retrieval-strategy, and catalog-size combinations on a frozen set of cases.
 
+For a ready conversation sample benchmark, use the [synthetic-v1 sample pack](data/samples/synthetic-v1/README.md): 192 newly authored English turns, 48 per sector, with explicit pre-turn context, expected labels, and rationales. It runs in temporary storage separately from the existing seed tests and private workspaces:
+
+```bash
+INTENT_EMBEDDING_MODE=disabled INTENT_LLM_BASE_URL= \
+  .venv/bin/python scripts/evaluate.py --sample-pack synthetic-v1 --workspace airline \
+  --methods lexical --limit 48 --repetitions 2 --max-provider-requests 0
+```
+
+Choose `demo`, `insurance`, or `ecommerce` for the other samples. Do not add `--source` to a sample-pack command. The guide includes all sector commands, provenance, coverage, input-only CSV exports, and a bounded remote example. These public synthetic annotations support development and regression checks, not production-accuracy claims.
+
 Add `--repetitions 2` to repeat that frozen cohort. Optional `--max-provider-requests`, `--max-duration-seconds`, and `--max-reported-cost-usd` controls apply across preparation, variants, and repeats. The USD threshold is a soft stop based on supported OpenRouter reported usage, not a guaranteed billing cap. Ctrl+C requests cooperative cancellation and saves partial JSON after in-flight work finishes. Evaluation exits are completed `0`, stopped `2`, failed `1`, and cancelled `130`. See [controlled and repeated experiments](docs/benchmark-experiments.md) for bounds, accounting, and statistical interpretation.
 
 The CLI defaults to 100 cases; use `--limit 430` for the complete airline, insurance, or e-commerce cohort and `--limit 153` for banking, or set **Maximum cases** accordingly in **Experiments**. The nonbank cohort requires all 200 catalog intents. The full banking cohort requires 59 intents, or 67 with calibration; `100, 200, 800` supports both. For smaller catalog-size comparisons, select a smaller fixed cohort first and keep it unchanged across sizes; do not remove cases separately for each size. Preserved user edits and deletions can make an existing workspace's actual counts differ from the starter totals.
@@ -119,7 +129,7 @@ For reproducible comparisons:
 
 The bundled cases support development and regression checks. They are not an independent held-out benchmark or evidence of production accuracy. Historical measurements in the guides used earlier Turkish banking catalogs and prompt versions; rerun comparisons on a fixed current dataset instead of treating translation as an accuracy improvement.
 
-[Experiment controls and transcript review](docs/benchmark-experiments.md) · [Model comparison](docs/model-comparison.md) · [Catalog sizes](docs/catalog-scaling.md) · [Calibration](docs/calibration-and-language.md) · [Retrieval and reranking](docs/retrieval-quality.md)
+[Synthetic conversation samples](data/samples/synthetic-v1/README.md) · [Experiment controls and transcript review](docs/benchmark-experiments.md) · [Model comparison](docs/model-comparison.md) · [Catalog sizes](docs/catalog-scaling.md) · [Calibration](docs/calibration-and-language.md) · [Retrieval and reranking](docs/retrieval-quality.md)
 
 ## Use your own data
 
@@ -167,6 +177,7 @@ Run backend tests and the production build sequentially because both can access 
 | `apps/web` | English React/TypeScript interface |
 | `data/demo` | Banking catalog, test/calibration cases, migration records |
 | `data/presets` | Sector manifest and airline, insurance, e-commerce starter data |
+| `data/samples/synthetic-v1` | Versioned four-sector conversation samples, annotations, and derived import CSVs |
 | `data/private` | Ignored local data and credentials |
 | `scripts` | Import, evaluation, model checks, indexing |
 | `tests` | Behavior and integration tests |

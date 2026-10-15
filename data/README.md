@@ -34,6 +34,14 @@ The bundled definitions and examples use the project's [Apache-2.0 license](../L
 
 `demo/transcript-example.csv` is a separate synthetic import template for the banking demo workspace: four turns across three conversations, with standalone, clarification, continuation, and cancellation pre-turn snapshots. It contains a synthetic namespace/provenance notice, is available from `GET /v1/cases/template`, and is never automatically seeded. Importing it creates unreviewed `customer`-category rows; that category is not a claim of real customer provenance. No real transcript dataset has been supplied or validated as part of this feature.
 
+## Versioned conversation sample pack
+
+[`samples/synthetic-v1`](samples/synthetic-v1/README.md) adds 192 English turns, 48 for each sector, separately from the 1,443 seeded tests and 312 calibration cases above. Its canonical JSON records stable conversation/turn identity, explicit pre-turn state, expected decisions/intents, challenge categories, and labeling rationales. All conversations remain wholly in the test split. The guide provides calculated coverage tables, provenance, limitations, and reproducible commands.
+
+The pack is AI-assisted and Apache-2.0 licensed, with `label_origin=ai_assisted_synthetic`. No customer records, real personal data, or provider responses were copied. Written noise is constructed text, not recorded ASR output. Each turn uses its own supplied snapshot; predictions are not propagated between turns. Nonbank examples use the existing catalog/context contract without invented workflow slots. These public development samples are not held-out or representative customer evidence.
+
+`scripts/evaluate.py --sample-pack synthetic-v1 --workspace <workspace>` runs only the selected sample cohort in temporary storage, preserving private workspaces. The adapter's internal `customer` category and reviewed flag permit evaluation of authored annotations; they do not claim real customer provenance or human review. In contrast, the derived CSVs omit expected labels/rationales and follow the ordinary **unreviewed** import workflow. Canonical JSON is authoritative; regenerate or verify the four CSVs with `scripts/export_synthetic_samples.py` or its `--check` option. Exact normalized duplicate validation does not establish semantic independence.
+
 ## Workspace preservation and customization
 
 A fresh sector workspace is seeded with its matching catalog and cases. Switching sectors does not replace an existing catalog or copy model registrations. **Add intent** appends a versioned custom definition; **Import JSON** replaces the active full catalog. Imported labels must still reference intents in that catalog. Recalibrate after changing definitions or labels.

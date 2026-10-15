@@ -2,7 +2,7 @@
 
 The UI and `scripts/evaluate.py` use the same evaluation service. A job freezes its reviewed cases, case order, catalog scopes, model/retrieval settings, calibration inputs, and pre-turn context when queued. Every repetition uses that same cohort, with fresh context for each case. These experiments measure observed variability on existing examples; repeating them does not create new held-out data or guarantee provider determinism.
 
-The bundled catalogs and the [transcript template](../data/demo/transcript-example.csv) are synthetic software fixtures. No real transcript dataset is bundled or validated by this workflow. Import readiness, offline checks, and controlled HTTP tests do not establish live model accuracy. See [data provenance](../data/README.md), [model comparison](model-comparison.md), [catalog scaling](catalog-scaling.md), and [calibration](calibration-and-language.md).
+The bundled catalogs, [transcript template](../data/demo/transcript-example.csv), and [four-sector conversation sample pack](../data/samples/synthetic-v1/README.md) are synthetic software fixtures. No real transcript dataset is bundled or validated by this workflow. Import readiness, offline checks, and controlled HTTP tests do not establish live model accuracy. See [data provenance](../data/README.md), [model comparison](model-comparison.md), [catalog scaling](catalog-scaling.md), and [calibration](calibration-and-language.md).
 
 ## Start a controlled run
 
@@ -20,6 +20,16 @@ INTENT_EMBEDDING_MODE=disabled INTENT_LLM_BASE_URL= \
 ```
 
 No provider request is needed. The normal CLI export remains `artifacts/runs/<job-id>.json`, relative to the working directory, regardless of `INTENT_DATA_DIR`. Both default private data and artifacts are ignored by Git. Use the same data directory as the API when operating on its existing workspaces. Use your environment's Python executable if different.
+
+For the separate 48-case authored conversation sample cohort, the CLI manages temporary storage automatically:
+
+```bash
+INTENT_EMBEDDING_MODE=disabled INTENT_LLM_BASE_URL= \
+  .venv/bin/python scripts/evaluate.py --sample-pack synthetic-v1 --workspace airline \
+  --methods lexical --limit 48 --repetitions 2 --max-provider-requests 0
+```
+
+Supported sample workspaces are `demo`, `airline`, `insurance`, and `ecommerce`. `--sample-pack` cannot be combined with `--source`. A smaller `--limit` selects the first canonical cases, not a random or balanced subset. Exports retain actual selected case IDs, challenge/decision counts, provenance, content SHA-256, and catalog fingerprint under `sample_pack`; selected counts precede repetition expansion. The sample adapter's internal `customer` category denotes authored sample rows, not real customers. Sample-mode storage is removed after export; private workspace data and model registrations do not follow into the run. Explicit remote methods use default environment model connections and can prepare the full catalog before scoring. See the [sample guide](../data/samples/synthetic-v1/README.md) for all four commands, calibration behavior, bounded remote use, and ordinary unreviewed CSV import.
 
 For a configured remote comparison, add the controls to an existing evaluation command:
 
@@ -153,6 +163,9 @@ Calibration accepts only reviewed, context-free route/handoff/OOS cases and reta
 
 ## Maintenance pitfalls
 
+- Resolve labels against exact catalog intent IDs before authoring samples; plausible aliases are not valid references. Keep each annotation and rationale aligned with the catalog's actual operation boundaries.
+- Check normalized new sample wording against all existing seed, supplemental, calibration, and catalog-example questions before publishing. Distinct IDs or punctuation do not prevent literal overlap; exact checks still cannot prove semantic independence.
+- Make negative validation fixtures violate one invariant at a time. An invalid active-context reference can fail before the intended coverage guard, hiding whether that guard works; preserve valid surrounding context when testing coverage rejection.
 - Track accepted capability requirements through implementation and verification. Saving or committing existing changes does not fulfill outstanding requirements; check each requested behavior before declaring the work complete.
 - Accumulate reported currency with decimal arithmetic. Binary floating-point sums can permit an extra request at an exact threshold; do not hide that with an arbitrary epsilon. Persist usage before task/status validation, and keep control-stop exceptions outside broad error-to-record conversion handlers.
 - Reserve request counts at the outbound boundary. A zero budget must still allow local/lexical work. Capture each completed case and active partial result before later work can fail; terminal writes must atomically reread cancellation so stale completion cannot overwrite it.
