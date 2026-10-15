@@ -1,5 +1,6 @@
 """Persistent index behavior at the filesystem and embedding HTTP boundaries."""
 import json
+import threading
 from pathlib import Path
 
 import httpx
@@ -7,9 +8,10 @@ import numpy as np
 import pytest
 
 from app.config import Settings
-from app.contracts import Intent
+from app.contracts import EvaluationRequest, Intent, RetrievalProfile, Review
 from app.service import Studio
 from app.store import Store
+from app.transcript_data import StoredCaseData
 
 
 def index_settings(directory: Path, **changes) -> Settings:
@@ -32,8 +34,21 @@ def save_catalog(directory: Path, workspace: str = "bank") -> str:
     return Store(directory).save_catalog(workspace, [i.model_dump() for i in catalog()])
 
 
-def embedding_transport(requests: list[httpx.Request]) -> httpx.MockTransport:
+def save_reviewed_route_case(store: Store) -> None:
+    case: StoredCaseData = {
+        "case_id": "case1", "source": "customer", "dataset_version": "synthetic-index-test",
+        "reviewed": False, "split": "test", "question": "Raise my limit",
+    }
+    store.save_cases("bank", [case])
+    store.review_case("bank", "case1", Review(
+        expected_decision="route", expected_intent_id="card.limit").model_dump())
+
+
+def embedding_transport(requests: list[httpx.Request],
+                        request_started: threading.Event | None = None) -> httpx.MockTransport:
     def respond(request: httpx.Request) -> httpx.Response:
+        if request_started is not None:
+            request_started.set()
         requests.append(request)
         texts = json.loads(request.content)["input"]
         return httpx.Response(200, json={"data": [{"index": n, "embedding": [1., float(n + 1)]}
@@ -267,15 +282,17 @@ def test_reindex_refreshes_next_lookup_without_mutating_held_retriever(tmp_path)
 
 
 def test_evaluation_pins_one_generation_across_variants(tmp_path):
-    from app.model_catalog import Variant
-
-    settings = index_settings(tmp_path)
-    version = save_catalog(tmp_path)
+    settings = index_settings(tmp_path, llm_base_url="https://selector.example/v1",
+                              llm_model="test-selector", llm_api_key="selector-secret")
+    save_catalog(tmp_path)
     studio = Studio(settings)
+    save_reviewed_route_case(studio.store)
+    request_started = threading.Event()
     query_count = 0
     current_matrix = [[1., 0.], [1., 0.], [0., 1.]]
     def respond(request):
         nonlocal query_count, current_matrix
+        request_started.set()
         texts = json.loads(request.content)["input"]
         if len(texts) == 1:
             query_count += 1
@@ -287,17 +304,30 @@ def test_evaluation_pins_one_generation_across_variants(tmp_path):
             values = current_matrix
         return httpx.Response(200, json={"data": [{"index": n, "embedding": value} for n, value in enumerate(values)]})
     studio.embeddings.transport = httpx.MockTransport(respond)
-    scope = {"version": version, "metadata": {"intent_count": 2}}
-    variants = [Variant(name, "e5", settings, "default", None) for name in ("first", "second")]
-    runs = [(v, scope, {**v.metadata, "catalog": scope["metadata"]}) for v in variants]
-    case = {"case_id": "case1", "question": "Raise my limit", "expected_decision": "route", "expected_intent_id": "card.limit"}
+    def select(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(json.loads(request.content)["messages"][1]["content"])
+        intent_id = payload["candidates"][0]["intent_id"]
+        return httpx.Response(200, json={"choices": [{"message": {"content": json.dumps({
+            "decision": "route", "intent_id": intent_id,
+        })}}]})
+    studio.selector.transport = httpx.MockTransport(select)
     try:
-        job = studio.store.create_job("bank", "evaluation", {"total": 2})
-        studio.run_evaluation("bank", job["id"], [case], runs, {}, [])
+        job = studio.start_evaluation("bank", EvaluationRequest(
+            methods=["e5", "hybrid_llm"], source="customer", semantic_rejection="off",
+            retrieval_profiles=[RetrievalProfile(source="semantic")], limit=1))
+        assert request_started.wait(30), "Evaluation did not reach its embedding boundary"
+        studio.close()
         output = studio.store.job("bank", job["id"])
         assert output["status"] == "completed"
-        assert [r["records"][0]["intent_id"] for r in output["results"].values()] == ["card.limit", "card.limit"]
-        assert studio.retriever("bank").search("later route", "e5", k=1)[0].intent_id == "account.balance"
+        results = list(output["results"].values())
+        assert [result["method"] for result in results] == ["e5", "hybrid_llm"]
+        assert [result["metrics"]["errors"] for result in results] == [0, 0]
+        assert [result["records"][0]["intent_id"] for result in results] == ["card.limit", "card.limit"]
+        generations = {result["index_preparation"]["generation"] for result in results}
+        assert len(generations) == 1 and query_count == 2
+        later = studio.retriever("bank")
+        assert later.search("later route", "e5", k=1)[0].intent_id == "account.balance"
+        assert later.prepare_index().generation not in generations
     finally:
         studio.close()
 
@@ -369,10 +399,8 @@ def test_route_reports_its_actual_index_preparation_source(tmp_path):
 
 
 def test_evaluation_counts_disk_reuse_as_cache_hit(tmp_path):
-    from app.model_catalog import Variant
-
     settings = index_settings(tmp_path)
-    version = save_catalog(tmp_path)
+    save_catalog(tmp_path)
     requests = []
     first = Studio(settings)
     first.embeddings.transport = embedding_transport(requests)
@@ -380,19 +408,25 @@ def test_evaluation_counts_disk_reuse_as_cache_hit(tmp_path):
         generation = first.retriever("bank").prepare_index().generation
     finally:
         first.close()
+    requests.clear()
     fresh = Studio(settings)
-    fresh.embeddings.transport = embedding_transport(requests)
-    variant = Variant("semantic", "e5", settings, "default", None)
-    scope = {"version": version, "metadata": {"intent_count": 2}}
-    case = {"case_id": "case1", "question": "Raise my limit", "expected_decision": "route", "expected_intent_id": "card.limit"}
+    save_reviewed_route_case(fresh.store)
+    request_started = threading.Event()
+    fresh.embeddings.transport = embedding_transport(requests, request_started)
     try:
-        job = fresh.store.create_job("bank", "evaluation", {"total": 1})
-        fresh.run_evaluation("bank", job["id"], [case], [(variant, scope, {**variant.metadata, "catalog": scope["metadata"]})], {}, [])
-        result = fresh.store.job("bank", job["id"])["results"]["semantic"]
+        job = fresh.start_evaluation("bank", EvaluationRequest(
+            methods=["e5"], source="customer", semantic_rejection="off", limit=1))
+        assert request_started.wait(30), "Evaluation did not reach its embedding boundary"
+        fresh.close()
+        output = fresh.store.job("bank", job["id"])
+        assert output["status"] == "completed"
+        result = output["results"]["e5"]
+        assert result["metrics"]["errors"] == 0
         assert result["index_cache_hit"] is True
         assert result["index_preparation"]["source"] == "disk"
         assert result["index_preparation"]["generation"] == generation
         assert result["records"][0]["index_preparation"]["source"] == "memory"
+        assert [json.loads(request.content)["input"] for request in requests] == [["Raise my limit"]]
     finally:
         fresh.close()
 

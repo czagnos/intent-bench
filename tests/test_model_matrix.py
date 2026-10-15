@@ -33,11 +33,13 @@ def wait_job(client, path):
     pytest.fail("Matrix job timed out")
 
 
-def install_transports(studio, fail_embedding=None):
+def install_transports(studio, fail_embedding=None, request_started: threading.Event | None = None):
     requests = []
     lock = threading.Lock()
 
     def respond(request):
+        if request_started is not None:
+            request_started.set()
         body = json.loads(request.content)
         assert request.headers["Authorization"] == "Bearer matrix-secret"
         with lock:
@@ -126,10 +128,14 @@ def test_unknown_model_and_request_endpoint_injection_rejected_before_claiming_t
 def test_full_matrix_uses_same_cases_separate_models_and_shared_index(settings):
     with TestClient(create_app(settings)) as client:
         studio = client.app.state.studio
-        requests = install_transports(studio)
+        request_started = threading.Event()
+        requests = install_transports(studio, request_started=request_started)
         response = client.post("/v1/evaluations", json={"methods": ["lexical", "e5", "hybrid_llm"], "semantic_rejection": "off", "embedding_ids": ["default", "bge-m3"], "llm_ids": ["gpt-oss-20b", "gpt-oss-120b"], "limit": 2})
         assert response.status_code == 202, response.text
-        job = wait_job(client, "/v1/evaluations/" + response.json()["id"])
+        assert request_started.wait(30), "Evaluation did not reach its external request boundary"
+        # Join the running worker without making machine speed a result assertion.
+        studio.close()
+        job = client.get("/v1/evaluations/" + response.json()["id"]).json()
         assert job["status"] == "completed" and job["progress"] == job["total"] == 14
         assert len(job["results"]) == len(job["variants"]) == 7
         expected_cases = [r["case_id"] for r in next(iter(job["results"].values()))["records"]]
