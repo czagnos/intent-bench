@@ -1,0 +1,753 @@
+{
+  "schema_version": 1,
+  "sample_pack": "synthetic-v1",
+  "sector": "banking",
+  "workspace": "demo",
+  "language": "en",
+  "catalog_fingerprint": "5d2cc3a58c44f9b6",
+  "cases": [
+    {
+      "case_id": "synthetic-v1-banking-case-001",
+      "conversation_id": "synthetic-v1-banking-conversation-001",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "The replacement card has been dispatched; where is the envelope now?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "card.delivery",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The request concerns delivery progress of a card, with no specific card product named."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-002",
+      "conversation_id": "synthetic-v1-banking-conversation-002",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "I would like the yearly membership charge on my credit card reviewed for a refund.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "card.fee",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "A yearly card membership charge belongs to the annual-fee intent rather than a disputed purchase."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-003",
+      "conversation_id": "synthetic-v1-banking-conversation-003",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Could the total credit available on my card be raised for future purchases?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "card.limit.change",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The requested operation changes the total credit card limit; the amount can be collected later."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-004",
+      "conversation_id": "synthetic-v1-banking-conversation-004",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Someone needs to pay me; show me the IBAN that belongs to my account.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "account.iban",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The user seeks their own account identifier and is not initiating a transfer."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-005",
+      "conversation_id": "synthetic-v1-banking-conversation-005",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "The person I paid says nothing has arrived; check the progress of that bank transfer.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "transfer.status",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "This is a status inquiry about a previously submitted transfer without a named transfer channel."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-006",
+      "conversation_id": "synthetic-v1-banking-conversation-006",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Arrange for my water bill to be settled automatically whenever it comes due.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "bill.autopay.create",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The user wants a recurring utility payment instruction rather than a one-off payment."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-007",
+      "conversation_id": "synthetic-v1-banking-conversation-007",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Has anyone finished assessing the borrowing application I submitted last week?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "loan.status",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The application already exists and its assessment status is requested; no loan product is specified."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-008",
+      "conversation_id": "synthetic-v1-banking-conversation-008",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "What spread are you quoting between buying and selling euros today?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "investment.fx.rate",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The user requests exchange pricing rather than placing a currency trade."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-009",
+      "conversation_id": "synthetic-v1-banking-conversation-009",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Tell me which of my card reward points will expire next.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "card.rewards",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The request concerns card reward expiry rather than a flight loyalty membership."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-010",
+      "conversation_id": "synthetic-v1-banking-conversation-010",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "I need a record showing the incoming and outgoing movements on my bank account.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "account.statement",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The user asks for account activity; no specific account product is named."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-011",
+      "conversation_id": "synthetic-v1-banking-conversation-011",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Do not end my card membership; just pause card use until I choose to turn it back on.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "card.temporary_block",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "Permanent cancellation is explicitly rejected; the desired restriction is temporary."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-012",
+      "conversation_id": "synthetic-v1-banking-conversation-012",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "My banking login works fine; it is the card PIN that I need to replace.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "card.pin",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "The user explicitly distinguishes a card PIN change from a digital banking password reset."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-013",
+      "conversation_id": "synthetic-v1-banking-conversation-013",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "I do not need to track the transfer; ask for the money I sent by mistake to be recalled.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "transfer.cancel",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "The affirmative request is recall of an already submitted transfer, not transfer tracking."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-014",
+      "conversation_id": "synthetic-v1-banking-conversation-014",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Leave the water service connected, but remove the bank instruction that pays its bill automatically.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "bill.autopay.cancel",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "The banking operation removes an existing autopay instruction; utility service cancellation is excluded."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-015",
+      "conversation_id": "synthetic-v1-banking-conversation-015",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "I said pay the card, but I meant tell me the outstanding card balance before I decide.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "card.debt.query",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "The speaker retracts payment and settles on a balance inquiry, leaving one requested operation."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-016",
+      "conversation_id": "synthetic-v1-banking-conversation-016",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Freeze the card—sorry, I already froze it; restore its use now.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "card.unblock",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "The corrected request reactivates a temporarily frozen card."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-017",
+      "conversation_id": "synthetic-v1-banking-conversation-017",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "What is the transfer limit—actually, I mean the fee charged for sending money?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "transfer.fee",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "The final corrected target is the transfer fee, not the sending limit."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-018",
+      "conversation_id": "synthetic-v1-banking-conversation-018",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Track my loan application—no, that was approved; I want to settle the remaining loan debt early.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "loan.payment",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "The speaker replaces the application-status request with early settlement of existing debt."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-019",
+      "conversation_id": "synthetic-v1-banking-conversation-019",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "uh that shop charge on my card, the same purchase shows twice, twice, I want to dispute it",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "card.dispute",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "Constructed repetitions preserve a clear request to dispute a duplicate card purchase."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-020",
+      "conversation_id": "synthetic-v1-banking-conversation-020",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "can you, um, turn on the online buying permission for this card",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "card.online",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "Written disfluency does not change the request to enable online card purchases."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-021",
+      "conversation_id": "synthetic-v1-banking-conversation-021",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "how much money is there in my account that I can, can actually use right now",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "account.balance",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "The repeated phrase still requests available account funds without identifying a specific product."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-022",
+      "conversation_id": "synthetic-v1-banking-conversation-022",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "my card is gone, er, someone took it from my bag, report it stolen please",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "card.lost",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "The constructed disfluency retains an explicit stolen-card report; card details can be collected later."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-023",
+      "conversation_id": "synthetic-v1-banking-conversation-023",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Terminate this card membership permanently even though I still have the card.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "card.cancel",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "Permanent membership termination differs from a temporary freeze or lost-card report."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-024",
+      "conversation_id": "synthetic-v1-banking-conversation-024",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Make a payment for the minimum due on my credit card this month.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "card.debt.pay",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "The user requests execution of a card payment rather than asking what is owed."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-025",
+      "conversation_id": "synthetic-v1-banking-conversation-025",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Start a new bank transfer to a recipient I have not paid before.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "transfer.create",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "The operation creates a new transfer; no earlier transfer needs tracking or recall."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-026",
+      "conversation_id": "synthetic-v1-banking-conversation-026",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Before I send anything, what is the maximum amount allowed in one bank transfer?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "transfer.limit",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "This asks about the permitted sending amount rather than a transfer fee or card limit."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-027",
+      "conversation_id": "synthetic-v1-banking-conversation-027",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Can you change that for me before it happens?",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "ambiguity",
+      "rationale": "The object and operation depend on missing prior context and cannot be assigned reliably."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-028",
+      "conversation_id": "synthetic-v1-banking-conversation-028",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "I need help with a charge on my card.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "ambiguity",
+      "rationale": "The message does not identify a purchase dispute, an annual membership fee, or another charge issue."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-029",
+      "conversation_id": "synthetic-v1-banking-conversation-029",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "I need a different limit.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "ambiguity",
+      "rationale": "The message does not identify whether a card limit, transfer limit, or another limit is involved."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-030",
+      "conversation_id": "synthetic-v1-banking-conversation-030",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Reset my card PIN and send me a bank account statement as well.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "multiple_intents",
+      "rationale": "Card PIN maintenance and account statement retrieval are two distinct requested operations with no chosen first task."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-031",
+      "conversation_id": "synthetic-v1-banking-conversation-031",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Close my bank account and start a new loan application.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "multiple_intents",
+      "rationale": "Account closure and a loan application are separate requests requiring a choice of operation."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-032",
+      "conversation_id": "synthetic-v1-banking-conversation-032",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Track the delivery of my card and check when my card reward points expire.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "multiple_intents",
+      "rationale": "Card delivery tracking and reward-expiry inquiry are independent goals."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-033",
+      "conversation_id": "synthetic-v1-banking-conversation-033",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Explain how to bake a loaf using only flour, water, salt, and yeast.",
+      "context": {},
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "out_of_scope",
+      "rationale": "Bread preparation is outside the banking catalog."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-034",
+      "conversation_id": "synthetic-v1-banking-conversation-034",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Reserve a seat on a train from the coast to the capital for tomorrow.",
+      "context": {},
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "out_of_scope",
+      "rationale": "Train reservation is not a banking operation in this catalog."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-035",
+      "conversation_id": "synthetic-v1-banking-conversation-035",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "I want a live bank representative to take over this conversation.",
+      "context": {},
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "handoff",
+      "rationale": "The user explicitly requests transfer to a human representative; handoff carries no intent label."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-036",
+      "conversation_id": "synthetic-v1-banking-conversation-036",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Please connect me with a person from customer service rather than continuing the automated chat.",
+      "context": {},
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "handoff",
+      "rationale": "The affirmative request is a human-service handoff, without another operation to route."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-037",
+      "conversation_id": "synthetic-v1-banking-conversation-limit",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Make the total 27500 TRY.",
+      "context": {
+        "active_intent": "card.limit.change",
+        "pending_slot": "new_limit",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I would like to increase the total credit limit on my card."
+          },
+          {
+            "role": "assistant",
+            "content": "What should your new total card limit be in TRY?"
+          }
+        ]
+      },
+      "expected_decision": "continue",
+      "expected_intent_id": "card.limit.change",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The answer supplies the pending new_limit for the active credit-limit workflow."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-038",
+      "conversation_id": "synthetic-v1-banking-conversation-limit",
+      "turn_id": "synthetic-v1-banking-turn-002",
+      "question": "Sorry, 28500 TRY is the total I meant.",
+      "context": {
+        "active_intent": "card.limit.change",
+        "slots": {
+          "new_limit": "27500"
+        },
+        "pending_confirmation": true,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Make the total 27500 TRY."
+          },
+          {
+            "role": "assistant",
+            "content": "The requested new total is 27500 TRY. Shall I proceed?"
+          }
+        ]
+      },
+      "expected_decision": "continue",
+      "expected_intent_id": "card.limit.change",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The user corrects a collected amount within the same active workflow rather than starting another operation."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-039",
+      "conversation_id": "synthetic-v1-banking-conversation-limit",
+      "turn_id": "synthetic-v1-banking-turn-003",
+      "question": "Stop this limit-change request; keep the current limit as it is.",
+      "context": {
+        "active_intent": "card.limit.change",
+        "slots": {
+          "new_limit": "28500"
+        },
+        "pending_confirmation": true,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Sorry, 28500 TRY is the total I meant."
+          },
+          {
+            "role": "assistant",
+            "content": "I have updated the requested total to 28500 TRY. Shall I proceed?"
+          }
+        ]
+      },
+      "expected_decision": "cancel",
+      "expected_intent_id": "card.limit.change",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The user cancels the pending active change before confirmation; the label remains the active intent."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-040",
+      "conversation_id": "synthetic-v1-banking-conversation-limit",
+      "turn_id": "synthetic-v1-banking-turn-004",
+      "question": "Show me my own IBAN so that someone can pay me.",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Stop this limit-change request; keep the current limit as it is."
+          },
+          {
+            "role": "assistant",
+            "content": "The limit-change request has been stopped."
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "account.iban",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The previous workflow is cancelled; the latest turn introduces a distinct account-identifier request."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-041",
+      "conversation_id": "synthetic-v1-banking-conversation-lost-card",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "The last four are 0426.",
+      "context": {
+        "active_intent": "card.lost",
+        "pending_slot": "card_last4",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Someone stole my card from my bag."
+          },
+          {
+            "role": "assistant",
+            "content": "What are the last four digits of the lost card?"
+          }
+        ]
+      },
+      "expected_decision": "continue",
+      "expected_intent_id": "card.lost",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The synthetic four-digit identifier fills the pending card_last4 slot in the stolen-card workflow."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-042",
+      "conversation_id": "synthetic-v1-banking-conversation-lost-card",
+      "turn_id": "synthetic-v1-banking-turn-002",
+      "question": "Yes, go ahead with securing that card.",
+      "context": {
+        "active_intent": "card.lost",
+        "slots": {
+          "card_last4": "0426"
+        },
+        "pending_confirmation": true,
+        "messages": [
+          {
+            "role": "user",
+            "content": "The last four are 0426."
+          },
+          {
+            "role": "assistant",
+            "content": "Shall I proceed with the lost-card action for the card ending 0426?"
+          }
+        ]
+      },
+      "expected_decision": "continue",
+      "expected_intent_id": "card.lost",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The user confirms the active workflow after its required slot has been supplied."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-043",
+      "conversation_id": "synthetic-v1-banking-conversation-lost-card",
+      "turn_id": "synthetic-v1-banking-turn-003",
+      "question": "Please put a human adviser in charge of this missing-card issue.",
+      "context": {
+        "active_intent": "card.lost",
+        "slots": {
+          "card_last4": "0426"
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "Yes, go ahead with securing that card."
+          },
+          {
+            "role": "assistant",
+            "content": "Your request has been submitted for processing."
+          }
+        ]
+      },
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "context",
+      "rationale": "An explicit human handoff takes precedence over continuing the active card workflow."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-044",
+      "conversation_id": "synthetic-v1-banking-conversation-lost-card",
+      "turn_id": "synthetic-v1-banking-turn-004",
+      "question": "While I wait, I would like a record of my bank account transactions.",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Please put a human adviser in charge of this missing-card issue."
+          },
+          {
+            "role": "assistant",
+            "content": "A representative has been requested. You may ask another question while waiting."
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "account.statement",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The new question asks for account transaction records rather than further action on the lost card."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-045",
+      "conversation_id": "synthetic-v1-banking-conversation-transfer",
+      "turn_id": "synthetic-v1-banking-turn-001",
+      "question": "Just find out whether the earlier transfer arrived.",
+      "context": {
+        "clarification_options": [
+          "transfer.create",
+          "transfer.status"
+        ],
+        "clarifications": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "I need help with a bank transfer."
+          },
+          {
+            "role": "assistant",
+            "content": "Do you want to send a new transfer or check one you already submitted?"
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "transfer.status",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The clarification reply selects tracking of an existing transfer rather than creation of a new one."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-046",
+      "conversation_id": "synthetic-v1-banking-conversation-transfer",
+      "turn_id": "synthetic-v1-banking-turn-002",
+      "question": "The reference is SYNTHETIC-TR-008.",
+      "context": {
+        "active_intent": "transfer.status",
+        "pending_slot": "transfer_reference",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Just find out whether the earlier transfer arrived."
+          },
+          {
+            "role": "assistant",
+            "content": "What is the reference number of the transfer?"
+          }
+        ]
+      },
+      "expected_decision": "continue",
+      "expected_intent_id": "transfer.status",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The explicitly synthetic reference supplies the pending transfer_reference for the active lookup."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-047",
+      "conversation_id": "synthetic-v1-banking-conversation-transfer",
+      "turn_id": "synthetic-v1-banking-turn-003",
+      "question": "Cancel this lookup; I do not want to check it now.",
+      "context": {
+        "active_intent": "transfer.status",
+        "slots": {
+          "transfer_reference": "SYNTHETIC-TR-008"
+        },
+        "pending_confirmation": true,
+        "messages": [
+          {
+            "role": "user",
+            "content": "The reference is SYNTHETIC-TR-008."
+          },
+          {
+            "role": "assistant",
+            "content": "Shall I look up the transfer with reference SYNTHETIC-TR-008?"
+          }
+        ]
+      },
+      "expected_decision": "cancel",
+      "expected_intent_id": "transfer.status",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "This cancels the active status lookup, not the underlying transfer transaction."
+    },
+    {
+      "case_id": "synthetic-v1-banking-case-048",
+      "conversation_id": "synthetic-v1-banking-conversation-transfer",
+      "turn_id": "synthetic-v1-banking-turn-004",
+      "question": "I still want the money sent earlier to be recalled.",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Cancel this lookup; I do not want to check it now."
+          },
+          {
+            "role": "assistant",
+            "content": "The status lookup has been stopped. The transfer itself has not been cancelled."
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "transfer.cancel",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The latest turn requests recall of the underlying transfer after cancelling only its status lookup."
+    }
+  ]
+}

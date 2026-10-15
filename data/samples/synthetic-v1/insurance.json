@@ -1,0 +1,834 @@
+{
+  "schema_version": 1,
+  "sample_pack": "synthetic-v1",
+  "sector": "insurance",
+  "workspace": "insurance",
+  "language": "en",
+  "catalog_fingerprint": "9b840160ba182327",
+  "cases": [
+    {
+      "case_id": "synthetic-v1-insurance-case-001",
+      "conversation_id": "synthetic-v1-insurance-standalone-001",
+      "turn_id": "synthetic-v1-insurance-standalone-001-turn-01",
+      "question": "Could you work out the price of cover for a newly adopted house rabbit?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.quote.pet",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The customer requests prospective pet insurance pricing, rather than claiming veterinary expenses."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-002",
+      "conversation_id": "synthetic-v1-insurance-standalone-002",
+      "turn_id": "synthetic-v1-insurance-standalone-002-turn-01",
+      "question": "The venue needs something showing that my insurance exists before it lets me run the stall.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.policy.certificate",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "Proof of insurance for a third party belongs to the certificate operation."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-003",
+      "conversation_id": "synthetic-v1-insurance-standalone-003",
+      "turn_id": "synthetic-v1-insurance-standalone-003-turn-01",
+      "question": "Taking every unpaid premium together, how much do I owe you altogether?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.premium.balance",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The request concerns total outstanding premium debt, not the next scheduled premium."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-004",
+      "conversation_id": "synthetic-v1-insurance-standalone-004",
+      "turn_id": "synthetic-v1-insurance-standalone-004-turn-01",
+      "question": "I accepted your claim offer last week; when should the money from that settlement reach me?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.claim.payment",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "An accepted settlement is awaiting payment; this is not a premium refund or a settlement negotiation."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-005",
+      "conversation_id": "synthetic-v1-insurance-standalone-005",
+      "turn_id": "synthetic-v1-insurance-standalone-005-turn-01",
+      "question": "Keep my cover running until its expiry, but prevent the policy from renewing itself after that.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.policy.autorenew",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "The customer disables future automatic renewal while explicitly retaining current cover."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-006",
+      "conversation_id": "synthetic-v1-insurance-standalone-006",
+      "turn_id": "synthetic-v1-insurance-standalone-006-turn-01",
+      "question": "I am not attaching any claim files yet; tell me what supporting evidence I need to gather.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.claim.documents",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "The customer asks which evidence is required and expressly does not request an upload."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-007",
+      "conversation_id": "synthetic-v1-insurance-standalone-007",
+      "turn_id": "synthetic-v1-insurance-standalone-007-turn-01",
+      "question": "No policy has been issued and I do not want one now; withdraw the application that is still pending.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.application.withdraw",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "Withdrawal before policy issue is an application operation, not cancellation of an issued policy."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-008",
+      "conversation_id": "synthetic-v1-insurance-standalone-008",
+      "turn_id": "synthetic-v1-insurance-standalone-008-turn-01",
+      "question": "This is not a claim for a paid hospital bill. Has my request for approval before the operation been decided?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.provider.authorization_status",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "The customer tracks an existing pretreatment authorization rather than submitting reimbursement."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-009",
+      "conversation_id": "synthetic-v1-insurance-standalone-009",
+      "turn_id": "synthetic-v1-insurance-standalone-009-turn-01",
+      "question": "I said change how often I pay, but I meant move the monthly insurance collection to the twenty-third.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.premium.due_date",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "The correction specifies a recurring collection day while retaining monthly frequency."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-010",
+      "conversation_id": "synthetic-v1-insurance-standalone-010",
+      "turn_id": "synthetic-v1-insurance-standalone-010-turn-01",
+      "question": "Let me correct that: the spelling is fine; I need to transfer legal ownership of the life policy.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.policy.ownership",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "The corrected request changes the contract owner rather than the current owner name."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-011",
+      "conversation_id": "synthetic-v1-insurance-standalone-011",
+      "turn_id": "synthetic-v1-insurance-standalone-011-turn-01",
+      "question": "I do not need a first assessor visit after all; please move the inspection already booked for Thursday.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.claim.assessment_reschedule",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "An existing inspection appointment is being moved, so first-assessment scheduling is excluded."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-012",
+      "conversation_id": "synthetic-v1-insurance-standalone-012",
+      "turn_id": "synthetic-v1-insurance-standalone-012-turn-01",
+      "question": "Sorry, the premium refund was already requested yesterday. I only want to check how far it has got.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.refund.status",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "The correction establishes an existing premium refund whose progress is requested."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-013",
+      "conversation_id": "synthetic-v1-insurance-standalone-013",
+      "turn_id": "synthetic-v1-insurance-standalone-013-turn-01",
+      "question": "um price insurance for the cargo on our boat shipment, the sea cargo, before it leaves",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.quote.marine",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "The written repetition still clearly requests prospective marine cargo cover pricing."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-014",
+      "conversation_id": "synthetic-v1-insurance-standalone-014",
+      "turn_id": "synthetic-v1-insurance-standalone-014-turn-01",
+      "question": "the stolen bike on my claim, uh, the police found it, found it this morning, I need to tell the insurer",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.claim.recovery",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "The customer notifies recovery of property already reported stolen; the repetition does not change the event."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-015",
+      "conversation_id": "synthetic-v1-insurance-standalone-015",
+      "turn_id": "synthetic-v1-insurance-standalone-015-turn-01",
+      "question": "can you put, put my antique watch on the separately listed valuables in the home policy",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.policy.specified_item",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "An individually listed valuable is being added to an existing property policy."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-016",
+      "conversation_id": "synthetic-v1-insurance-standalone-016",
+      "turn_id": "synthetic-v1-insurance-standalone-016-turn-01",
+      "question": "my health member card, erm, I misplaced it, can I get another card for the insurance",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.provider.member_card",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "The customer requests replacement of health insurance member identification."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-017",
+      "conversation_id": "synthetic-v1-insurance-standalone-017",
+      "turn_id": "synthetic-v1-insurance-standalone-017-turn-01",
+      "question": "My car is a write-off; explain the vehicle valuation basis you used to classify it as a total loss.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.claim.total_loss",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "The explicit write-off valuation basis uses total-loss handling rather than generic settlement explanation."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-018",
+      "conversation_id": "synthetic-v1-insurance-standalone-018",
+      "turn_id": "synthetic-v1-insurance-standalone-018-turn-01",
+      "question": "For driving my insured car across the border, I need the country-specific green-card insurance document.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.policy.motor_abroad_certificate",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "A country-specific motor certificate for foreign travel is narrower than general proof of insurance."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-019",
+      "conversation_id": "synthetic-v1-insurance-standalone-019",
+      "turn_id": "synthetic-v1-insurance-standalone-019-turn-01",
+      "question": "Price insurance for the flat I own and rent to tenants; I do not live in it myself.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.quote.landlord",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "The rented property requires a landlord quote rather than an owner-occupied home quote."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-020",
+      "conversation_id": "synthetic-v1-insurance-standalone-020",
+      "turn_id": "synthetic-v1-insurance-standalone-020-turn-01",
+      "question": "The insurer-approved roof repair is finished, but the workmanship is faulty and I need that put right.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.claim.repair_warranty",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "Defective completed insurer-arranged repair work uses the repair warranty operation."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-021",
+      "conversation_id": "synthetic-v1-insurance-standalone-021",
+      "turn_id": "synthetic-v1-insurance-standalone-021-turn-01",
+      "question": "There is a problem somewhere on the insurance payments side; can you sort it out?",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "ambiguity",
+      "rationale": "No failure, charge dispute, arrears, or other particular payment operation has been identified."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-022",
+      "conversation_id": "synthetic-v1-insurance-standalone-022",
+      "turn_id": "synthetic-v1-insurance-standalone-022-turn-01",
+      "question": "Can you make a change to the cover on my current policy?",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "ambiguity",
+      "rationale": "The desired policy operation is unspecified; increasing, removing, or changing cover cannot be chosen reliably."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-023",
+      "conversation_id": "synthetic-v1-insurance-standalone-023",
+      "turn_id": "synthetic-v1-insurance-standalone-023-turn-01",
+      "question": "Could you send me that insurance document we were talking about?",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "ambiguity",
+      "rationale": "No prior context identifies whether the document is a policy copy, certificate, receipt, or something else."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-024",
+      "conversation_id": "synthetic-v1-insurance-standalone-024",
+      "turn_id": "synthetic-v1-insurance-standalone-024-turn-01",
+      "question": "Something needs doing with my claim, and I need your help with that.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "ambiguity",
+      "rationale": "The customer has not distinguished claim status, amendment, withdrawal, evidence, or another claim operation."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-025",
+      "conversation_id": "synthetic-v1-insurance-standalone-025",
+      "turn_id": "synthetic-v1-insurance-standalone-025-turn-01",
+      "question": "Renew my expiring policy and change the bank account you collect its premiums from.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "multiple_intents",
+      "rationale": "Renewal and changing the premium payment method are separate goals with no selected first operation."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-026",
+      "conversation_id": "synthetic-v1-insurance-standalone-026",
+      "turn_id": "synthetic-v1-insurance-standalone-026-turn-01",
+      "question": "I want to upload photographs to my claim and check the progress of my premium refund.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "multiple_intents",
+      "rationale": "Claim evidence upload and premium refund tracking are independent requests."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-027",
+      "conversation_id": "synthetic-v1-insurance-standalone-027",
+      "turn_id": "synthetic-v1-insurance-standalone-027-turn-01",
+      "question": "Work out a pet insurance quote for my cat and a travel insurance quote for my holiday.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "multiple_intents",
+      "rationale": "Two distinct insurance product quotations are requested without a single selected goal."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-028",
+      "conversation_id": "synthetic-v1-insurance-standalone-028",
+      "turn_id": "synthetic-v1-insurance-standalone-028-turn-01",
+      "question": "Give me a copy of the personal data you hold and also check the status of my open burglary claim.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "multiple_intents",
+      "rationale": "A privacy access request and claim progress check require different destination workflows."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-029",
+      "conversation_id": "synthetic-v1-insurance-standalone-029",
+      "turn_id": "synthetic-v1-insurance-standalone-029-turn-01",
+      "question": "Teach me the fingering for a C major scale on a piano.",
+      "context": {},
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "out_of_scope",
+      "rationale": "Music instruction is outside the insurance service catalog."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-030",
+      "conversation_id": "synthetic-v1-insurance-standalone-030",
+      "turn_id": "synthetic-v1-insurance-standalone-030-turn-01",
+      "question": "Write a Python function that sorts a list of city names alphabetically.",
+      "context": {},
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "out_of_scope",
+      "rationale": "General programming assistance is outside the insurance service catalog."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-031",
+      "conversation_id": "synthetic-v1-insurance-standalone-031",
+      "turn_id": "synthetic-v1-insurance-standalone-031-turn-01",
+      "question": "Tell me how many moons orbit Jupiter for my school assignment.",
+      "context": {},
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "out_of_scope",
+      "rationale": "An astronomy question does not request any insurance operation."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-032",
+      "conversation_id": "synthetic-v1-insurance-standalone-032",
+      "turn_id": "synthetic-v1-insurance-standalone-032-turn-01",
+      "question": "Please reserve a table for four at a restaurant for tomorrow evening.",
+      "context": {},
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "out_of_scope",
+      "rationale": "Restaurant reservations are not an insurance service in this catalog."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-033",
+      "conversation_id": "synthetic-v1-insurance-standalone-033",
+      "turn_id": "synthetic-v1-insurance-standalone-033-turn-01",
+      "question": "Please connect me with a real insurance adviser who can talk this through with me.",
+      "context": {},
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "handoff",
+      "rationale": "The customer explicitly requests a human insurance representative."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-034",
+      "conversation_id": "synthetic-v1-insurance-standalone-034",
+      "turn_id": "synthetic-v1-insurance-standalone-034-turn-01",
+      "question": "I want a person on the claims team, rather than continuing this automated conversation.",
+      "context": {},
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "handoff",
+      "rationale": "The requested operation is transfer to a human claims representative."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-035",
+      "conversation_id": "synthetic-v1-insurance-standalone-035",
+      "turn_id": "synthetic-v1-insurance-standalone-035-turn-01",
+      "question": "Can you hand this conversation over to one of your human customer service agents?",
+      "context": {},
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "handoff",
+      "rationale": "An explicit human transfer takes precedence over guessing an unspecified insurance task."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-036",
+      "conversation_id": "synthetic-v1-insurance-standalone-036",
+      "turn_id": "synthetic-v1-insurance-standalone-036-turn-01",
+      "question": "Let me speak to a live member of staff about my insurance, please.",
+      "context": {},
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "handoff",
+      "rationale": "The customer clearly asks to speak to a live staff member."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-037",
+      "conversation_id": "synthetic-v1-insurance-motor-quote",
+      "turn_id": "synthetic-v1-insurance-motor-quote-turn-01",
+      "question": "The price for a car policy I have not bought yet, please.",
+      "context": {
+        "clarification_options": [
+          "insurance.quote.motor",
+          "insurance.coverage.motor"
+        ],
+        "clarifications": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "I have a question about motor cover."
+          },
+          {
+            "role": "assistant",
+            "content": "Do you want a price for new cover, or information about what a motor policy covers?"
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.quote.motor",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The reply resolves the prior quote-versus-cover question in favor of new motor pricing."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-038",
+      "conversation_id": "synthetic-v1-insurance-motor-quote",
+      "turn_id": "synthetic-v1-insurance-motor-quote-turn-02",
+      "question": "Just our family hatchback, used for personal trips.",
+      "context": {
+        "active_intent": "insurance.quote.motor",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I have a question about motor cover."
+          },
+          {
+            "role": "assistant",
+            "content": "Do you want a price for new cover, or information about what a motor policy covers?"
+          },
+          {
+            "role": "user",
+            "content": "The price for a car policy I have not bought yet, please."
+          },
+          {
+            "role": "assistant",
+            "content": "Is the proposed insurance for your personal car or a commercial fleet?"
+          }
+        ]
+      },
+      "expected_decision": "continue",
+      "expected_intent_id": "insurance.quote.motor",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "Vehicle-use information answers the active motor quotation workflow without starting a policy-use change."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-039",
+      "conversation_id": "synthetic-v1-insurance-motor-quote",
+      "turn_id": "synthetic-v1-insurance-motor-quote-turn-03",
+      "question": "Stop this quote enquiry; I do not want to carry on with it.",
+      "context": {
+        "active_intent": "insurance.quote.motor",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I have a question about motor cover."
+          },
+          {
+            "role": "assistant",
+            "content": "Do you want a price for new cover, or information about what a motor policy covers?"
+          },
+          {
+            "role": "user",
+            "content": "The price for a car policy I have not bought yet, please."
+          },
+          {
+            "role": "assistant",
+            "content": "Is the proposed insurance for your personal car or a commercial fleet?"
+          },
+          {
+            "role": "user",
+            "content": "Just our family hatchback, used for personal trips."
+          },
+          {
+            "role": "assistant",
+            "content": "We can continue gathering information for that quotation."
+          }
+        ]
+      },
+      "expected_decision": "cancel",
+      "expected_intent_id": "insurance.quote.motor",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The customer abandons the active quotation request rather than cancelling existing insurance cover."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-040",
+      "conversation_id": "synthetic-v1-insurance-claim-to-receipt",
+      "turn_id": "synthetic-v1-insurance-claim-to-receipt-turn-01",
+      "question": "The kitchen water leak report I made last month.",
+      "context": {
+        "active_intent": "insurance.claim.status",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Please check progress on an existing home claim."
+          },
+          {
+            "role": "assistant",
+            "content": "Which of your existing loss reports are you asking about?"
+          }
+        ]
+      },
+      "expected_decision": "continue",
+      "expected_intent_id": "insurance.claim.status",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The reply identifies the existing claim being discussed and does not report a new home loss."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-041",
+      "conversation_id": "synthetic-v1-insurance-claim-to-receipt",
+      "turn_id": "synthetic-v1-insurance-claim-to-receipt-turn-02",
+      "question": "Leave that for now. Instead, I need a receipt for the insurance premium I paid on Monday.",
+      "context": {
+        "active_intent": "insurance.claim.status",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Please check progress on an existing home claim."
+          },
+          {
+            "role": "assistant",
+            "content": "Which of your existing loss reports are you asking about?"
+          },
+          {
+            "role": "user",
+            "content": "The kitchen water leak report I made last month."
+          },
+          {
+            "role": "assistant",
+            "content": "We can continue with the progress enquiry for that reported leak."
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.premium.receipt",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "An explicit topic switch requests proof of a paid premium rather than more claim information."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-042",
+      "conversation_id": "synthetic-v1-insurance-claim-to-receipt",
+      "turn_id": "synthetic-v1-insurance-claim-to-receipt-turn-03",
+      "question": "Never mind the receipt request; stop this process here.",
+      "context": {
+        "active_intent": "insurance.premium.receipt",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Please check progress on an existing home claim."
+          },
+          {
+            "role": "assistant",
+            "content": "Which of your existing loss reports are you asking about?"
+          },
+          {
+            "role": "user",
+            "content": "The kitchen water leak report I made last month."
+          },
+          {
+            "role": "assistant",
+            "content": "We can continue with the progress enquiry for that reported leak."
+          },
+          {
+            "role": "user",
+            "content": "Leave that for now. Instead, I need a receipt for the insurance premium I paid on Monday."
+          },
+          {
+            "role": "assistant",
+            "content": "We can help with the premium receipt request."
+          }
+        ]
+      },
+      "expected_decision": "cancel",
+      "expected_intent_id": "insurance.premium.receipt",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The active receipt workflow is abandoned without reversing the underlying premium payment."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-043",
+      "conversation_id": "synthetic-v1-insurance-claim-evidence",
+      "turn_id": "synthetic-v1-insurance-claim-evidence-turn-01",
+      "question": "Tell me which ones are required; I am not ready to send any files.",
+      "context": {
+        "clarification_options": [
+          "insurance.claim.documents",
+          "insurance.claim.upload"
+        ],
+        "clarifications": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "I need help with evidence for my open burglary claim."
+          },
+          {
+            "role": "assistant",
+            "content": "Do you want to find out which documents are required or send documents you already have?"
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.claim.documents",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The reply chooses evidence requirements and explicitly excludes uploading."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-044",
+      "conversation_id": "synthetic-v1-insurance-claim-evidence",
+      "turn_id": "synthetic-v1-insurance-claim-evidence-turn-02",
+      "question": "Yes, that same burglary report, not a different incident.",
+      "context": {
+        "active_intent": "insurance.claim.documents",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I need help with evidence for my open burglary claim."
+          },
+          {
+            "role": "assistant",
+            "content": "Do you want to find out which documents are required or send documents you already have?"
+          },
+          {
+            "role": "user",
+            "content": "Tell me which ones are required; I am not ready to send any files."
+          },
+          {
+            "role": "assistant",
+            "content": "Is your enquiry about the burglary claim you just mentioned?"
+          }
+        ]
+      },
+      "expected_decision": "continue",
+      "expected_intent_id": "insurance.claim.documents",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The reply identifies the same claim within the active evidence-requirements enquiry; no transaction confirmation state is asserted."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-045",
+      "conversation_id": "synthetic-v1-insurance-claim-evidence",
+      "turn_id": "synthetic-v1-insurance-claim-evidence-turn-03",
+      "question": "I would prefer to discuss the documents with a human claims adviser now.",
+      "context": {
+        "active_intent": "insurance.claim.documents",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I need help with evidence for my open burglary claim."
+          },
+          {
+            "role": "assistant",
+            "content": "Do you want to find out which documents are required or send documents you already have?"
+          },
+          {
+            "role": "user",
+            "content": "Tell me which ones are required; I am not ready to send any files."
+          },
+          {
+            "role": "assistant",
+            "content": "Is your enquiry about the burglary claim you just mentioned?"
+          },
+          {
+            "role": "user",
+            "content": "Yes, that same burglary report, not a different incident."
+          },
+          {
+            "role": "assistant",
+            "content": "We can continue discussing evidence needed for that existing claim."
+          }
+        ]
+      },
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The explicit request for a human overrides continuing the evidence enquiry."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-046",
+      "conversation_id": "synthetic-v1-insurance-renewal-to-excess",
+      "turn_id": "synthetic-v1-insurance-renewal-to-excess-turn-01",
+      "question": "Yes, the renewal setting on that same motor policy.",
+      "context": {
+        "active_intent": "insurance.policy.autorenew",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I want to turn off automatic renewal and keep my existing insurance until it ends."
+          },
+          {
+            "role": "assistant",
+            "content": "Is your question about the renewal setting on the current motor policy?"
+          }
+        ]
+      },
+      "expected_decision": "continue",
+      "expected_intent_id": "insurance.policy.autorenew",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The reply confirms the subject of the ongoing renewal-settings enquiry without claiming an execution confirmation."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-047",
+      "conversation_id": "synthetic-v1-insurance-renewal-to-excess",
+      "turn_id": "synthetic-v1-insurance-renewal-to-excess-turn-02",
+      "question": "Before that, explain what the excess means when I make an eligible claim.",
+      "context": {
+        "active_intent": "insurance.policy.autorenew",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I want to turn off automatic renewal and keep my existing insurance until it ends."
+          },
+          {
+            "role": "assistant",
+            "content": "Is your question about the renewal setting on the current motor policy?"
+          },
+          {
+            "role": "user",
+            "content": "Yes, the renewal setting on that same motor policy."
+          },
+          {
+            "role": "assistant",
+            "content": "We can continue with the automatic renewal setting enquiry."
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.coverage.deductible",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The customer explicitly switches from renewal settings to an explanation of the insured contribution on a claim."
+    },
+    {
+      "case_id": "synthetic-v1-insurance-case-048",
+      "conversation_id": "synthetic-v1-insurance-renewal-to-excess",
+      "turn_id": "synthetic-v1-insurance-renewal-to-excess-turn-03",
+      "question": "Forget the excess question; I want to end this enquiry.",
+      "context": {
+        "active_intent": "insurance.coverage.deductible",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I want to turn off automatic renewal and keep my existing insurance until it ends."
+          },
+          {
+            "role": "assistant",
+            "content": "Is your question about the renewal setting on the current motor policy?"
+          },
+          {
+            "role": "user",
+            "content": "Yes, the renewal setting on that same motor policy."
+          },
+          {
+            "role": "assistant",
+            "content": "We can continue with the automatic renewal setting enquiry."
+          },
+          {
+            "role": "user",
+            "content": "Before that, explain what the excess means when I make an eligible claim."
+          },
+          {
+            "role": "assistant",
+            "content": "We can discuss how the policy excess works."
+          }
+        ]
+      },
+      "expected_decision": "cancel",
+      "expected_intent_id": "insurance.coverage.deductible",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The customer cancels the active explanatory enquiry, not an insurance policy or claim."
+    }
+  ]
+}

@@ -1,0 +1,834 @@
+{
+  "schema_version": 1,
+  "sample_pack": "synthetic-v1",
+  "sector": "ecommerce",
+  "workspace": "ecommerce",
+  "language": "en",
+  "catalog_fingerprint": "7187a619b2b7ff6f",
+  "cases": [
+    {
+      "case_id": "synthetic-v1-ecommerce-case-001",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-001",
+      "turn_id": "synthetic-v1-ecommerce-standalone-001-turn-01",
+      "question": "Find me a compact reading light that can clip onto a bed frame.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.product.search",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The customer seeks products satisfying a need rather than details of an identified item."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-002",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-002",
+      "turn_id": "synthetic-v1-ecommerce-standalone-002-turn-01",
+      "question": "Before I buy this coat, where can I see how its sizes translate into chest measurements?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.product.sizing",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The request is for sizing and fit information rather than general product specifications."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-003",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-003",
+      "turn_id": "synthetic-v1-ecommerce-standalone-003-turn-01",
+      "question": "My spare kettle is still in the basket; take that one out before I place the purchase.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.cart.remove",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The item is removed from an unsubmitted cart rather than cancelling a placed order."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-004",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-004",
+      "turn_id": "synthetic-v1-ecommerce-standalone-004-turn-01",
+      "question": "My locker collection deadline is tomorrow; can I have a few extra days to pick up the order?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.delivery.pickup_extend",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The customer requests a longer collection window for an existing pickup order."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-005",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-005",
+      "turn_id": "synthetic-v1-ecommerce-standalone-005-turn-01",
+      "question": "Do not put the camera in my basket yet; save it to my wishlist so I can decide later.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.wishlist.add",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "Saving to a wishlist is explicit and adding to the active cart is rejected."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-006",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-006",
+      "turn_id": "synthetic-v1-ecommerce-standalone-006-turn-01",
+      "question": "I am not asking where the parcel is; I need the phone or chat contact details for its courier.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.delivery.courier_contact",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "The user requests the courier contact channel rather than parcel tracking."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-007",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-007",
+      "turn_id": "synthetic-v1-ecommerce-standalone-007-turn-01",
+      "question": "Keep the coffee subscription active, but stop its deliveries temporarily while I am away.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.subscription.pause",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "The interruption is temporary and ending the recurring subscription is expressly excluded."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-008",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-008",
+      "turn_id": "synthetic-v1-ecommerce-standalone-008-turn-01",
+      "question": "No refund has been requested yet; I want to send back the physical toaster I received.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.return.request",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "The requested first operation is returning a received physical product, not checking a refund."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-009",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-009",
+      "turn_id": "synthetic-v1-ecommerce-standalone-009-turn-01",
+      "question": "When I said pause the subscription, I meant skip just the next tea box and keep the usual schedule after it.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.subscription.skip",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "The correction selects omission of one shipment while preserving the regular interval."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-010",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-010",
+      "turn_id": "synthetic-v1-ecommerce-standalone-010-turn-01",
+      "question": "Sorry, leave my existing order alone; I only need to edit the home address saved in my account address book.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.account.address_book",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "The correction targets a saved address entry rather than an order delivery address."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-011",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-011",
+      "turn_id": "synthetic-v1-ecommerce-standalone-011-turn-01",
+      "question": "The refund amount is right, actually. Can you change where the still-pending refund will be sent?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.refund.destination",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "The corrected request changes the destination of an uncompleted refund rather than explaining its amount."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-012",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-012",
+      "turn_id": "synthetic-v1-ecommerce-standalone-012-turn-01",
+      "question": "I meant the shipping rates for my seller shop listings, not delivery prices for something I am buying.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.seller.shipping_policy",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "Seller shipping-rate configuration is distinct from buyer shipping service comparisons."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-013",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-013",
+      "turn_id": "synthetic-v1-ecommerce-standalone-013-turn-01",
+      "question": "the boxed lamp, uh, it arrived with the shade cracked, cracked right across",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.issue.damaged",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "The written repetition describes physical damage present when the product arrived."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-014",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-014",
+      "turn_id": "synthetic-v1-ecommerce-standalone-014-turn-01",
+      "question": "my purchased software key says, says already used when I try to activate it",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.digital.activation",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "The purchased digital activation key fails redemption rather than download access."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-015",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-015",
+      "turn_id": "synthetic-v1-ecommerce-standalone-015-turn-01",
+      "question": "the back, backpack in charcoal, uh do you have any left before I order it",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.product.availability",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "The interrupted word and filler leave a clear pre-purchase stock check for an identified variant."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-016",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-016",
+      "turn_id": "synthetic-v1-ecommerce-standalone-016-turn-01",
+      "question": "seller money, the payout money has a reserve hold on it, erm can you explain that hold",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.seller.reserve",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "The seller explicitly asks about a reserve applied to funds, rather than an unexplained late payout."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-017",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-017",
+      "turn_id": "synthetic-v1-ecommerce-standalone-017-turn-01",
+      "question": "From the order I placed, cancel only the blue mug and leave all the other items going ahead.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.order.cancel_item",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "Selected items in a placed order are cancelled while the rest remains active."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-018",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-018",
+      "turn_id": "synthetic-v1-ecommerce-standalone-018-turn-01",
+      "question": "I accidentally packed my own scarf inside the return parcel I sent to you; how can I recover it?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.return.wrong_item",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "The wrong item was sent back by the customer, not received from the store."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-019",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-019",
+      "turn_id": "synthetic-v1-ecommerce-standalone-019-turn-01",
+      "question": "I downloaded the purchased design template and now want its refund eligibility reviewed.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.digital.refund",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "The purchase is downloaded digital content, so the digital refund operation applies."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-020",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-020",
+      "turn_id": "synthetic-v1-ecommerce-standalone-020-turn-01",
+      "question": "Could you retrieve the delivery photograph or signature recorded by the carrier for my order?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.delivery.proof",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "The customer asks for recorded delivery evidence without reporting nonreceipt."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-021",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-021",
+      "turn_id": "synthetic-v1-ecommerce-standalone-021-turn-01",
+      "question": "Can you make that change to my shopping order for me?",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "ambiguity",
+      "rationale": "No prior context or wording identifies whether the change concerns items, address, cancellation, or another operation."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-022",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-022",
+      "turn_id": "synthetic-v1-ecommerce-standalone-022-turn-01",
+      "question": "Something is not right with the money from my purchase.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "ambiguity",
+      "rationale": "The payment or refund issue is unspecified, so a particular financial operation cannot be selected."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-023",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-023",
+      "turn_id": "synthetic-v1-ecommerce-standalone-023-turn-01",
+      "question": "I need help with the box, but I am not sure what to ask for.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "ambiguity",
+      "rationale": "The customer has not described whether the problem is delivery, contents, damage, or a return."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-024",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-024",
+      "turn_id": "synthetic-v1-ecommerce-standalone-024-turn-01",
+      "question": "Use the second option you offered me for this purchase.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "ambiguity",
+      "rationale": "Without earlier options, the ordinal reply does not identify a routable goal."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-025",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-025",
+      "turn_id": "synthetic-v1-ecommerce-standalone-025-turn-01",
+      "question": "Track my dispatched speaker parcel and reset the password on my shopping account.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "multiple_intents",
+      "rationale": "Parcel tracking and account access recovery are independent goals with no first task chosen."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-026",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-026",
+      "turn_id": "synthetic-v1-ecommerce-standalone-026-turn-01",
+      "question": "Apply my discount code to the basket and register yesterday's purchase for its warranty.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "multiple_intents",
+      "rationale": "Coupon application and warranty registration concern separate operations and purchases."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-027",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-027",
+      "turn_id": "synthetic-v1-ecommerce-standalone-027-turn-01",
+      "question": "I want a refund review for the ebook I downloaded and a size exchange for the shoes that arrived.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "multiple_intents",
+      "rationale": "Digital refund review and a physical product exchange are separate requested workflows."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-028",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-028",
+      "turn_id": "synthetic-v1-ecommerce-standalone-028-turn-01",
+      "question": "Update stock counts in my seller shop and send me its marketplace tax certificate.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "multiple_intents",
+      "rationale": "Seller inventory editing and tax document retrieval are distinct requests without a selected priority."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-029",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-029",
+      "turn_id": "synthetic-v1-ecommerce-standalone-029-turn-01",
+      "question": "Book a seat for me on a passenger flight to Lisbon next week.",
+      "context": {},
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "out_of_scope",
+      "rationale": "Airline passenger reservations are outside this commerce catalog."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-030",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-030",
+      "turn_id": "synthetic-v1-ecommerce-standalone-030-turn-01",
+      "question": "Transfer rent from my bank account to my landlord.",
+      "context": {},
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "out_of_scope",
+      "rationale": "A bank transfer is outside the store and marketplace operations."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-031",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-031",
+      "turn_id": "synthetic-v1-ecommerce-standalone-031-turn-01",
+      "question": "Help me dispute the settlement offered for my motor insurance claim.",
+      "context": {},
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "out_of_scope",
+      "rationale": "An insurance claim appeal is outside the commerce catalog."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-032",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-032",
+      "turn_id": "synthetic-v1-ecommerce-standalone-032-turn-01",
+      "question": "Explain why the seasons are different in the northern and southern hemispheres.",
+      "context": {},
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "out_of_scope",
+      "rationale": "A general astronomy explanation does not request a commerce operation."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-033",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-033",
+      "turn_id": "synthetic-v1-ecommerce-standalone-033-turn-01",
+      "question": "Please put me through to a human at the store support desk.",
+      "context": {},
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "handoff",
+      "rationale": "The customer explicitly requests transfer to a human store representative."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-034",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-034",
+      "turn_id": "synthetic-v1-ecommerce-standalone-034-turn-01",
+      "question": "I would like an actual person to take over this shopping support chat.",
+      "context": {},
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "handoff",
+      "rationale": "The requested outcome is handoff to a person rather than an inferred shopping task."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-035",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-035",
+      "turn_id": "synthetic-v1-ecommerce-standalone-035-turn-01",
+      "question": "Can a live customer service agent speak with me about my order?",
+      "context": {},
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "handoff",
+      "rationale": "The customer explicitly requests a live service agent."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-036",
+      "conversation_id": "synthetic-v1-ecommerce-standalone-036",
+      "turn_id": "synthetic-v1-ecommerce-standalone-036-turn-01",
+      "question": "Please transfer me to a human marketplace support representative now.",
+      "context": {},
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "handoff",
+      "rationale": "A direct human marketplace support request is labeled handoff."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-037",
+      "conversation_id": "synthetic-v1-ecommerce-order-cancellation",
+      "turn_id": "synthetic-v1-ecommerce-order-cancellation-turn-01",
+      "question": "It has not been sent yet. Cancel the placed order before it is completed.",
+      "context": {
+        "clarification_options": [
+          "ecommerce.order.cancel",
+          "ecommerce.return.request"
+        ],
+        "clarifications": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "I want to undo my toaster purchase."
+          },
+          {
+            "role": "assistant",
+            "content": "Has it arrived and you want to return it, or is this a placed order you want cancelled before completion?"
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.order.cancel",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The reply resolves the distinction as cancelling an uncompleted placed order rather than returning a received product."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-038",
+      "conversation_id": "synthetic-v1-ecommerce-order-cancellation",
+      "turn_id": "synthetic-v1-ecommerce-order-cancellation-turn-02",
+      "question": "Every item in that order, the entire purchase.",
+      "context": {
+        "active_intent": "ecommerce.order.cancel",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I want to undo my toaster purchase."
+          },
+          {
+            "role": "assistant",
+            "content": "Has it arrived and you want to return it, or is this a placed order you want cancelled before completion?"
+          },
+          {
+            "role": "user",
+            "content": "It has not been sent yet. Cancel the placed order before it is completed."
+          },
+          {
+            "role": "assistant",
+            "content": "Are you asking about the whole order or only some of its items?"
+          }
+        ]
+      },
+      "expected_decision": "continue",
+      "expected_intent_id": "ecommerce.order.cancel",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The reply supplies the scope of the existing whole-order cancellation enquiry."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-039",
+      "conversation_id": "synthetic-v1-ecommerce-order-cancellation",
+      "turn_id": "synthetic-v1-ecommerce-order-cancellation-turn-03",
+      "question": "I have changed my mind; stop this cancellation request and leave the order alone.",
+      "context": {
+        "active_intent": "ecommerce.order.cancel",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I want to undo my toaster purchase."
+          },
+          {
+            "role": "assistant",
+            "content": "Has it arrived and you want to return it, or is this a placed order you want cancelled before completion?"
+          },
+          {
+            "role": "user",
+            "content": "It has not been sent yet. Cancel the placed order before it is completed."
+          },
+          {
+            "role": "assistant",
+            "content": "Are you asking about the whole order or only some of its items?"
+          },
+          {
+            "role": "user",
+            "content": "Every item in that order, the entire purchase."
+          },
+          {
+            "role": "assistant",
+            "content": "We can continue with your whole-order cancellation request."
+          }
+        ]
+      },
+      "expected_decision": "cancel",
+      "expected_intent_id": "ecommerce.order.cancel",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The customer abandons the cancellation workflow; the request is not to cancel the order again."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-040",
+      "conversation_id": "synthetic-v1-ecommerce-return-to-invoice",
+      "turn_id": "synthetic-v1-ecommerce-return-to-invoice-turn-01",
+      "question": "The portable desk fan from my most recent purchase.",
+      "context": {
+        "active_intent": "ecommerce.return.request",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I want to return something I received from the store."
+          },
+          {
+            "role": "assistant",
+            "content": "Which received product is this return enquiry about?"
+          }
+        ]
+      },
+      "expected_decision": "continue",
+      "expected_intent_id": "ecommerce.return.request",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The product reference answers the active return enquiry instead of initiating product search."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-041",
+      "conversation_id": "synthetic-v1-ecommerce-return-to-invoice",
+      "turn_id": "synthetic-v1-ecommerce-return-to-invoice-turn-02",
+      "question": "Set the return aside. I need the invoice for a different completed purchase instead.",
+      "context": {
+        "active_intent": "ecommerce.return.request",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I want to return something I received from the store."
+          },
+          {
+            "role": "assistant",
+            "content": "Which received product is this return enquiry about?"
+          },
+          {
+            "role": "user",
+            "content": "The portable desk fan from my most recent purchase."
+          },
+          {
+            "role": "assistant",
+            "content": "We can continue gathering details for that return request."
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.payment.invoice",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The explicit topic change requests an invoice rather than continuing the return."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-042",
+      "conversation_id": "synthetic-v1-ecommerce-return-to-invoice",
+      "turn_id": "synthetic-v1-ecommerce-return-to-invoice-turn-03",
+      "question": "I found the invoice myself; cancel this enquiry now.",
+      "context": {
+        "active_intent": "ecommerce.payment.invoice",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I want to return something I received from the store."
+          },
+          {
+            "role": "assistant",
+            "content": "Which received product is this return enquiry about?"
+          },
+          {
+            "role": "user",
+            "content": "The portable desk fan from my most recent purchase."
+          },
+          {
+            "role": "assistant",
+            "content": "We can continue gathering details for that return request."
+          },
+          {
+            "role": "user",
+            "content": "Set the return aside. I need the invoice for a different completed purchase instead."
+          },
+          {
+            "role": "assistant",
+            "content": "We can help locate the invoice for that completed purchase."
+          }
+        ]
+      },
+      "expected_decision": "cancel",
+      "expected_intent_id": "ecommerce.payment.invoice",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The active invoice retrieval enquiry is abandoned without cancelling a purchase."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-043",
+      "conversation_id": "synthetic-v1-ecommerce-restock-alert",
+      "turn_id": "synthetic-v1-ecommerce-restock-alert-turn-01",
+      "question": "Send me an alert when that bottle is back, please.",
+      "context": {
+        "clarification_options": [
+          "ecommerce.product.availability",
+          "ecommerce.product.restock"
+        ],
+        "clarifications": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "I am looking at the sold-out green insulated bottle."
+          },
+          {
+            "role": "assistant",
+            "content": "Do you want to check its current stock or receive an alert when it comes back?"
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.product.restock",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The customer selects a future restock notification rather than a current stock check."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-044",
+      "conversation_id": "synthetic-v1-ecommerce-restock-alert",
+      "turn_id": "synthetic-v1-ecommerce-restock-alert-turn-02",
+      "question": "Yes, the green one from this same conversation.",
+      "context": {
+        "active_intent": "ecommerce.product.restock",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I am looking at the sold-out green insulated bottle."
+          },
+          {
+            "role": "assistant",
+            "content": "Do you want to check its current stock or receive an alert when it comes back?"
+          },
+          {
+            "role": "user",
+            "content": "Send me an alert when that bottle is back, please."
+          },
+          {
+            "role": "assistant",
+            "content": "Is the alert for the green insulated bottle you mentioned?"
+          }
+        ]
+      },
+      "expected_decision": "continue",
+      "expected_intent_id": "ecommerce.product.restock",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The contextual reply identifies the product for the active alert enquiry without asserting a stored workflow slot."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-045",
+      "conversation_id": "synthetic-v1-ecommerce-restock-alert",
+      "turn_id": "synthetic-v1-ecommerce-restock-alert-turn-03",
+      "question": "Please let a human store representative take over from here.",
+      "context": {
+        "active_intent": "ecommerce.product.restock",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I am looking at the sold-out green insulated bottle."
+          },
+          {
+            "role": "assistant",
+            "content": "Do you want to check its current stock or receive an alert when it comes back?"
+          },
+          {
+            "role": "user",
+            "content": "Send me an alert when that bottle is back, please."
+          },
+          {
+            "role": "assistant",
+            "content": "Is the alert for the green insulated bottle you mentioned?"
+          },
+          {
+            "role": "user",
+            "content": "Yes, the green one from this same conversation."
+          },
+          {
+            "role": "assistant",
+            "content": "We can continue with that restock alert enquiry."
+          }
+        ]
+      },
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "context",
+      "rationale": "A direct request for a human overrides continuation of the restock enquiry."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-046",
+      "conversation_id": "synthetic-v1-ecommerce-frequency-to-pause",
+      "turn_id": "synthetic-v1-ecommerce-frequency-to-pause-turn-01",
+      "question": "Six weeks between every delivery from now on.",
+      "context": {
+        "active_intent": "ecommerce.subscription.frequency",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I want a new recurring interval for my coffee deliveries."
+          },
+          {
+            "role": "assistant",
+            "content": "How far apart should the future deliveries be?"
+          }
+        ]
+      },
+      "expected_decision": "continue",
+      "expected_intent_id": "ecommerce.subscription.frequency",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The reply supplies the recurring interval requested by the active subscription-frequency enquiry."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-047",
+      "conversation_id": "synthetic-v1-ecommerce-frequency-to-pause",
+      "turn_id": "synthetic-v1-ecommerce-frequency-to-pause-turn-02",
+      "question": "Actually, I need all deliveries paused temporarily while I travel; keep the subscription itself.",
+      "context": {
+        "active_intent": "ecommerce.subscription.frequency",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I want a new recurring interval for my coffee deliveries."
+          },
+          {
+            "role": "assistant",
+            "content": "How far apart should the future deliveries be?"
+          },
+          {
+            "role": "user",
+            "content": "Six weeks between every delivery from now on."
+          },
+          {
+            "role": "assistant",
+            "content": "We can continue with the recurring-interval change request."
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.subscription.pause",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The correction switches to temporarily suspending deliveries rather than changing their interval or ending the subscription."
+    },
+    {
+      "case_id": "synthetic-v1-ecommerce-case-048",
+      "conversation_id": "synthetic-v1-ecommerce-frequency-to-pause",
+      "turn_id": "synthetic-v1-ecommerce-frequency-to-pause-turn-03",
+      "question": "No, stop this pause request. I do not want to make any subscription changes now.",
+      "context": {
+        "active_intent": "ecommerce.subscription.pause",
+        "messages": [
+          {
+            "role": "user",
+            "content": "I want a new recurring interval for my coffee deliveries."
+          },
+          {
+            "role": "assistant",
+            "content": "How far apart should the future deliveries be?"
+          },
+          {
+            "role": "user",
+            "content": "Six weeks between every delivery from now on."
+          },
+          {
+            "role": "assistant",
+            "content": "We can continue with the recurring-interval change request."
+          },
+          {
+            "role": "user",
+            "content": "Actually, I need all deliveries paused temporarily while I travel; keep the subscription itself."
+          },
+          {
+            "role": "assistant",
+            "content": "We can discuss temporarily pausing the recurring deliveries."
+          }
+        ]
+      },
+      "expected_decision": "cancel",
+      "expected_intent_id": "ecommerce.subscription.pause",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The user abandons the active pause workflow rather than cancelling the subscription itself."
+    }
+  ]
+}

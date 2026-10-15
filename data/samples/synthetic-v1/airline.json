@@ -1,0 +1,755 @@
+{
+  "schema_version": 1,
+  "sample_pack": "synthetic-v1",
+  "sector": "airline",
+  "workspace": "airline",
+  "language": "en",
+  "catalog_fingerprint": "e158b7efd510b1e3",
+  "cases": [
+    {
+      "case_id": "synthetic-v1-airline-case-001",
+      "conversation_id": "synthetic-v1-airline-conversation-001",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Show me whether leaving a day earlier or later would give me a better flight option.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.search.flexible",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "Comparing nearby departure dates is flexible-date flight search."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-002",
+      "conversation_id": "synthetic-v1-airline-conversation-002",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "The unpaid reservation you are holding for me expires soon; can I have longer to pay?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.booking.hold_extend",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The user seeks extra time on an existing unpaid hold rather than a new hold or payment."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-003",
+      "conversation_id": "synthetic-v1-airline-conversation-003",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "I need the airline to carry my surfboard as checked sports equipment.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.baggage.special",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "A surfboard is special sports baggage, not ordinary extra weight or an animal container."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-004",
+      "conversation_id": "synthetic-v1-airline-conversation-004",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Arrange adjacent seats for everyone travelling in our party.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.seat.together",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The request is specifically for the party to sit together."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-005",
+      "conversation_id": "synthetic-v1-airline-conversation-005",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "I finished check-in but lost the boarding document; send me another copy.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.boarding.pass",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "Check-in is complete and the user needs an issued boarding pass again."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-006",
+      "conversation_id": "synthetic-v1-airline-conversation-006",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Replace the contact phone number saved on this flight reservation.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.passenger.contact",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The changed contact belongs to a reservation rather than a loyalty profile."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-007",
+      "conversation_id": "synthetic-v1-airline-conversation-007",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "My ticket refund application is already in; what stage has it reached?",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.refund.status",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The refund request exists and only its processing status is requested."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-008",
+      "conversation_id": "synthetic-v1-airline-conversation-008",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "The flight I took last month has not earned any miles in my account; claim the missing credit.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.loyalty.missing",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "The missing miles relate to a completed flight, not a non-flight partner."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-009",
+      "conversation_id": "synthetic-v1-airline-conversation-009",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Please register a gluten-free dietary meal request for my upcoming flight.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.assistance.meal",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "A dietary accommodation belongs to special meals rather than a paid menu purchase."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-010",
+      "conversation_id": "synthetic-v1-airline-conversation-010",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Online check-in keeps showing an error after I select my booking; help me get past it.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.checkin.failure",
+      "split": "test",
+      "challenge": "paraphrase",
+      "rationale": "An error in online check-in requires troubleshooting, not initiation of an otherwise working check-in."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-011",
+      "conversation_id": "synthetic-v1-airline-conversation-011",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Do not open another missing-bag report; use my existing report to see where the suitcase is.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.baggage.trace",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "An existing tracing report and a location request distinguish tracking from an initial baggage report."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-012",
+      "conversation_id": "synthetic-v1-airline-conversation-012",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "This reservation has never been paid for; release its temporary hold instead of cancelling a ticket.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.booking.hold_cancel",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "The explicit unpaid hold must be released through hold cancellation, not issued-ticket cancellation."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-013",
+      "conversation_id": "synthetic-v1-airline-conversation-013",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "I am keeping the same cabin and flight; only move my assigned seat to a window.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.seat.select",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "Only seat assignment changes; neither cabin upgrade nor flight change is requested."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-014",
+      "conversation_id": "synthetic-v1-airline-conversation-014",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "I do not need a boarding pass; I need the receipt proving I paid for the airline ticket.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.payment.receipt",
+      "split": "test",
+      "challenge": "negation",
+      "rationale": "The required document is a ticket-payment receipt rather than a boarding document."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-015",
+      "conversation_id": "synthetic-v1-airline-conversation-015",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Change my loyalty name—sorry, the spelling mistake is on the passenger name on my ticket.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.passenger.name",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "The corrected request concerns the ticketed passenger name, not the loyalty profile."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-016",
+      "conversation_id": "synthetic-v1-airline-conversation-016",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Cancel my paid flight—actually, keep the booking and move it to the following week.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.change.flight",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "The final request is a voluntary date change of a paid booking, replacing the initial cancellation request."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-017",
+      "conversation_id": "synthetic-v1-airline-conversation-017",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Check my refund—let me correct that, I have not applied yet; start a refund request for the unused ticket.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.refund.request",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "The user corrects the assumption of an existing application and asks to initiate one."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-018",
+      "conversation_id": "synthetic-v1-airline-conversation-018",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Book my cat on the flight—first, I only want the required dimensions for its travel container.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.assistance.pet_carrier",
+      "split": "test",
+      "challenge": "correction",
+      "rationale": "The user explicitly defers booking and narrows the current request to pet-container requirements."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-019",
+      "conversation_id": "synthetic-v1-airline-conversation-019",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "uh find a return flight from Madrid to Rome, leaving next Monday, back Friday, one adult",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.search.flights",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "Constructed disfluency leaves a clear conventional return-flight search."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-020",
+      "conversation_id": "synthetic-v1-airline-conversation-020",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "can we check, check me in online for the flight tomorrow please",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.checkin.online",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "The repetition does not introduce an error report; the user wants to start online check-in."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-021",
+      "conversation_id": "synthetic-v1-airline-conversation-021",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "my suitcase came off the belt and the wheel is, is broken off, I need to report that",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.baggage.damaged",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "The returned bag is damaged, distinguishing this from missing baggage or an initial compensation application."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-022",
+      "conversation_id": "synthetic-v1-airline-conversation-022",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "how many miles have I got, um, available in my frequent flyer account",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.loyalty.balance",
+      "split": "test",
+      "challenge": "noisy_transcript",
+      "rationale": "Written hesitation retains a straightforward loyalty-mile balance inquiry."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-023",
+      "conversation_id": "synthetic-v1-airline-conversation-023",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "The cancellation is already confirmed; tell me the reason the airline recorded for it.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.disruption.reason",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "The request asks why the flight was cancelled rather than whether cancellation occurred."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-024",
+      "conversation_id": "synthetic-v1-airline-conversation-024",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Issue an official letter documenting the delay so I can attach it to another claim.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.disruption.certificate",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "The user needs evidence of disruption, not initial airline compensation or proof of completed travel."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-025",
+      "conversation_id": "synthetic-v1-airline-conversation-025",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "I paid for my own hotel during your flight cancellation; I want those hotel costs repaid.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.disruption.expenses",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "Personally paid disruption expenses require reimbursement rather than carrier-arranged accommodation."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-026",
+      "conversation_id": "synthetic-v1-airline-conversation-026",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Cancel the award reservation I paid for entirely with miles and return any eligible miles.",
+      "context": {},
+      "expected_decision": "route",
+      "expected_intent_id": "airline.loyalty.award_cancel",
+      "split": "test",
+      "challenge": "near_neighbor",
+      "rationale": "The explicitly mileage-funded award belongs to award cancellation rather than ordinary paid-booking cancellation."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-027",
+      "conversation_id": "synthetic-v1-airline-conversation-027",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Move it to a different one, please.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "ambiguity",
+      "rationale": "The missing referent could be a flight, seat, or another object, so prior context is essential."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-028",
+      "conversation_id": "synthetic-v1-airline-conversation-028",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "There is a problem with my ticket and I need it sorted.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "ambiguity",
+      "rationale": "The message does not specify payment, passenger details, travel changes, or another ticket operation."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-029",
+      "conversation_id": "synthetic-v1-airline-conversation-029",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "I need to sort something out with my frequent flyer miles.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "ambiguity",
+      "rationale": "The requested loyalty operation is unspecified and could concern balance, missing credit, expiry, or redemption."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-030",
+      "conversation_id": "synthetic-v1-airline-conversation-030",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Choose a window seat for me and check how my existing ticket refund is progressing.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "multiple_intents",
+      "rationale": "Seat selection and refund tracking are two independent requests with no chosen first task."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-031",
+      "conversation_id": "synthetic-v1-airline-conversation-031",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Buy an extra checked bag and change the contact email on my reservation.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "multiple_intents",
+      "rationale": "Additional baggage purchase and reservation-contact maintenance are separate operations."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-032",
+      "conversation_id": "synthetic-v1-airline-conversation-032",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Create a frequent flyer membership for me and request a vegetarian special meal.",
+      "context": {},
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "multiple_intents",
+      "rationale": "Loyalty enrollment and dietary meal accommodation require distinct routes."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-033",
+      "conversation_id": "synthetic-v1-airline-conversation-033",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Calculate what my monthly mortgage repayment would be at a lower interest rate.",
+      "context": {},
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "out_of_scope",
+      "rationale": "A mortgage repayment calculation is outside the airline catalog."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-034",
+      "conversation_id": "synthetic-v1-airline-conversation-034",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Tell me how to repair a television that has sound but no picture.",
+      "context": {},
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "out_of_scope",
+      "rationale": "Home television repair has no airline-catalog operation."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-035",
+      "conversation_id": "synthetic-v1-airline-conversation-035",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Transfer this chat to a live airline service representative, please.",
+      "context": {},
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "handoff",
+      "rationale": "The user explicitly requests human assistance, which is labeled handoff with no intent ID."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-036",
+      "conversation_id": "synthetic-v1-airline-conversation-036",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "I would like to speak with an actual person from the airline support team now.",
+      "context": {},
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "handoff",
+      "rationale": "The sole requested action is a human-support transfer."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-037",
+      "conversation_id": "synthetic-v1-airline-conversation-keep-outbound",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Only the return leg; keep the outbound flight as it is.",
+      "context": {
+        "clarification_options": [
+          "airline.cancel.booking",
+          "airline.cancel.partial"
+        ],
+        "clarifications": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "I need to cancel something in my paid return-flight reservation."
+          },
+          {
+            "role": "assistant",
+            "content": "Should the whole reservation be cancelled, or only one part of it?"
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "airline.cancel.partial",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The clarification reply selects cancellation of only one segment of the paid reservation."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-038",
+      "conversation_id": "synthetic-v1-airline-conversation-keep-outbound",
+      "turn_id": "synthetic-v1-airline-turn-002",
+      "question": "Stop that cancellation request; I will keep both flights.",
+      "context": {
+        "active_intent": "airline.cancel.partial",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Only the return leg; keep the outbound flight as it is."
+          },
+          {
+            "role": "assistant",
+            "content": "Your request concerns the return leg. No cancellation has been carried out."
+          }
+        ]
+      },
+      "expected_decision": "cancel",
+      "expected_intent_id": "airline.cancel.partial",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The user cancels the active partial-cancellation workflow, not the underlying reservation."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-039",
+      "conversation_id": "synthetic-v1-airline-conversation-keep-outbound",
+      "turn_id": "synthetic-v1-airline-turn-003",
+      "question": "On the trip I am keeping, put me in an aisle seat.",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Stop that cancellation request; I will keep both flights."
+          },
+          {
+            "role": "assistant",
+            "content": "The cancellation request has been stopped; your flights are unchanged."
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "airline.seat.select",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "After abandoning cancellation, the user introduces a seat-assignment request."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-040",
+      "conversation_id": "synthetic-v1-airline-conversation-keep-outbound",
+      "turn_id": "synthetic-v1-airline-turn-004",
+      "question": "Please let a live agent take over arranging this seat.",
+      "context": {
+        "active_intent": "airline.seat.select",
+        "messages": [
+          {
+            "role": "user",
+            "content": "On the trip I am keeping, put me in an aisle seat."
+          },
+          {
+            "role": "assistant",
+            "content": "I can help with a seat assignment on the existing trip."
+          }
+        ]
+      },
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "context",
+      "rationale": "An explicit human handoff supersedes the current seat-selection flow."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-041",
+      "conversation_id": "synthetic-v1-airline-conversation-bag-arrival",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "The bag's whereabouts, not a reimbursement.",
+      "context": {
+        "clarification_options": [
+          "airline.baggage.trace",
+          "airline.baggage.claim_status"
+        ],
+        "clarifications": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "I already have a delayed-bag report and need an update."
+          },
+          {
+            "role": "assistant",
+            "content": "Are you checking where the bag is or the progress of a baggage reimbursement claim?"
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "airline.baggage.trace",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The reply resolves the clarification toward physical bag tracking rather than claim processing."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-042",
+      "conversation_id": "synthetic-v1-airline-conversation-bag-arrival",
+      "turn_id": "synthetic-v1-airline-turn-002",
+      "question": "Stop searching for the suitcase for now.",
+      "context": {
+        "active_intent": "airline.baggage.trace",
+        "messages": [
+          {
+            "role": "user",
+            "content": "The bag's whereabouts, not a reimbursement."
+          },
+          {
+            "role": "assistant",
+            "content": "I can help check the location using your existing tracing report."
+          }
+        ]
+      },
+      "expected_decision": "cancel",
+      "expected_intent_id": "airline.baggage.trace",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The user abandons the active location lookup without requesting closure of the underlying baggage report."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-043",
+      "conversation_id": "synthetic-v1-airline-conversation-bag-arrival",
+      "turn_id": "synthetic-v1-airline-turn-003",
+      "question": "The handle is snapped off; I want to report the damage.",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Stop searching for the suitcase for now."
+          },
+          {
+            "role": "assistant",
+            "content": "The lookup has been stopped."
+          },
+          {
+            "role": "user",
+            "content": "The courier has now brought the suitcase."
+          },
+          {
+            "role": "assistant",
+            "content": "Has the suitcase arrived in good condition?"
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "airline.baggage.damaged",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "Prior turns establish that the bag arrived; the latest turn reports physical damage, not continuing loss."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-044",
+      "conversation_id": "synthetic-v1-airline-conversation-bag-arrival",
+      "turn_id": "synthetic-v1-airline-turn-004",
+      "question": "Instead of continuing this damage report, I want to change the phone number on my booking.",
+      "context": {
+        "active_intent": "airline.baggage.damaged",
+        "messages": [
+          {
+            "role": "user",
+            "content": "The handle is snapped off; I want to report the damage."
+          },
+          {
+            "role": "assistant",
+            "content": "I can help report the damage to the returned bag."
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "airline.passenger.contact",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The explicit topic switch requests reservation-contact maintenance rather than a reply within baggage reporting."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-045",
+      "conversation_id": "synthetic-v1-airline-conversation-disrupted-trip",
+      "turn_id": "synthetic-v1-airline-turn-001",
+      "question": "Find me a replacement flight; I still need to travel.",
+      "context": {
+        "clarification_options": [
+          "airline.disruption.rebook",
+          "airline.refund.request"
+        ],
+        "clarifications": 1,
+        "messages": [
+          {
+            "role": "user",
+            "content": "The airline cancelled my flight and I need help."
+          },
+          {
+            "role": "assistant",
+            "content": "Would you like another flight after this cancellation, or to request a ticket refund?"
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "airline.disruption.rebook",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The reply selects replacement travel after airline disruption rather than refund."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-046",
+      "conversation_id": "synthetic-v1-airline-conversation-disrupted-trip",
+      "turn_id": "synthetic-v1-airline-turn-002",
+      "question": "Abandon the replacement-flight request for the moment.",
+      "context": {
+        "active_intent": "airline.disruption.rebook",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Find me a replacement flight; I still need to travel."
+          },
+          {
+            "role": "assistant",
+            "content": "I can help look for replacement travel after the airline cancellation."
+          }
+        ]
+      },
+      "expected_decision": "cancel",
+      "expected_intent_id": "airline.disruption.rebook",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The user cancels the active rebooking request without initiating ticket cancellation."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-047",
+      "conversation_id": "synthetic-v1-airline-conversation-disrupted-trip",
+      "turn_id": "synthetic-v1-airline-turn-003",
+      "question": "What reason did the airline give for cancelling that flight?",
+      "context": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "The airline cancelled my flight and I need help."
+          },
+          {
+            "role": "assistant",
+            "content": "I can help look for replacement travel."
+          },
+          {
+            "role": "user",
+            "content": "Abandon the replacement-flight request for the moment."
+          },
+          {
+            "role": "assistant",
+            "content": "The replacement-flight request has been stopped."
+          }
+        ]
+      },
+      "expected_decision": "route",
+      "expected_intent_id": "airline.disruption.reason",
+      "split": "test",
+      "challenge": "context",
+      "rationale": "History identifies the airline-cancelled flight; the new question requests its reported cause."
+    },
+    {
+      "case_id": "synthetic-v1-airline-case-048",
+      "conversation_id": "synthetic-v1-airline-conversation-disrupted-trip",
+      "turn_id": "synthetic-v1-airline-turn-004",
+      "question": "Have a person explain the cancellation to me, please.",
+      "context": {
+        "active_intent": "airline.disruption.reason",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What reason did the airline give for cancelling that flight?"
+          },
+          {
+            "role": "assistant",
+            "content": "I can help find the reported cause of the flight cancellation."
+          }
+        ]
+      },
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "split": "test",
+      "challenge": "context",
+      "rationale": "The user explicitly requests a person to handle the explanation, so the decision is handoff."
+    }
+  ]
+}

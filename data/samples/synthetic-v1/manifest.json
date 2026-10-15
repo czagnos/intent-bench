@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "sample_pack": "synthetic-v1",
+  "language": "en",
+  "license": "Apache-2.0",
+  "label_origin": "ai_assisted_synthetic",
+  "authorship": "AI-assisted authoring and catalog-based annotation by Codex; labels are synthetic author annotations, not human-reviewed real transcripts.",
+  "generation_method": "New English examples composed against the four bundled intent catalogs, including deliberate ambiguity, contrast, constructed speech noise, and explicit contextual replies. No customer records, provider responses, or real personal data were copied.",
+  "evaluation_method": "Each turn is scored against its own explicit pre-turn snapshot. Earlier predictions are not propagated into later turns; this is snapshot evaluation, not a sequential conversation rollout.",
+  "limitations": [
+    "These public examples are development and regression samples, not an independent held-out benchmark or evidence of production accuracy.",
+    "Coverage is illustrative and deliberately balanced across selected challenges; it does not estimate real traffic frequencies or exhaust every catalog operation.",
+    "Written noise is constructed text, not actual ASR output, and cannot measure audio recognition accuracy.",
+    "Exact normalized wording checks reduce literal duplicates only; they do not establish semantic independence from catalog examples or other synthetic cases.",
+    "Labels reflect the bundled catalog boundaries and require reassessment if those boundaries change. Ordinary CSV imports remain unreviewed.",
+    "Per-turn snapshots omit many real-world timing, state, language, privacy, and distribution shifts. No reliability guarantee follows from a high sample score."
+  ],
+  "sectors": ["banking", "airline", "insurance", "ecommerce"]
+}
