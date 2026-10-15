@@ -132,6 +132,7 @@ class Review(BaseModel):
 class EvaluationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     execution_limits: ExecutionLimits = Field(default_factory=ExecutionLimits)
+    repetitions: int = Field(default=1, strict=True, ge=1, le=5)
     methods: list[Method] = Field(default=["lexical"], min_length=1, max_length=3)
     embedding_ids: list[ModelId] = Field(default=["default"], min_length=1, max_length=8)
     llm_ids: list[ModelId] = Field(default=["default"], min_length=1, max_length=12)

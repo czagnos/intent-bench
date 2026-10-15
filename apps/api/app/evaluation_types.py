@@ -7,6 +7,7 @@ from typing import Literal, TypedDict
 
 from .contracts import DecisionType
 from .execution import ExecutionAccounting
+from .repeat_statistics import RepeatGroupSummary
 from .vector_index import IndexSource
 
 EvaluationPhase = Literal["index", "calibration", "cases"]
@@ -73,6 +74,8 @@ class IndexPreparationData(TypedDict):
 
 
 class EvaluationResult(TypedDict):
+    group_id: str
+    repeat_index: int
     complete: bool
     completed_count: int
     selected_count: int
@@ -99,3 +102,4 @@ class EvaluationCheckpoint(TypedDict, total=False):
     phase: EvaluationPhase
     calibrations: dict[str, CalibrationSummary | None]
     calibration_fits: list[CalibrationFit]
+    group_summaries: list[RepeatGroupSummary]

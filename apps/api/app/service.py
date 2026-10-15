@@ -2,7 +2,9 @@ import copy
 import json
 import threading
 import time
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
+from typing import Literal, TypedDict
 
 from .config import ROOT, Settings
 from .calibration import Calibrator, data_fingerprint, public_calibration
@@ -10,16 +12,64 @@ from .catalog_scope import core_ids, select_catalogs
 from .catalog_presets import workspace_preset
 from .contracts import Intent
 from .evaluation import summarize, diagnose
-from .evaluation_types import EvaluationResult
+from .evaluation_types import EvaluationCheckpoint, EvaluationMetrics, EvaluationResult
 from .execution import EvaluationController, EvaluationStopped, ExecutionAccounting, ExecutionLimits, activate_execution, execution_checkpoint, execution_stage
 from .model_catalog import MAX_VARIANTS, ModelCatalog, embedding_key, embedding_runtime_key, llm_metadata
 from .policy import apply_decision, baseline_decision, context_decision, explicit_workflow_slots
 from .providers import is_openrouter
 from .retrieval import Embeddings, ModelUnavailable, Retriever, tokens
 from .reranker import Reranker
+from .repeat_statistics import RepeatGroupSummary, RepeatResult, summarize_repeats
 from .selector import Selector, prompt_version
 from .store import Store, fingerprint
 from .vector_index import CorpusRow, VectorIndex, build_corpus, make_identity
+
+
+class _RerankerRuntimeSettings(TypedDict):
+    model: str
+    mode: Literal["disabled", "local", "http"]
+    protocol: Literal["cohere", "tei"] | None
+    endpoint: str | None
+    credential: str | None
+    timeout_seconds: float | None
+    batch_size: int | None
+    local_files_only: bool | None
+
+
+def _reranker_runtime_key(settings: Settings) -> str:
+    """Private identity of compatible inference; independent of the retrieval/LLM variant."""
+    identity: _RerankerRuntimeSettings = {
+        "model": settings.reranker_model, "mode": settings.reranker_mode,
+        "protocol": settings.reranker_protocol if settings.reranker_mode == "http" else None,
+        "endpoint": settings.reranker_base_url.strip().rstrip("/") if settings.reranker_mode == "http" else None,
+        "credential": settings.reranker_api_key.strip() if settings.reranker_mode == "http" else None,
+        "timeout_seconds": settings.reranker_timeout_seconds if settings.reranker_mode == "http" else None,
+        "batch_size": settings.reranker_batch_size if settings.reranker_mode == "local" else None,
+        "local_files_only": settings.reranker_local_files_only if settings.reranker_mode == "local" else None,
+    }
+    return fingerprint(identity)
+
+
+def repeated_summaries(
+    results: Sequence[EvaluationResult], group_ids: Sequence[str], repetitions: int,
+) -> list[RepeatGroupSummary]:
+    """Pass only the run statistics and outcome identities to the repeat reducer."""
+    projected: list[RepeatResult] = [{
+        "group_id": result["group_id"], "repeat_index": result["repeat_index"],
+        "complete": result["complete"], "completed_count": result["completed_count"],
+        "selected_count": result["selected_count"],
+        "metrics": {
+            "routing_accuracy": result["metrics"]["routing_accuracy"],
+            "decision_accuracy": result["metrics"]["decision_accuracy"],
+            "macro_f1": result["metrics"]["macro_f1"],
+            "recall_at_k": result["metrics"]["recall_at_k"],
+            "latency_ms": {"p95": result["metrics"]["latency_ms"]["p95"]},
+            "errors": result["metrics"]["errors"], "total": result["metrics"]["total"],
+        },
+        "records": [{"case_id": record["case_id"], "decision": record["decision"],
+                     "intent_id": record["intent_id"]} for record in result["records"]],
+    } for result in results]
+    return summarize_repeats(projected, group_ids=group_ids, planned_repetitions=repetitions)
 
 
 class Studio:
@@ -100,6 +150,12 @@ class Studio:
             embeddings = self.embeddings
         else:
             embeddings = self.embedding_clients.setdefault(model_key, Embeddings(settings, transport=self.embeddings.transport))
+        return self._retriever_with_embeddings(workspace, version, intents, embeddings)
+
+    def _retriever_with_embeddings(
+        self, workspace: str, version: str, intents: list[Intent], embeddings: Embeddings,
+    ) -> Retriever:
+        settings = embeddings.settings
         rows = build_corpus(intents, settings.retrieval_representation)
         formatted = embeddings.prepare_texts([row.text for row in rows])
         identity = make_identity(workspace, version, embedding_key(settings), settings.retrieval_representation,
@@ -133,14 +189,13 @@ class Studio:
 
     def get_reranker(self, settings):
         # A private runtime identity; neither endpoints nor credentials enter exported results.
-        key = fingerprint({**Reranker(settings).metadata, "endpoint": settings.reranker_base_url,
-                           "credential": settings.reranker_api_key})
+        key = _reranker_runtime_key(settings)
         with self.lock:
             if key not in self.reranker_clients:
                 self.reranker_clients[key] = Reranker(settings, transport=self.reranker.transport)
             return self.reranker_clients[key]
 
-    def compute(self, text, state, method, retriever, channel="chat", emit=None, variant=None, preparation_error=None, calibration=None):
+    def compute(self, text, state, method, retriever, channel="chat", emit=None, variant=None, preparation_error=None, calibration=None, reranker: Reranker | None = None):
         started = time.perf_counter()
         settings = variant.settings if variant else self.settings
         timings, candidates, usage = {}, [], {}
@@ -181,7 +236,7 @@ class Studio:
                     candidates = []
                     trace["final"] = []
                     t = time.perf_counter()
-                    candidates = self.get_reranker(settings).rank(query, pool, retriever.intents, settings.candidate_k)
+                    candidates = (reranker or self.get_reranker(settings)).rank(query, pool, retriever.intents, settings.candidate_k)
                     timings["reranking"] = (time.perf_counter()-t)*1000
                     emit("reranking", f"{len(candidates)} candidates reranked", candidates=[c.model_dump() for c in candidates])
                 trace["final"] = [c.intent_id for c in candidates]
@@ -271,6 +326,8 @@ class Studio:
         scopes = select_catalogs(catalog, options.catalog_sizes, cases, fit_cases, options.catalog_seed)
         if len(scopes)*len(variants) > MAX_VARIANTS:
             raise ValueError(f"At most {MAX_VARIANTS} combinations can run, including catalog sizes.")
+        if len(cases)*len(scopes)*len(variants)*options.repetitions > 100000:
+            raise ValueError("At most 100000 case executions can run, including repetitions.")
         runs, calibrations = [], {}
         for variant in variants:
             for scope in scopes:
@@ -278,6 +335,9 @@ class Studio:
                 metadata = {**variant.metadata, "id": run_id, "base_variant_id": variant.id, "catalog": scope["metadata"]}
                 runs.append((variant, scope, metadata))
                 calibrations[run_id] = None if scale_fit and variant.method == "e5" else self.calibrator.resolve(workspace, variant, scope["version"], options.semantic_rejection, cases)
+        runs = [(variant, scope, {**metadata, "group_id": metadata["id"], "repeat_index": repeat_index,
+                                 "id": metadata["id"] if options.repetitions == 1 else f"{metadata['id']}__repeat_{repeat_index}"})
+                for repeat_index in range(1, options.repetitions + 1) for variant, scope, metadata in runs]
         for scope in scopes:
             self.store.save_catalog_snapshot(workspace, scope)
         job = self.store.create_job(workspace, "evaluation", {
@@ -286,6 +346,7 @@ class Studio:
             "dataset_fingerprint": fingerprint(cases), "dataset_versions": sorted({c["dataset_version"] for c in cases}),
             "selected_count": len(cases), "unreviewed_excluded": sum(not c["reviewed"] for c in all_cases),
             "progress": 0, "total": len(cases)*len(runs), "results": {}, "calibrations": calibrations,
+            "group_summaries": repeated_summaries([], list(calibrations), options.repetitions),
             "cancel_requested": False, "stop_reason": None, "accounting": ExecutionAccounting().model_dump(),
             "scale_calibration": {"source": options.scale_calibration_source, "sample_count": len(fit_cases),
                                   "dataset_fingerprint": data_fingerprint(fit_cases), "max_oos_false_accept_rate": options.scale_max_oos_false_accept_rate} if scale_fit else None,
@@ -308,27 +369,43 @@ class Studio:
     def _execute_evaluation(self, workspace, job_id, cases, runs, calibrations, fit_cases):
         job = self.store.job(workspace, job_id)
         results: dict[str, EvaluationResult] = {}
-        progress, index_errors, fitted, fit_errors, baselines = 0, {}, {}, {}, {}
+        progress, index_errors, fitted, fit_errors = 0, {}, {}, {}
+        baselines: dict[tuple[str, int], tuple[int, EvaluationMetrics]] = {}
         pinned_retrievers: dict[tuple[str, str, str], Retriever] = {}
+        pinned_embeddings: dict[str, Embeddings] = {}
+        pinned_rerankers: dict[str, Reranker] = {}
+
+        def checkpoint(updates: EvaluationCheckpoint) -> None:
+            updates["group_summaries"] = repeated_summaries(
+                list(results.values()), list(calibrations), job["options"]["repetitions"])
+            self.store.checkpoint_evaluation(workspace, job_id, updates)
+
         try:
             for variant, scope, metadata in runs:
                 execution_checkpoint()
                 method, run_id = variant.method, metadata["id"]
+                group_id = metadata["group_id"]
                 records = []
                 result: EvaluationResult = {**metadata, "complete": False, "completed_count": 0, "selected_count": len(cases),
                           "records": records, "metrics": summarize(records, variant.settings.candidate_k),
-                          "model": None, "calibration": calibrations.get(run_id), "calibration_build_ms": 0,
+                          "model": None, "calibration": calibrations.get(group_id), "calibration_build_ms": 0,
                           "reranker_prepare_ms": 0, "index_preparation": None, "index_build_ms": 0,
                           "index_cache_hit": False, "index_error": None, "preparation_error": None,
                           "scaling": {"baseline_intent_count": None, "accuracy_delta_pp": None, "p95_ratio": None}}
                 results[run_id] = result
-                self.store.checkpoint_evaluation(workspace, job_id, {"active_variant": run_id, "phase": "index", "results": results})
+                checkpoint({"active_variant": run_id, "phase": "index", "results": results})
                 started = time.perf_counter()
                 model_key = embedding_key(variant.settings)
-                cache_key = (workspace, scope["version"], embedding_runtime_key(variant.settings))
-                retriever_cached = cache_key in self.retrievers
+                runtime_key = embedding_runtime_key(variant.settings)
+                cache_key = (workspace, scope["version"], runtime_key)
+                retriever_cached = cache_key in pinned_retrievers
                 if cache_key not in pinned_retrievers:
-                    pinned_retrievers[cache_key] = self.retriever(workspace, scope["version"], variant.settings)
+                    if runtime_key not in pinned_embeddings:
+                        pinned_embeddings[runtime_key] = Embeddings(
+                            variant.settings.model_copy(deep=True), transport=self.embeddings.transport)
+                    pinned_retrievers[cache_key] = self._retriever_with_embeddings(
+                        workspace, scope["version"], [Intent.model_validate(intent) for intent in scope["intents"]],
+                        pinned_embeddings[runtime_key])
                 retriever = pinned_retrievers[cache_key]
                 execution_checkpoint()
                 cache_hit = retriever_cached if method == "lexical" else False
@@ -344,17 +421,23 @@ class Studio:
                         preparation_error = index_errors[preparation_key] = exc
                 index_ms = round((time.perf_counter()-started)*1000, 2)
                 reranker_ms = 0
+                reranker = None
                 if variant.retrieval and variant.retrieval.reranker_id and preparation_error is None:
+                    reranker_key = _reranker_runtime_key(variant.settings)
+                    if reranker_key not in pinned_rerankers:
+                        pinned_rerankers[reranker_key] = Reranker(
+                            variant.settings.model_copy(deep=True), transport=self.reranker.transport)
+                    reranker = pinned_rerankers[reranker_key]
                     started = time.perf_counter()
                     try:
                         with execution_stage("index"):
-                            self.get_reranker(variant.settings).prepare()
+                            reranker.prepare()
                     except ModelUnavailable as exc:
                         preparation_error = exc
                     reranker_ms = round((time.perf_counter()-started)*1000, 2)
                 calibration_ms = 0
                 if method == "e5" and fit_cases and preparation_error is None:
-                    self.store.checkpoint_evaluation(workspace, job_id, {"phase": "calibration"})
+                    checkpoint({"phase": "calibration"})
                     started = time.perf_counter()
                     if preparation_key not in fitted and preparation_key not in fit_errors:
                         try:
@@ -364,22 +447,22 @@ class Studio:
                             fit_errors[preparation_key] = exc
                     preparation_error = fit_errors.get(preparation_key)
                     if preparation_key in fitted:
-                        calibrations[run_id] = public_calibration(fitted[preparation_key])
+                        calibrations[group_id] = public_calibration(fitted[preparation_key])
                     calibration_ms = round((time.perf_counter()-started)*1000, 2)
-                    self.store.checkpoint_evaluation(workspace, job_id, {"calibrations": calibrations, "calibration_fits": list(fitted.values())})
-                result.update(calibration=calibrations.get(run_id), calibration_build_ms=calibration_ms,
+                    checkpoint({"calibrations": calibrations, "calibration_fits": list(fitted.values())})
+                result.update(calibration=calibrations.get(group_id), calibration_build_ms=calibration_ms,
                               reranker_prepare_ms=reranker_ms,
                               index_preparation=index_preparation.model_dump() if index_preparation else None,
                               index_build_ms=index_ms, index_cache_hit=cache_hit,
                               index_error=str(index_errors[preparation_key]) if method != "lexical" and preparation_key in index_errors else None,
                               preparation_error=str(preparation_error) if preparation_error else None)
-                self.store.checkpoint_evaluation(workspace, job_id, {"phase": "cases", "results": results})
+                checkpoint({"phase": "cases", "results": results})
                 for case in cases:
                     execution_checkpoint()
                     # The labels select the fixed evaluation cohort, never the per-query candidate ranking or LLM input.
-                    state = {"active_intent": None, "slots": {}, "pending_slot": None, "pending_confirmation": False, "clarification_options": [], "messages": [], **case.get("context", {})}
+                    state = {"active_intent": None, "slots": {}, "pending_slot": None, "pending_confirmation": False, "clarification_options": [], "messages": [], **copy.deepcopy(case.get("context", {}))}
                     with execution_stage("cases"):
-                        output, _ = self.compute(case["question"], state, method, retriever, variant=variant, preparation_error=preparation_error, calibration=calibrations.get(run_id))
+                        output, _ = self.compute(case["question"], state, method, retriever, variant=variant, preparation_error=preparation_error, calibration=calibrations.get(group_id), reranker=reranker)
                     expected = case["expected_decision"]
                     correct = output["decision"] == expected and (expected != "route" or output["intent_id"] == case["expected_intent_id"])
                     record = {"case_id": case["case_id"], "question": case["question"], "expected_decision": expected, "expected_intent_id": case["expected_intent_id"], "decision": output["decision"], "intent_id": output["intent_id"], "correct": correct, "candidate_hit": case["expected_intent_id"] in [c["intent_id"] for c in output["candidates"]], "total_ms": output["timings_ms"]["compute_total"], "timings_ms": output["timings_ms"], "usage": output["usage"], "reason_code": output["reason_code"], "message": output["message"], "diagnostics": output.get("diagnostics"), "rejection_score": output.get("rejection_score"), "error": output["message"] if output["decision"] == "error" else None,
@@ -390,20 +473,20 @@ class Studio:
                     progress += 1
                     result.update(completed_count=len(records), complete=len(records) == len(cases),
                                   metrics=summarize(records, variant.settings.candidate_k), model=output["model"])
-                    self.store.checkpoint_evaluation(workspace, job_id, {"progress": progress, "results": results})
+                    checkpoint({"progress": progress, "results": results})
                     execution_checkpoint()
                 metrics = summarize(records, variant.settings.candidate_k)
-                baseline = baselines.setdefault(variant.id, (scope["metadata"]["intent_count"], metrics))
+                baseline = baselines.setdefault((variant.id, metadata["repeat_index"]), (scope["metadata"]["intent_count"], metrics))
                 accuracy, base_accuracy = metrics["routing_accuracy"], baseline[1]["routing_accuracy"]
                 base_p95 = baseline[1]["latency_ms"]["p95"]
                 result["scaling"] = {"baseline_intent_count": baseline[0],
                                      "accuracy_delta_pp": 100*(accuracy-base_accuracy) if accuracy is not None and base_accuracy is not None else None,
                                      "p95_ratio": metrics["latency_ms"]["p95"]/base_p95 if base_p95 and not metrics["errors"] and not baseline[1]["errors"] else None}
-                self.store.checkpoint_evaluation(workspace, job_id, {"progress": progress, "results": results})
+                checkpoint({"progress": progress, "results": results})
             self.store.finalize_evaluation(workspace, job_id, "completed")
         except EvaluationStopped as exc:
-            self.store.checkpoint_evaluation(workspace, job_id, {"results": results, "progress": progress})
+            checkpoint({"results": results, "progress": progress})
             self.store.finalize_evaluation(workspace, job_id, "stopped", stop_reason=exc.stop_reason)
         except Exception:
-            self.store.checkpoint_evaluation(workspace, job_id, {"results": results, "progress": progress})
+            checkpoint({"results": results, "progress": progress})
             self.store.finalize_evaluation(workspace, job_id, "failed", error="The evaluation could not complete. Check the model and data configuration.")
