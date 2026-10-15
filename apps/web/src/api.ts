@@ -164,6 +164,8 @@ export type LlmMetadata = {
     }
 );
 export type Variant = {
+  group_id?: string;
+  repeat_index?: number;
   model_labels?: { embedding?: string; llm?: string; reranker?: string };
   retrieval_profile?: RetrievalProfile;
   reranker?: { model: string; mode: string } | null;
@@ -287,13 +289,18 @@ export type EvalRecord = {
   diagnostics?: Record<string, unknown> | null;
 };
 export type EvaluationResult = {
+  group_id?: string;
+  repeat_index?: number;
+  complete?: boolean;
+  completed_count?: number;
+  selected_count?: number;
   model_labels?: { embedding?: string; llm?: string; reranker?: string };
   retrieval_profile?: RetrievalProfile;
   reranker?: { model: string; mode: string } | null;
   reranker_prepare_ms?: number;
   metrics: Metrics;
   records: EvalRecord[];
-  model: string;
+  model: string | null;
   method?: MethodId;
   embedding?: EmbeddingMetadata | null;
   llm?: LlmMetadata | null;
@@ -306,14 +313,112 @@ export type EvaluationResult = {
   calibration_build_ms?: number;
   preparation_error?: string | null;
   scaling?: {
-    baseline_intent_count: number;
+    baseline_intent_count: number | null;
     accuracy_delta_pp: number | null;
     p95_ratio: number | null;
   };
 };
+export type ExecutionLimits = {
+  max_provider_requests?: number | null;
+  max_duration_seconds?: number | null;
+  max_reported_cost_usd?: number | null;
+};
+export type EvaluationExecutionOptions = {
+  repetitions: number;
+  execution_limits?: ExecutionLimits;
+};
+// Saved artifacts can predate individual options; request payloads use EvaluationExecutionOptions.
+export type EvaluationSavedOptions = {
+  repetitions?: number;
+  execution_limits?: ExecutionLimits;
+  methods?: MethodId[];
+  embedding_ids?: string[];
+  llm_ids?: string[];
+  semantic_rejection?: "calibrated" | "off";
+  source?: "all" | "seed" | "customer";
+  split?: "dev" | "calibration" | "test";
+  limit?: number;
+  catalog_sizes?: number[] | null;
+  catalog_seed?: number;
+  scale_calibration_source?: "seed" | "customer";
+  scale_max_oos_false_accept_rate?: number;
+  retrieval_profiles?: RetrievalProfile[] | null;
+};
+export type EvaluationStatus = "queued" | "running" | "completed" | "stopped" | "cancelled" | "failed";
+export type EvaluationStopReason =
+  | "request_limit"
+  | "duration_limit"
+  | "reported_cost_limit"
+  | "reported_cost_unknown"
+  | "user_cancelled"
+  | "interrupted";
+export type ExecutionUsageTotals = {
+  provider_requests: number;
+  known_prompt_tokens: number;
+  known_completion_tokens: number;
+  known_total_tokens: number;
+  unknown_prompt_token_requests: number;
+  unknown_completion_token_requests: number;
+  unknown_total_token_requests: number;
+  known_cost_usd: number;
+  unknown_cost_requests: number;
+  reported_cost_usd: number | null;
+};
+export type ServiceStageAccounting = ExecutionUsageTotals & {
+  service: "embedding" | "llm" | "typesafe" | "reranker";
+  stage: "evaluation" | "index" | "calibration" | "cases";
+};
+export type ExecutionAccounting = ExecutionUsageTotals & {
+  by_service_stage: ServiceStageAccounting[];
+};
+export type RepeatMetricSummary = {
+  count: number;
+  mean: number | null;
+  sample_sd: number | null;
+  min: number | null;
+  max: number | null;
+};
+export type RepeatGroupMetrics = {
+  routing_accuracy: RepeatMetricSummary;
+  decision_accuracy: RepeatMetricSummary;
+  macro_f1: RepeatMetricSummary;
+  recall_at_k: RepeatMetricSummary;
+  latency_p95_ms: RepeatMetricSummary;
+  technical_error_rate: RepeatMetricSummary;
+};
+export type RepeatCaseDisagreement = {
+  case_id: string;
+  distinct_outcome_count: number;
+  disagrees: boolean;
+};
+export type RepeatDisagreementSummary = {
+  compared_repeat_count: number;
+  eligible_case_count: number;
+  excluded_technical_error_case_count: number;
+  disagreeing_case_count: number;
+  disagreement_rate: number | null;
+  cases: RepeatCaseDisagreement[];
+};
+export type RepeatGroupSummary = {
+  group_id: string;
+  planned_count: number;
+  complete_count: number;
+  partial_count: number;
+  missing_count: number;
+  metrics: RepeatGroupMetrics;
+  latency_label: string;
+  disagreement: RepeatDisagreementSummary;
+};
 export type Evaluation = {
   id: string;
-  status: string;
+  status: EvaluationStatus;
+  options?: EvaluationSavedOptions;
+  cancel_requested?: boolean;
+  stop_reason?: EvaluationStopReason | null;
+  accounting?: ExecutionAccounting;
+  started?: number;
+  elapsed_ms?: number;
+  group_summaries?: RepeatGroupSummary[];
   created: number;
   selected_count: number;
   unreviewed_excluded: number;
