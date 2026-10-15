@@ -11,7 +11,8 @@ from .choice_routing import (CandidateContext, ChoiceQuestion, Conversation, Pri
                              RoutingContext, SelectionState, ROUTING_INSTRUCTIONS,
                              make_routing_request, selection_from_choices)
 from .contracts import Candidate, Intent, RoutingSelection
-from .providers import ModelUnavailable, TYPESAFE_BASE_URL, response_json
+from .execution import reserve_provider_request
+from .providers import ModelUnavailable, TYPESAFE_BASE_URL, account_provider_response, response_json
 
 PROMPT_VERSION = "router-en-typesafe-v2-multisector-choice"
 
@@ -75,9 +76,11 @@ def select(settings: Settings, transport: httpx.BaseTransport | None, text: str,
     try:
         request = make_request(settings, text, state, candidates, catalog)
         with httpx.Client(timeout=settings.llm_timeout_seconds, transport=transport) as client:
+            attempt = reserve_provider_request("typesafe")
             response = client.post(TYPESAFE_BASE_URL + "/systemone",
                                    headers={"Authorization": "Bearer " + settings.resolved_llm_api_key},
                                    json=request.model_dump())
+            account_provider_response(attempt, response)
             data = SystemOneResponse.model_validate(response_json(response, "TypeSafe"))
         validate_answers(data, request)
         selection = routing_selection(data, request, catalog)

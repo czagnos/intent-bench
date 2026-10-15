@@ -5,7 +5,8 @@ import threading
 import httpx
 import numpy as np
 
-from .providers import ModelUnavailable, response_json
+from .execution import execution_checkpoint, reserve_provider_request
+from .providers import ModelUnavailable, account_provider_response, response_json
 
 
 class Reranker:
@@ -29,10 +30,12 @@ class Reranker:
                 "document_format": "intent-description-example-exclusions-rule-v1"}
 
     def prepare(self):
+        execution_checkpoint()
         if not self.enabled:
             raise ModelUnavailable("Reranker connection is not configured.")
         if self.settings.reranker_mode == "local":
             with self.lock:
+                execution_checkpoint()
                 if self.model is None:
                     try:
                         from sentence_transformers import CrossEncoder
@@ -41,6 +44,7 @@ class Reranker:
                                                   max_length=512)
                     except Exception as exc:
                         raise ModelUnavailable("Could not load the reranker. Check ML dependencies and local model files.") from exc
+                execution_checkpoint()
 
     def scores(self, query, documents):
         self.prepare()
@@ -48,12 +52,14 @@ class Reranker:
             return []
         s = self.settings
         if s.reranker_mode == "local":
-            try:
-                with self.lock:
+            with self.lock:
+                execution_checkpoint()
+                try:
                     values = np.asarray(self.model.predict([[query, text] for text in documents],
                                         batch_size=s.reranker_batch_size, show_progress_bar=False)).reshape(-1).tolist()
-            except Exception as exc:
-                raise ModelUnavailable("The local reranker request failed.") from exc
+                except Exception as exc:
+                    raise ModelUnavailable("The local reranker request failed.") from exc
+                execution_checkpoint()
         else:
             headers = {"Authorization": "Bearer " + s.reranker_api_key.strip()} if s.reranker_api_key.strip() else {}
             payload = ({"query": query, "texts": documents, "raw_scores": True}
@@ -61,7 +67,9 @@ class Reranker:
                        {"model": s.reranker_model, "query": query, "documents": documents, "top_n": len(documents)})
             try:
                 with httpx.Client(timeout=s.reranker_timeout_seconds, transport=self.transport) as client:
+                    attempt = reserve_provider_request("reranker")
                     response = client.post(s.reranker_base_url.strip().rstrip("/") + "/rerank", headers=headers, json=payload)
+                    account_provider_response(attempt, response)
                     data = response_json(response, "Reranker", allow_list=s.reranker_protocol == "tei")
                 rows = data if s.reranker_protocol == "tei" else data["results"]
                 if not isinstance(rows, list) or len(rows) != len(documents):

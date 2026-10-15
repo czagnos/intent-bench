@@ -5,9 +5,64 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 
 import httpx
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
+
+from .execution import ProviderAttempt, ReportedUsage
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 TYPESAFE_BASE_URL = "https://api.typesafe.ai/v1"
+
+
+class _ProviderUsage(BaseModel):
+    """Independently validate allowlisted values without retaining raw payloads."""
+    model_config = ConfigDict(extra="ignore", strict=True)
+    prompt_tokens: int | None = Field(default=None, validation_alias=AliasChoices("prompt_tokens", "input_tokens"))
+    completion_tokens: int | None = Field(default=None, validation_alias=AliasChoices("completion_tokens", "output_tokens"))
+    total_tokens: int | None = None
+    cost: float | None = None
+
+    @field_validator("prompt_tokens", "completion_tokens", "total_tokens", mode="before")
+    @classmethod
+    def valid_tokens(cls, value: object) -> int | None:
+        return value if type(value) is int and value >= 0 else None
+
+    @field_validator("cost", mode="before")
+    @classmethod
+    def valid_cost(cls, value: object) -> float | None:
+        if type(value) not in (int, float):
+            return None
+        try:
+            cost = float(value)
+        except OverflowError:
+            return None
+        return cost if math.isfinite(cost) and cost >= 0 else None
+
+
+class _UsageEnvelope(BaseModel):
+    model_config = ConfigDict(extra="ignore", strict=True)
+    usage: _ProviderUsage = Field(default_factory=_ProviderUsage)
+
+
+def account_provider_response(attempt: ProviderAttempt | None, response: httpx.Response) -> None:
+    if attempt is None:
+        return
+    try:
+        usage = _UsageEnvelope.model_validate(response.json()).usage
+    except ValueError:
+        usage = _ProviderUsage()
+    total = usage.total_tokens
+    if total is None and usage.prompt_tokens is not None and usage.completion_tokens is not None:
+        total = usage.prompt_tokens + usage.completion_tokens
+    try:
+        supported_cost = str(response.request.url) in {
+            OPENROUTER_BASE_URL + "/embeddings", OPENROUTER_BASE_URL + "/chat/completions",
+        }
+    except RuntimeError:
+        supported_cost = False
+    attempt.record_usage(ReportedUsage(
+        prompt_tokens=usage.prompt_tokens, completion_tokens=usage.completion_tokens,
+        total_tokens=total, cost_usd=usage.cost if supported_cost else None,
+    ))
 
 
 def is_openrouter(base_url: str) -> bool:

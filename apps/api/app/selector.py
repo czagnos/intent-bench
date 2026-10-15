@@ -5,7 +5,8 @@ from pydantic import ValidationError
 
 from .config import Settings
 from .contracts import Proposal, RoutingSelection
-from .providers import ModelUnavailable, is_openrouter, response_json
+from .execution import reserve_provider_request
+from .providers import ModelUnavailable, account_provider_response, is_openrouter, response_json
 from . import typesafe_selector
 
 _JSON_INPUT_TYPES = {type(None): "null", str: "string", dict: "object", list: "array",
@@ -95,7 +96,9 @@ class Selector:
             headers["X-OpenRouter-Title"] = "IntentBench"
         try:
             with httpx.Client(timeout=self.settings.llm_timeout_seconds, transport=self.transport) as client:
+                attempt = reserve_provider_request("llm")
                 response = client.post(self.settings.llm_base_url.strip().rstrip("/") + "/chat/completions", headers=headers, json=payload)
+                account_provider_response(attempt, response)
                 data = response_json(response, "LLM")
                 choice = data["choices"][0]
                 if not isinstance(choice, dict):

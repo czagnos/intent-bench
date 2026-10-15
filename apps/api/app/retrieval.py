@@ -9,7 +9,8 @@ import numpy as np
 
 from .config import Settings
 from .contracts import Candidate, Intent
-from .providers import ModelUnavailable, is_openrouter, response_json
+from .execution import execution_checkpoint, reserve_provider_request
+from .providers import ModelUnavailable, account_provider_response, is_openrouter, response_json
 from .vector_index import IndexPreparation, IndexSnapshot, VectorIndex, build_corpus
 
 
@@ -62,11 +63,13 @@ class Embeddings:
         }
 
     def encode(self, texts: list[str], query=False):
+        execution_checkpoint()
         if not self.enabled:
             raise ModelUnavailable("The embedding connection is not configured. Set the model mode, endpoint and API key if required.")
         prepared = self.prepare_texts(texts, query)
         if self.settings.embedding_mode == "local":
             with self.lock:
+                execution_checkpoint()
                 if self.model is None:
                     try:
                         from sentence_transformers import SentenceTransformer
@@ -75,8 +78,10 @@ class Embeddings:
                         self.model = SentenceTransformer(self.settings.embedding_model, local_files_only=self.settings.embedding_local_files_only)
                     except Exception as exc:
                         raise ModelUnavailable("The embedding model could not be loaded. Check ML dependencies and access to model files.") from exc
+                    execution_checkpoint()
                 # Input formatting is already applied for this model family.
                 values = self.model.encode(prepared, prompt="", normalize_embeddings=True, show_progress_bar=False, batch_size=self.settings.embedding_batch_size)
+                execution_checkpoint()
         else:
             key = self.settings.resolved_embedding_api_key
             headers = {"Authorization": "Bearer " + key} if key else {}
@@ -88,7 +93,9 @@ class Embeddings:
                         payload = {"model": self.settings.embedding_model, "input": batch, "encoding_format": "float"}
                         if is_openrouter(self.settings.embedding_base_url) and self.settings.embedding_provider_only:
                             payload["provider"] = {"only": self.settings.embedding_provider_only}
+                        attempt = reserve_provider_request("embedding")
                         response = client.post(self.settings.embedding_base_url.strip().rstrip("/") + "/embeddings", headers=headers, json=payload)
+                        account_provider_response(attempt, response)
                         data = sorted(response_json(response, "Embedding")["data"], key=lambda item: item["index"])
                         if [item["index"] for item in data] != list(range(len(batch))):
                             raise ModelUnavailable("The embedding response has missing or duplicate indices.")
@@ -111,6 +118,7 @@ class Embeddings:
 
 class Retriever:
     def __init__(self, intents: list[Intent], version: str, embeddings: Embeddings, vector_index: VectorIndex | None = None):
+        execution_checkpoint()
         self.intents = {i.intent_id: i for i in intents}
         self.version = version
         self.embeddings = embeddings
@@ -126,11 +134,14 @@ class Retriever:
         self.avg_len = sum(sum(c.values()) for c in self.words) / max(1, len(self.words))
         self.matrix = None
         self.index_lock = threading.Lock()
+        execution_checkpoint()
 
     def prepare_index(self) -> IndexPreparation:
+        execution_checkpoint()
         started = time.perf_counter()
         source = "memory"
         with self.index_lock:
+            execution_checkpoint()
             if self.matrix is None:
                 if self.vector_index is None:
                     self.matrix = self.embeddings.encode([d.text for d in self.documents])
@@ -142,16 +153,19 @@ class Retriever:
                     self.snapshot = acquired.snapshot
                     self.matrix = self.snapshot.matrix
                     source = acquired.source
+        execution_checkpoint()
         return IndexPreparation(source=source, generation=self.snapshot.metadata.generation if self.snapshot else None,
                                 document_count=len(self.documents), dimensions=self.matrix.shape[1],
                                 elapsed_ms=round((time.perf_counter() - started) * 1000, 2))
 
     def rebuild_index(self) -> IndexPreparation:
         """Publish a new generation; callers already holding this matrix keep it."""
+        execution_checkpoint()
         if self.vector_index is None:
             raise ModelUnavailable("A persistent index is not configured.")
         started = time.perf_counter()
         acquired = self.vector_index.rebuild(lambda: self.embeddings.encode([d.text for d in self.documents]))
+        execution_checkpoint()
         return IndexPreparation(source=acquired.source, generation=acquired.snapshot.metadata.generation,
                                 document_count=len(self.documents), dimensions=acquired.snapshot.metadata.dimensions,
                                 elapsed_ms=round((time.perf_counter() - started) * 1000, 2))
@@ -169,6 +183,7 @@ class Retriever:
 
     def search_with_trace(self, query: str, mode="lexical", k=20, active_intent=None,
                           source_k=40, semantic_weight=.5):
+        execution_checkpoint()
         trace = {"executed": True, "completed": False, "source": mode,
                  "source_k": source_k, "semantic": [], "lexical": [], "fusion": [], "pool": []}
         if not self.documents:
