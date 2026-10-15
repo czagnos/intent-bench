@@ -33,7 +33,8 @@ def wait_job(client, path):
     pytest.fail("Matrix job timed out")
 
 
-def install_transports(studio, fail_embedding=None, request_started: threading.Event | None = None):
+def install_transports(studio, fail_embedding=None, request_started: threading.Event | None = None,
+                       model_requests_started: dict[str, threading.Event] | None = None):
     requests = []
     lock = threading.Lock()
 
@@ -41,6 +42,10 @@ def install_transports(studio, fail_embedding=None, request_started: threading.E
         if request_started is not None:
             request_started.set()
         body = json.loads(request.content)
+        if model_requests_started is not None:
+            model_started = model_requests_started.get(body["model"])
+            if model_started is not None:
+                model_started.set()
         assert request.headers["Authorization"] == "Bearer matrix-secret"
         with lock:
             requests.append(body)
@@ -164,9 +169,14 @@ def test_full_matrix_uses_same_cases_separate_models_and_shared_index(settings):
 
 def test_broken_embedding_does_not_abort_others_or_repeat_index_failures(settings):
     with TestClient(create_app(settings)) as client:
-        requests = install_transports(client.app.state.studio, fail_embedding="baai/bge-m3")
+        studio = client.app.state.studio
+        request_started = threading.Event()
+        requests = install_transports(studio, fail_embedding="baai/bge-m3", request_started=request_started)
         response = client.post("/v1/evaluations", json={"methods": ["e5", "hybrid_llm"], "semantic_rejection": "off", "embedding_ids": ["bge-m3", "default"], "llm_ids": ["gpt-oss-20b", "gpt-oss-120b"], "limit": 2})
-        job = wait_job(client, "/v1/evaluations/" + response.json()["id"])
+        assert response.status_code == 202, response.text
+        assert request_started.wait(30), "Evaluation did not reach its external request boundary"
+        studio.close()
+        job = client.get("/v1/evaluations/" + response.json()["id"]).json()
         assert job["status"] == "completed" and job["progress"] == 12
         assert len([r for r in requests if r["model"] == "baai/bge-m3"]) == 1
         for result in job["results"].values():
@@ -179,15 +189,21 @@ def test_broken_embedding_does_not_abort_others_or_repeat_index_failures(setting
 
 def test_concurrent_demo_requests_keep_model_and_embedding_selection(settings):
     with TestClient(create_app(settings)) as client:
-        requests = install_transports(client.app.state.studio)
+        studio = client.app.state.studio
+        model_requests_started = {model: threading.Event() for model in (settings.embedding_model, "baai/bge-m3")}
+        requests = install_transports(studio, model_requests_started=model_requests_started)
         selections = [("default", "gpt-oss-20b"), ("bge-m3", "qwen3-30b-instruct")]
         def run(pair):
             sid = client.post("/v1/sessions").json()["session_id"]
             response = client.post("/v1/route", json={"session_id": sid, "turn_revision": 1, "user_text": "I want to increase my credit card limit", "method": "hybrid_llm", "embedding_id": pair[0], "llm_id": pair[1]})
             assert response.status_code == 202
-            return wait_job(client, "/v1/requests/" + response.json()["request_id"])
+            return response.json()["request_id"]
         with ThreadPoolExecutor(max_workers=2) as pool:
-            jobs = list(pool.map(run, selections))
+            request_ids = list(pool.map(run, selections))
+        for model, request_started in model_requests_started.items():
+            assert request_started.wait(30), f"Route using {model} did not reach its external request boundary"
+        studio.close()
+        jobs = [client.get("/v1/requests/" + request_id).json() for request_id in request_ids]
         assert all(job["status"] == "completed" for job in jobs)
         assert jobs[0]["result"]["model"] == "openai/gpt-oss-20b"
         assert jobs[0]["result"]["embedding"]["model"] == "qwen/qwen3-embedding-8b"

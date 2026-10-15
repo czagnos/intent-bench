@@ -222,7 +222,7 @@ def _prepare_in_process(directory, barrier, results):
     studio.embeddings.transport = httpx.MockTransport(respond)
     try:
         retriever = studio.retriever("bank")
-        barrier.wait(timeout=10)
+        barrier.wait(timeout=60)
         preparation = retriever.prepare_index()
         results.put((preparation.source, preparation.generation, len(requests)))
     finally:
@@ -231,15 +231,24 @@ def _prepare_in_process(directory, barrier, results):
 
 def test_concurrent_processes_build_missing_corpus_only_once(tmp_path):
     import multiprocessing
+    from queue import Empty
 
     save_catalog(tmp_path)
     context = multiprocessing.get_context("spawn")
-    barrier, results = context.Barrier(3), context.Queue()
+    barrier, results = context.Barrier(4), context.Queue()
     processes = [context.Process(target=_prepare_in_process, args=(str(tmp_path), barrier, results)) for _ in range(3)]
     try:
         for process in processes:
             process.start()
-        observed = [results.get(timeout=15) for _ in processes]
+        try:
+            # Spawn/import/Studio setup must finish before the index-completion wait starts.
+            barrier.wait(timeout=60)
+        except threading.BrokenBarrierError:
+            pytest.fail(f"Index workers did not become ready; exit codes: {[p.exitcode for p in processes]}")
+        try:
+            observed = [results.get(timeout=15) for _ in processes]
+        except Empty:
+            pytest.fail(f"Ready index workers did not return results; exit codes: {[p.exitcode for p in processes]}")
         for process in processes:
             process.join(timeout=5)
             assert process.exitcode == 0
