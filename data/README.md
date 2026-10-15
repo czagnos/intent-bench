@@ -32,6 +32,8 @@ The nonbank expansion adds 130 airline, 126 insurance, and 116 e-commerce defini
 
 The bundled definitions and examples use the project's [Apache-2.0 license](../LICENSE), unless a file states otherwise. This does not grant rights to third-party datasets, weights, or hosted services. Record provenance and permissions for new data; calling it synthetic does not establish its origin.
 
+`demo/transcript-example.csv` is a separate synthetic import template for the banking demo workspace: four turns across three conversations, with standalone, clarification, continuation, and cancellation pre-turn snapshots. It contains a synthetic namespace/provenance notice, is available from `GET /v1/cases/template`, and is never automatically seeded. Importing it creates unreviewed `customer`-category rows; that category is not a claim of real customer provenance. No real transcript dataset has been supplied or validated as part of this feature.
+
 ## Workspace preservation and customization
 
 A fresh sector workspace is seeded with its matching catalog and cases. Switching sectors does not replace an existing catalog or copy model registrations. **Add intent** appends a versioned custom definition; **Import JSON** replaces the active full catalog. Imported labels must still reference intents in that catalog. Recalibrate after changing definitions or labels.
@@ -53,6 +55,8 @@ Keep imports under `data/private/` or outside the repository. That directory als
 Imported rows can retain questions, answers, identifiers, and selected source metadata for review. Experiment exports can contain per-case outcomes and context. Embedding vectors and fingerprints are not automatically anonymous. Review files and screenshots before sharing them.
 
 Use reviewed development, calibration, and test splits. Keep conversation turns and near-duplicates together. Do not put labels, source answers, or held-out test utterances into retrieval indexing or prompt tuning. For transcript benchmarks, record the source speech pipeline and distinguish transcription errors from decision errors. Check the actual workspace contents before enabling a remote provider.
+
+The [CSV schema and review workflow](../docs/benchmark-experiments.md#import-transcripts-without-changing-their-meaning) retain legacy headers and add `SourceDatasetId`, `Context`, and `Split`. Stable namespace/session/turn identity is separate from the file fingerprint. Imports validate explicit bounded pre-turn context against the selected catalog, preserve original language, and never infer labels/history from answers or source flags. Identical replays preserve human review and moved conversation splits; conflicting immutable turns or new split conflicts reject atomically. Use the whole-conversation split action to preserve labels and unreviewed state. Review every imported turn before including it in evaluation; calibration remains limited to context-free eligible decisions.
 
 ## Adding a publishable dataset
 

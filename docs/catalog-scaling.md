@@ -1,5 +1,7 @@
 # Catalog-size experiments
 
+The [controlled experiment guide](benchmark-experiments.md) describes repetitions, shared execution limits, cancellation, and partial exports. Repeats freeze the same cases and catalog scopes; each repeat has its own baseline for a base model/retrieval variant. Partial results are excluded from scaling comparisons, and p95 ratios require full cohorts without technical errors in both compared results.
+
 Updated for English sector workspaces: 14 October 2026. See [taxonomy v2 and routing changes](taxonomy-and-routing.md).
 
 The banking workspace (`demo`) contains **800 intent definitions**. Airline, insurance, and e-commerce each contain **200**; select sizes within that workspace's catalog. Experiments can compare one or several catalog sizes while holding the test cohort and model settings fixed.
@@ -130,6 +132,8 @@ This example has four method/model variants × three sizes = 12 combinations, ea
 .venv/bin/python scripts/evaluate.py --workspace demo --methods e5 --embedding-ids default bge-m3 --limit 153 --catalog-sizes 100 200 800
 .venv/bin/python scripts/evaluate.py --workspace demo --methods hybrid_llm --llm-ids gpt-oss-20b gpt-oss-120b --limit 153 --catalog-sizes 100 200 800
 ```
+
+Add `--repetitions 2 --max-provider-requests 0` to the lexical command for two offline repeats. This plans 153 × 3 × 2 = 918 case executions. Remote experiments can use optional request/duration/reported-USD controls; preparation and calibration requests share the same job budget across sizes/repeats. Compatible preparation is reused. Report complete-run variability and mean of per-run p95 separately from individual-run metrics; do not pool repeated cases into Wilson intervals. Historical measured results in this guide retain their original dataset and protocol.
 
 ## Updating an existing installation
 

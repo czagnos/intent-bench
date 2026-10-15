@@ -10,6 +10,8 @@
 4. Inspect metrics and case-level errors for each row. **Compare two combinations case by case** shows disagreements; **Only different decisions** filters them.
 5. Download JSON to retain settings, catalog/data identities, and individual outcomes. Historical single-model runs remain readable.
 
+Set repetitions (1–5) to measure variability on the same frozen cohort, and optionally bound provider requests, duration, or supported reported USD. Preparation counts toward the job limits. For six combinations × 153 cases × two repetitions, planned work is 1,836 decisions; limits are shared across them. See [experiment controls](benchmark-experiments.md) for cancellation, partial exports, and exact bounds.
+
 Change one component at a time: hold the embedding/retrieval strategy fixed when comparing decision models, then hold the decision model fixed when comparing embeddings. Connectivity checks and synthetic starter cases are preparation for evaluation on independent reviewed data.
 
 ## Bundled LLM profiles
@@ -51,6 +53,8 @@ The original OpenRouter catalog inspection was on **8 September 2026**. Model ac
 - An index failure produces error records for every affected case without rebuilding for each one. Other models continue. Query/model errors remain failures in the full denominator; there is no silent model fallback.
 - Completed combinations become visible while remaining ones run. The limit is 32 combinations, including retrieval strategies and catalog sizes.
 
+Repeat summaries include only complete full-cohort runs and report run-level mean, sample SD, minimum, maximum, and count. Complete runs with technical errors remain in accuracy/error statistics; partial runs are counted separately. Sample SD needs at least two defined observations. Latency is labelled **mean of per-run p95**, not pooled p95. Decision disagreement excludes cases with technical errors in any compared repeat and reports that denominator. Keep Wilson intervals per run; repeated records are not independent additional observations. Unknown costs remain distinct from known subtotals, and older artifacts without accounting remain unavailable.
+
 Read routing accuracy alongside overall decisions, OOS false acceptance, false rejection, clarification, and technical errors. A small starter dataset cannot demonstrate broad production accuracy.
 
 ## CLI and API
@@ -73,11 +77,15 @@ Example body for `POST /v1/evaluations?workspace=airline`:
   "semantic_rejection": "calibrated",
   "source": "seed",
   "split": "test",
-  "limit": 100
+  "limit": 100,
+  "repetitions": 2,
+  "execution_limits": {"max_provider_requests": 500, "max_duration_seconds": 900}
 }
 ```
 
 With `catalog_sizes` omitted, calibrated semantic evaluation needs a current saved fit. `e5` is the backward-compatible API name for semantic retrieval regardless of the embedding model. New result keys identify combinations; each result also records `method`, `embedding`, `llm`, and `model`. Original default combinations retain their legacy keys.
+
+With multiple repetitions, result IDs append `__repeat_<index>` and carry `group_id`/`repeat_index`. Saved request controls are under `options`; `group_summaries` distinguishes complete/partial/missing repeats. CLI equivalents are `--repetitions`, `--max-provider-requests`, `--max-duration-seconds`, and `--max-reported-cost-usd`. A stopped or cancelled run still exports finished records; [exit/status meanings](benchmark-experiments.md#status-cancellation-and-partial-results) differ from a completed run containing technical errors.
 
 ## Adding profiles
 

@@ -52,11 +52,11 @@ Cosine scores are **not confidence probabilities**. This feature calibrates a de
 
 - The banking calibration set has **72 handwritten, context-free cases: 48 in scope (47 route, one human handoff), 24 OOS**. The **153 banking test cases** (29 original plus 124 supplemental) remain separate and are not used to choose thresholds. A complete fresh banking workspace stores 225 seeded rows across these two splits. Its full test cohort requires at least 59 intents, or 67 with calibration; use `100, 200, 800` for full-cohort size comparisons. These are illustrative datasets, not representative bank-call validation.
 - Airline, insurance, and e-commerce each provide **80 context-free calibration cases: 40 route and 40 OOS**, separate from 400 catalog example utterances and 430 test cases. A complete fresh workspace stores 510 seeded rows. The full test cohort requires all 200 sector intents. Keep both calibration and test targets when choosing a smaller fixed cohort for catalog-size experiments.
-- For customer calibration, review labels on **Cases** and assign them to the **Calibration** split. At least 10 in-scope and 10 OOS cases are required. This minimum is a software prerequisite, not a statistically sufficient sample-size claim. Ambiguous `clarify` cases and cases containing conversation context are excluded by explicit validation rather than silently relabelled.
-- Normalized duplicate utterances within calibration, and overlaps with test utterances or catalog examples, are rejected. This catches exact normalized overlap; it does not detect paraphrase or conversation-level leakage. Keep conversations and near-duplicates in one split when preparing customer data.
+- For customer calibration, review labels on **Cases** and assign whole conversations to the **Calibration** split. At least 10 in-scope and 10 OOS cases are required. This minimum is a software prerequisite, not a statistically sufficient sample-size claim. Only reviewed context-free `route`, `handoff`, and `out_of_scope` cases are eligible; `clarify`, `continue`, `cancel`, and cases with context are rejected by explicit validation rather than silently relabelled.
+- Normalized duplicate utterances within calibration, and overlaps with test utterances or catalog examples, are rejected. Selected conversation IDs are also checked across all stored splits, including legacy/manual rows and unreviewed siblings. Unrelated split problems do not block an independent cohort. These guards do not detect paraphrases or differently identified copies; keep near-duplicates together manually.
 - Evaluating a calibrated semantic model on the utterances used to fit its threshold is blocked. Reviewed customer test counts exclude calibration/development cases.
 - Fits are stored per workspace, catalog version, embedding model, endpoint identity, provider restrictions, query profile/instruction, candidate count and calibration algorithm version. Provider identity here means the configured endpoint/restrictions; an automatically routed provider can still change underneath the same configuration.
-- The labelled calibration dataset fingerprint is checked when a fit is used. Editing its labels/split requires refitting. A catalog or dataset change while fitting prevents publication. Calibration artifacts and compatible embedding indexes persist across API restarts.
+- The labelled calibration dataset fingerprint and selected-conversation separation are checked when a fit is used. Editing its labels/split requires refitting; a newly inserted sibling in another split also blocks reuse even if the fit-row fingerprint is unchanged. A catalog or dataset change while fitting prevents publication. Calibration artifacts and compatible embedding indexes persist across API restarts.
 - Calibration metadata is frozen when a route/evaluation is queued. A later fit cannot change the threshold of an existing run. Results include calibration ID, threshold, model, source, catalog/data fingerprints and per-case `rejection_score` when semantic retrieval ran.
 - A failed refit does not erase an earlier valid fit. The page shows failed jobs separately from active, timestamped fits. A mixed-success calibration job has `status=completed` with individual failed results; check each result. The CLI exits nonzero if any selected model fails.
 
@@ -67,7 +67,7 @@ Calibration retention is not correct-intent accuracy. After calibration, inspect
 | Test metric | Denominator and meaning |
 |---|---|
 | In-scope routing accuracy | Correct `route` + intent / all expected-`route` cases. Rejection, errors and unnecessary clarification count as failures. |
-| Overall decision accuracy | Correct decision / all cases; a route also needs the expected intent. |
+| Overall decision accuracy | Correct decision / all cases; route, continue, and cancel also need the expected intent. |
 | Auto-routing coverage | Predicted `route` / all cases, whether the route is correct or not. |
 | Clarification rate | Predicted `clarify` / all cases. |
 | OOS false acceptance | Predicted `route` among expected-OOS cases / all expected-OOS cases. Errors and clarification do not count as false acceptance, but are not necessarily correct rejection. |
@@ -87,6 +87,8 @@ The existing OOS metric deliberately retains its original `route` definition for
 The calibration CLI and API use the same store and fitter. Run them with the same data directory as the API. Calibration output is written under ignored `artifacts/calibrations/`; it is not added to Git.
 
 These evaluation commands include the complete banking test cohort. Use the matching sector workspace and `--limit 430` for a complete nonbank test cohort. Without an explicit limit, the evaluation CLI selects at most 100 cases.
+
+Evaluation accepts `--repetitions` and optional request/duration/reported-USD limits. Limits include evaluation-owned index preparation and calibration fits across all variants/repeats; they do not apply to a separate `scripts/calibrate.py` invocation. Compatible frozen fits can be reused within a repeated experiment. See [experiment controls and transcript review](benchmark-experiments.md) for accounting, cooperative cancellation, complete-run statistics, bounded pre-turn context, and conversation split actions.
 
 ```http
 POST /v1/calibrations?workspace=demo

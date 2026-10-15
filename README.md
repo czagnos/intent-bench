@@ -104,6 +104,8 @@ INTENT_EMBEDDING_MODE=disabled INTENT_LLM_BASE_URL= \
 
 Use `demo`, `insurance`, or `ecommerce` for another sector. Results are written under ignored `artifacts/runs/`. **Experiments** uses the same engine and compares method/model, retrieval-strategy, and catalog-size combinations on a frozen set of cases.
 
+Add `--repetitions 2` to repeat that frozen cohort. Optional `--max-provider-requests`, `--max-duration-seconds`, and `--max-reported-cost-usd` controls apply across preparation, variants, and repeats. The USD threshold is a soft stop based on supported OpenRouter reported usage, not a guaranteed billing cap. Ctrl+C requests cooperative cancellation and saves partial JSON after in-flight work finishes. Evaluation exits are completed `0`, stopped `2`, failed `1`, and cancelled `130`. See [controlled and repeated experiments](docs/benchmark-experiments.md) for bounds, accounting, and statistical interpretation.
+
 The CLI defaults to 100 cases; use `--limit 430` for the complete airline, insurance, or e-commerce cohort and `--limit 153` for banking, or set **Maximum cases** accordingly in **Experiments**. The nonbank cohort requires all 200 catalog intents. The full banking cohort requires 59 intents, or 67 with calibration; `100, 200, 800` supports both. For smaller catalog-size comparisons, select a smaller fixed cohort first and keep it unchanged across sizes; do not remove cases separately for each size. Preserved user edits and deletions can make an existing workspace's actual counts differ from the starter totals.
 
 For reproducible comparisons:
@@ -117,7 +119,7 @@ For reproducible comparisons:
 
 The bundled cases support development and regression checks. They are not an independent held-out benchmark or evidence of production accuracy. Historical measurements in the guides used earlier Turkish banking catalogs and prompt versions; rerun comparisons on a fixed current dataset instead of treating translation as an accuracy improvement.
 
-[Model comparison](docs/model-comparison.md) · [Catalog sizes](docs/catalog-scaling.md) · [Calibration](docs/calibration-and-language.md) · [Retrieval and reranking](docs/retrieval-quality.md)
+[Experiment controls and transcript review](docs/benchmark-experiments.md) · [Model comparison](docs/model-comparison.md) · [Catalog sizes](docs/catalog-scaling.md) · [Calibration](docs/calibration-and-language.md) · [Retrieval and reranking](docs/retrieval-quality.md)
 
 ## Use your own data
 
@@ -128,6 +130,8 @@ Keep private files under `data/private/` or outside the repository. In the selec
 ```
 
 The importer accepts UTF-8/BOM, comma/semicolon/tab separators, and multiline fields. `Question` supplies the input. Optional `BenchmarkSessionId` and `BenchmarkSessionMessageId` identify source records. `Answer` is review context and is not sent to the model; `Message Flow` supplies limited source metadata. Source `TRUE/FALSE` flags are retained without assuming they are correct intent labels. Review labels and assign splits before evaluating imported cases. The API's source name `customer` describes an import category, not verified provenance.
+
+Optional `SourceDatasetId`, `Context`, and `Split` columns add stable identities across files, bounded explicit pre-turn context, and conversation-safe splits. The API and CLI validate and import atomically, report actual inserted/already-present counts, and preserve human review on identical replay. Move a conversation's split with the whole-conversation action. The [synthetic banking CSV template](data/demo/transcript-example.csv), also downloadable in **Cases**, is a format example only; no real transcript dataset is bundled. Read the [schema and review workflow](docs/benchmark-experiments.md#import-transcripts-without-changing-their-meaning) before preparing private exports.
 
 Database files, raw imports, credentials, vector indexes, and case-level outputs remain local. Git ignore rules do not anonymize data or protect copies elsewhere. Imported transcripts are not automatically translated, and an English interface does not validate multilingual routing.
 
