@@ -1600,3 +1600,524 @@ test("a late model-catalog probe cannot restore success after setup refreshes co
   assert.doesNotMatch(document.body.textContent, /Test passed/);
   assert.equal(button("Test connection").disabled, false);
 });
+
+test("experiment execution controls multiply scopes and repeats and submit zero request budgets", async () => {
+  await click(button("Experiments"));
+  await click(button("Compare all sizes"));
+  await fillInput(inputByLabel("Repetitions"), "2");
+  await fillInput(inputByLabel("Maximum provider requests"), "0");
+  await fillInput(inputByLabel("Maximum duration in seconds"), "12.5");
+  await fillInput(inputByLabel("Reported USD threshold"), ".25");
+  assert.match(document.querySelector(".execution-preview").textContent, /145 × 2 = 290 planned case executions/);
+  await click(button("Run evaluation"));
+  const sent = requests.find(r => r.path === "/v1/evaluations" && r.method === "POST").body;
+  assert.equal(sent.repetitions, 2);
+  assert.deepEqual(sent.execution_limits, { max_provider_requests: 0, max_duration_seconds: 12.5, max_reported_cost_usd: .25 });
+});
+
+test("experiment validation blocks empty cohorts and invalid values and preserves unlimited defaults", async () => {
+  await click(button("Experiments"));
+  await change(select("Test set"), "customer");
+  assert.equal(button("Run evaluation").disabled, true);
+  await change(select("Test set"), "seed");
+  for (const [label, invalid] of [["Repetitions", "6"], ["Maximum provider requests", "-1"], ["Maximum duration in seconds", "0"], ["Reported USD threshold", "Infinity"], ["Maximum cases", "1.5"]]) {
+    const field = inputByLabel(label);
+    const original = field.value;
+    await fillInput(field, invalid);
+    assert.equal(button("Run evaluation").disabled, true, label);
+    await click(button("Run evaluation"));
+    assert.equal(requests.some(r => r.path === "/v1/evaluations" && r.method === "POST"), false);
+    await fillInput(field, original);
+  }
+  await click(button("Run evaluation"));
+  const payload = requests.find(r => r.path === "/v1/evaluations" && r.method === "POST").body;
+  assert.equal(payload.repetitions, 1);
+  assert.equal(payload.execution_limits, undefined);
+});
+
+const response = data => ({ ok: true, json: async () => data });
+const deferred = () => {
+  let resolve;
+  const promise = new Promise(r => { resolve = r; });
+  return { promise, resolve };
+};
+const activeEvaluation = (overrides = {}) => ({ ...evaluation, status: "running", progress: 1, total: 4,
+  accounting: { provider_requests: 3, known_cost_usd: .2, reported_cost_usd: null, unknown_cost_requests: 1 }, ...overrides });
+
+test("evaluation cancellation retains partial results, pending acknowledgement and unknown accounting", async () => {
+  const originalFetch = globalThis.fetch;
+  const cancelling = deferred();
+  const cancelCalls = [];
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(input, "http://localhost");
+    if (url.pathname === "/v1/evaluations/eval-1/cancel") { cancelCalls.push({ init, workspace: url.searchParams.get("workspace") }); return cancelling.promise; }
+    if (url.pathname === "/v1/evaluations/eval-1") return response(activeEvaluation());
+    if (url.pathname === "/v1/evaluations" && !init.method) return response([{ ...evaluation, id: "older" }]);
+    return originalFetch(input, init);
+  };
+  await click(button("Experiments"));
+  await click(button("Run evaluation"));
+  assert.match(document.querySelector('[aria-label="Evaluation progress"]').textContent, /Known reported USD subtotal\$0.2Reported USD totalUnknown/);
+  assert.equal(document.querySelector(".history button").disabled, true);
+  await click(button("Cancel evaluation"));
+  assert.match(document.body.textContent, /Requesting cancellation \(running\)/);
+  assert.equal(button("Cancellation pending").disabled, true);
+  assert.deepEqual(cancelCalls.map(c => [c.init.method, c.workspace]), [["POST", "demo"]]);
+  await act(async () => { cancelling.resolve(response(activeEvaluation({ status: "cancelled", cancel_requested: true, stop_reason: "user_cancelled" }))); await delay(); });
+  assert.match(document.body.textContent, /Cancelled by user/);
+  assert.match(document.body.textContent, /Incomplete evaluation/);
+  assert.ok(button("Download results"));
+  assert.ok(document.body.textContent.includes(question));
+  assert.equal(document.querySelector(".history button").disabled, false);
+});
+
+test("evaluation polling is sequential and ignores an aborted response after cancellation", async () => {
+  const originalFetch = globalThis.fetch;
+  const pendingPoll = deferred();
+  let reads = 0;
+  let pollSignal;
+  let acknowledged = false;
+  globalThis.fetch = async (input, init = {}) => {
+    const path = new URL(input, "http://localhost").pathname;
+    if (path === "/v1/evaluations/eval-1/cancel") { acknowledged = true; return response(activeEvaluation({ cancel_requested: true })); }
+    if (path === "/v1/evaluations/eval-1") {
+      reads++;
+      if (reads === 1) return response(activeEvaluation());
+      if (!acknowledged) { pollSignal = init.signal; return pendingPoll.promise; }
+      return response(activeEvaluation({ status: "cancelled", stop_reason: "user_cancelled" }));
+    }
+    return originalFetch(input, init);
+  };
+  await click(button("Experiments"));
+  await click(button("Run evaluation"));
+  await act(() => delay(1500));
+  assert.equal(reads, 2, "a slow poll does not overlap another poll");
+  await click(button("Cancel evaluation"));
+  assert.equal(pollSignal.aborted, true);
+  assert.match(document.body.textContent, /Cancellation requested \(running\)/);
+  await act(async () => { pendingPoll.resolve(response(activeEvaluation({ progress: 99, total: 99 }))); await delay(); });
+  assert.doesNotMatch(document.querySelector(".execution-progress").textContent, /99 \/ 99/);
+  await act(() => delay(750));
+  assert.match(document.querySelector(".execution-progress").textContent, /Cancelled by user/);
+});
+
+test("rapid history selections and late submissions retain the current workspace and evaluation", async () => {
+  const originalFetch = globalThis.fetch;
+  const older = deferred();
+  const submit = deferred();
+  let oldSignal;
+  let submitSignal;
+  let followupReads = 0;
+  globalThis.fetch = async (input, init = {}) => {
+    const path = new URL(input, "http://localhost").pathname;
+    if (path === "/v1/evaluations" && init.method === "POST") { submitSignal = init.signal; return submit.promise; }
+    if (path === "/v1/evaluations") return response([{ ...evaluation, id: "older" }, { ...evaluation, id: "newer" }]);
+    if (path === "/v1/evaluations/older") { oldSignal = init.signal; return older.promise; }
+    if (path === "/v1/evaluations/newer") return response({ ...evaluation, id: "newer", dataset_fingerprint: "NEW-DATA" });
+    if (path === "/v1/evaluations/late-created") followupReads++;
+    return originalFetch(input, init);
+  };
+  await click(button("Experiments"));
+  await click(document.querySelectorAll(".history button")[0]);
+  await click(document.querySelectorAll(".history button")[1]);
+  assert.match(document.body.textContent, /NEW-DATA/);
+  assert.equal(oldSignal.aborted, true);
+  await act(async () => { older.resolve(response({ ...evaluation, dataset_fingerprint: "OLD-DATA" })); await delay(); });
+  assert.doesNotMatch(document.body.textContent, /OLD-DATA/);
+  await click(button("Run evaluation"));
+  assert.equal(document.querySelector(".history button").disabled, true);
+  await change(document.querySelector('[aria-label="Sector workspace"]'), "airline");
+  assert.equal(submitSignal.aborted, true);
+  await act(async () => { submit.resolve(response({ id: "late-created" })); await delay(); });
+  await click(button("Experiments"));
+  assert.equal(followupReads, 0);
+  assert.doesNotMatch(document.body.textContent, /OLD-DATA|NEW-DATA/);
+});
+
+const repeatMetric = (mean, count = 1) => ({ count, mean, sample_sd: null, min: mean, max: mean });
+const repeatGroup = { group_id: "group-e5", planned_count: 3, complete_count: 1, partial_count: 1, missing_count: 1,
+  metrics: { routing_accuracy: repeatMetric(.9), decision_accuracy: repeatMetric(.8), macro_f1: repeatMetric(.7), recall_at_k: repeatMetric(1), latency_p95_ms: repeatMetric(700), technical_error_rate: repeatMetric(.1) },
+  disagreement: { compared_repeat_count: 1, eligible_case_count: 0, excluded_technical_error_case_count: 0, disagreeing_case_count: 0, disagreement_rate: null, cases: [] } };
+
+test("repeated results remain distinct with complete-only summary and downloadable partial records", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init = {}) => {
+    if (new URL(input, "http://localhost").pathname === "/v1/evaluations/eval-1") return response({ ...evaluation,
+      status: "stopped", stop_reason: "request_limit", progress: 3, total: 6, group_summaries: [repeatGroup],
+      results: { "e5/repeat/1": { ...evaluation.results.e5, group_id: "group-e5", repeat_index: 1, complete: true },
+        "e5/repeat/2": { ...evaluation.results.e5, group_id: "group-e5", repeat_index: 2, complete: false, completed_count: 1, selected_count: 2,
+          records: [{ ...record, decision: "handoff", intent_id: null, correct: false, message: "SECOND REPEAT ONLY" }] } } });
+    return originalFetch(input, init);
+  };
+  await click(button("Experiments"));
+  await click(button("Run evaluation"));
+  assert.match(document.querySelector(".repeat-summary").textContent, /Partial repeats1Missing repeats1/);
+  assert.match(document.querySelector(".repeat-summary").textContent, /Mean of per-run p95 latency/);
+  assert.match(document.querySelector(".repeat-summary").textContent, /Unavailable \(n < 2\)/);
+  assert.match(document.querySelector(".repeat-summary").textContent, /Completed runs with technical errors remain included/);
+  const picker = select("First combination");
+  assert.match(picker.options[0].textContent, /Repeat 1/);
+  assert.match(picker.options[1].textContent, /Repeat 2/);
+  assert.equal(document.querySelectorAll(".case-comparison tbody tr").length, 1);
+  const secondResult = [...document.querySelectorAll("button")].find(b => /Repeat 2/.test(b.textContent));
+  await click(secondResult);
+  assert.match(document.querySelector(".result-detail-bar").textContent, /Repeat 2/);
+  assert.match(document.body.textContent, /Incomplete result: 1 of 2/);
+  assert.ok(button("Download results"));
+});
+
+async function uploadSyntheticCsv() {
+  const input = document.querySelector('input[type="file"]');
+  const file = new File(["Question\nSynthetic fixture\n"], "synthetic.csv", { type: "text/csv" });
+  Object.defineProperty(input, "files", { value: [file], configurable: true });
+  await act(async () => { input.dispatchEvent(new Event("change", { bubbles: true })); await delay(); });
+}
+const transcriptCase = (overrides = {}) => ({ case_id: "legacy/session?turn=1", conversation_id: "legacy/session?conversation=1",
+  source_dataset_id: "synthetic-bank-v1", source_session_id: "session-1", source_message_id: "turn-1", source: "customer",
+  question: "SYNTHETIC CONTINUATION", reviewed: false, expected_decision: null, expected_intent_id: null, split: "test",
+  source_flag: "TRUE", suggestions: [{ intent_id: "card.limit.change", name: "Card limit", score: .8 }],
+  context: { active_intent: "card.limit.change", pending_slot: "new_limit", slots: {}, pending_confirmation: false, clarifications: 0,
+    clarification_options: [], messages: [{ role: "assistant", content: "What should the new limit be?" }] }, ...overrides });
+
+function caseBoundary(initialItems) {
+  const originalFetch = globalThis.fetch;
+  const state = { items: initialItems, calls: [] };
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(input, "http://localhost");
+    if (url.pathname === "/v1/cases") return response({ items: state.items, total: state.items.length });
+    if (url.pathname.startsWith("/v1/cases/") || url.pathname.startsWith("/v1/conversations/")) {
+      const body = init.body && !(init.body instanceof FormData) ? JSON.parse(init.body) : undefined;
+      state.calls.push({ path: url.pathname, workspace: url.searchParams.get("workspace"), method: init.method || "GET", body, signal: init.signal });
+      if (state.handle) return state.handle(url, init, body);
+      throw new Error("Unexpected transcript request: " + url.pathname);
+    }
+    return originalFetch(input, init);
+  };
+  return state;
+}
+
+test("case import explains transcript schema and reports actual insert and replay counts", async () => {
+  const boundary = caseBoundary([]);
+  boundary.handle = () => response({ imported: 3, inserted: 1, already_present: 2, duplicates: 1, skipped_empty_question: 0, valid_traces: 0 });
+  await click(button("Cases"));
+  const template = [...document.querySelectorAll("a")].find(a => /synthetic.*CSV/i.test(a.textContent));
+  assert.ok(template, "synthetic template link");
+  assert.equal(new URL(template.href).pathname, "/v1/cases/template");
+  assert.match(document.body.textContent, /Synthetic banking demo.*not real transcript data/);
+  assert.match(document.body.textContent, /SourceDatasetId.*BenchmarkSessionId.*BenchmarkSessionMessageId/);
+  assert.match(document.body.textContent, /Context.*Split/);
+  await uploadSyntheticCsv();
+  assert.match(document.querySelector(".notice.success").textContent, /3 unique candidate cases.*1 inserted.*2 already present.*1 duplicate input rows/);
+  assert.equal(boundary.calls[0].workspace, "demo");
+});
+
+test("transcript review shows source and pre-turn context and validates continue/cancel intent labels", async () => {
+  const first = transcriptCase();
+  const boundary = caseBoundary([first, transcriptCase({ case_id: "no-context", question: "SYNTHETIC STANDALONE", context: {} })]);
+  const save = deferred();
+  boundary.handle = (url, init, body) => {
+    if (url.pathname.endsWith("/versions")) return response({ case_id: first.case_id, current: boundary.items[0], versions: [{ version: "review-1", created: 1, reason: "review", case: boundary.items[0] }] });
+    if (boundary.calls.filter(c => c.method === "PATCH").length === 1) return save.promise;
+    boundary.items[0] = { ...boundary.items[0], ...body, reviewed: true };
+    return response(boundary.items[0]);
+  };
+  await click(button("Cases"));
+  await act(() => delay(240));
+  await click(button(first.question));
+  const panel = document.querySelector(".review-panel");
+  assert.match(panel.textContent, /Source dataset.*synthetic-bank-v1.*Source session.*session-1.*Source message.*turn-1/);
+  assert.match(panel.textContent, /Conversation.*legacy\/session\?conversation=1/);
+  assert.match(panel.textContent, /Pre-turn context.*card.limit.change.*new_limit.*What should the new limit be/s);
+  const context = panel.querySelector('[aria-label="Pre-turn context"]');
+  assert.ok(context.compareDocumentPosition(select("Decision type")) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING);
+  await change(select("Decision type"), "continue");
+  assert.equal(select("Correct intent").value, "card.limit.change");
+  assert.equal(select("Correct intent").options.length, 1);
+  await click(button("Confirm and save label"));
+  assert.match(panel.textContent, /Awaiting review/);
+  const firstSave = boundary.calls.find(c => c.method === "PATCH");
+  assert.equal(firstSave.path, "/v1/cases/legacy%2Fsession%3Fturn%3D1/review");
+  assert.deepEqual(firstSave.body, { expected_decision: "continue", expected_intent_id: "card.limit.change", split: "test" });
+  boundary.items[0] = { ...first, ...firstSave.body, reviewed: true };
+  await act(async () => { save.resolve(response(boundary.items[0])); await delay(); });
+  assert.equal(panel.querySelector(".case-review-status").textContent, "Reviewed");
+  await change(select("Decision type"), "cancel");
+  await click(button("Confirm and save label"));
+  assert.equal(boundary.calls.filter(c => c.method === "PATCH").at(-1).body.expected_intent_id, "card.limit.change");
+  await change(select("Decision type"), "handoff");
+  await click(button("Confirm and save label"));
+  assert.equal(boundary.calls.filter(c => c.method === "PATCH").at(-1).body.expected_intent_id, null);
+  await change(select("Decision type"), "route");
+  await change(select("Correct intent"), "");
+  assert.equal(button("Confirm and save label").disabled, true);
+  await click(button("View label history"));
+  assert.equal(boundary.calls.at(-1).path, "/v1/cases/legacy%2Fsession%3Fturn%3D1/versions");
+  assert.match(panel.textContent, /review-1/);
+  await click(button("SYNTHETIC STANDALONE"));
+  assert.equal([...select("Decision type").options].find(o => o.value === "continue").disabled, true);
+  assert.equal([...select("Decision type").options].find(o => o.value === "cancel").disabled, true);
+});
+
+test("whole-conversation split moves preserve selected and sibling labels and review state", async () => {
+  const unreviewed = transcriptCase();
+  const reviewed = transcriptCase({ case_id: "sibling", source_message_id: "turn-2", question: "SYNTHETIC SIBLING", reviewed: true, expected_decision: "handoff" });
+  const boundary = caseBoundary([unreviewed, reviewed]);
+  const moved = deferred();
+  boundary.handle = () => moved.promise;
+  await click(button("Cases"));
+  await act(() => delay(240));
+  await click(button(unreviewed.question));
+  await change(select("Conversation split"), "dev");
+  await click(button("Move whole conversation"));
+  assert.equal(boundary.calls.at(-1).path, "/v1/conversations/legacy%2Fsession%3Fconversation%3D1/split");
+  assert.deepEqual(boundary.calls.at(-1).body, { split: "dev" });
+  assert.equal(boundary.calls.at(-1).method, "PATCH");
+  assert.equal(boundary.calls.some(c => c.path.endsWith("/review")), false);
+  assert.equal(select("Data split").value, "test", "no optimistic split update");
+  boundary.items = boundary.items.map(item => ({ ...item, split: "dev" }));
+  await act(async () => { moved.resolve(response({ conversation_id: unreviewed.conversation_id, split: "dev", updated_count: 2 })); await delay(); });
+  assert.equal(select("Data split").value, "dev");
+  assert.equal(document.querySelector(".case-review-status").textContent, "Awaiting review");
+  assert.match(document.body.textContent, /Moved 2 turns to dev.*labels and review status preserved/);
+  const rows = [...document.querySelectorAll(".cases-layout tbody tr")];
+  assert.ok(rows.every(row => row.textContent.includes("Development")));
+  await click(button(reviewed.question));
+  assert.equal(document.querySelector(".case-review-status").textContent, "Reviewed");
+  assert.equal(select("Decision type").value, "handoff");
+});
+
+test("accepted evaluation identity survives an initial status failure and is recovered by polling", async () => {
+  const originalFetch = globalThis.fetch;
+  let reads = 0;
+  globalThis.fetch = async (input, init = {}) => {
+    if (new URL(input, "http://localhost").pathname === "/v1/evaluations/eval-1") {
+      reads++;
+      return reads === 1 ? { ok: false, json: async () => ({ detail: "Temporary status failure" }) }
+        : response(activeEvaluation({ status: "stopped", stop_reason: "request_limit" }));
+    }
+    return originalFetch(input, init);
+  };
+  await click(button("Experiments"));
+  await click(button("Run evaluation"));
+  assert.equal(button("Run evaluation").disabled, true, "accepted job remains active despite status read failure");
+  assert.match(document.body.textContent, /eval-1.*Loading evaluation status/);
+  await act(() => delay(750));
+  assert.match(document.querySelector(".execution-progress").textContent, /Provider request limit reached/);
+  assert.equal(button("Run evaluation").disabled, false);
+});
+
+test("experiment planned work blocks totals over 100000 before any submission", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    if (new URL(input, "http://localhost").pathname === "/v1/status") return response({ ...status, seed_case_count: 2000 });
+    return originalFetch(input, init);
+  };
+  await act(() => root.unmount());
+  await mount();
+  await click(button("Experiments"));
+  await fillInput(inputByLabel("Maximum cases"), "2000");
+  await fillInput(inputByLabel("Repetitions"), "5");
+  await click(button("Compare all sizes"));
+  const methodInput = name => [...document.querySelectorAll(".method-checks label")].find(l => l.textContent.includes(name)).querySelector("input");
+  await click(methodInput("Semantic search"));
+  assert.match(document.querySelector(".execution-preview").textContent, /100,000 planned case executions/);
+  assert.equal(button("Run evaluation").disabled, false);
+  await click(methodInput("Hybrid retrieval"));
+  assert.match(document.body.textContent, /Planned case executions exceed 100,000/);
+  assert.equal(button("Run evaluation").disabled, true);
+  await click(button("Run evaluation"));
+  assert.equal(requests.some(r => r.path === "/v1/evaluations" && r.method === "POST"), false);
+});
+
+for (const action of ["upload", "review", "split"]) {
+  test(`late case ${action} responses cannot update a new workspace`, async () => {
+    const fixture = transcriptCase();
+    const boundary = caseBoundary([fixture]);
+    const waiting = deferred();
+    boundary.handle = () => waiting.promise;
+    await click(button("Cases"));
+    await act(() => delay(240));
+    if (action === "upload") await uploadSyntheticCsv();
+    else {
+      await click(button(fixture.question));
+      if (action === "review") await click(button("Confirm and save label"));
+      else {
+        await change(select("Conversation split"), "dev");
+        await click(button("Move whole conversation"));
+      }
+    }
+    const call = boundary.calls.at(-1);
+    assert.equal(call.workspace, "demo");
+    await change(document.querySelector('[aria-label="Sector workspace"]'), "airline");
+    assert.equal(call.signal.aborted, true);
+    const bankingRefreshes = requests.filter(r => r.path === "/v1/status" && r.workspace === "demo").length;
+    await click(button("Cases"));
+    await act(async () => { waiting.resolve(response(action === "upload"
+      ? { imported: 999, inserted: 999, already_present: 0, duplicates: 0, skipped_empty_question: 0, valid_traces: 0 }
+      : action === "review" ? { ...fixture, question: "STALE MUTATION", reviewed: true }
+      : { conversation_id: fixture.conversation_id, split: "dev", updated_count: 999 })); await delay(); });
+    assert.doesNotMatch(document.body.textContent, /999 inserted|STALE MUTATION|Moved 999/);
+    assert.equal(document.querySelector(".review-panel"), null);
+    assert.equal(requests.filter(r => r.path === "/v1/status" && r.workspace === "demo").length, bankingRefreshes);
+  });
+}
+
+test("late case history cannot replace the selected turn and failed review never marks it reviewed", async () => {
+  const fixture = transcriptCase();
+  const second = transcriptCase({ case_id: "second", question: "SECOND SOURCE TURN", context: {} });
+  const boundary = caseBoundary([fixture, second]);
+  const history = deferred();
+  boundary.handle = (url, init) => init.method === "PATCH"
+    ? { ok: false, json: async () => ({ detail: "Move the whole conversation before changing its split." }) }
+    : history.promise;
+  await click(button("Cases"));
+  await act(() => delay(240));
+  await click(button(fixture.question));
+  await click(button("View label history"));
+  const historySignal = boundary.calls.at(-1).signal;
+  await click(button(second.question));
+  assert.equal(historySignal.aborted, true);
+  await act(async () => { history.resolve(response({ case_id: fixture.case_id, current: fixture, versions: [{ version: "STALE HISTORY", reason: "review", case: fixture }] })); await delay(); });
+  assert.doesNotMatch(document.querySelector(".review-panel").textContent, /STALE HISTORY/);
+  await change(select("Data split"), "dev");
+  await click(button("Confirm and save label"));
+  assert.match(document.querySelector('[role="alert"]').textContent, /Move the whole conversation/);
+  assert.equal(document.querySelector(".case-review-status").textContent, "Awaiting review");
+});
+
+test("case filters abort slow earlier reads and keep the newest visible cohort", async () => {
+  const originalFetch = globalThis.fetch;
+  const first = deferred();
+  let oldSignal;
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(input, "http://localhost");
+    if (url.pathname === "/v1/cases") {
+      if (!url.searchParams.get("q")) { oldSignal = init.signal; return first.promise; }
+      return response({ items: [transcriptCase({ question: "NEWEST FILTER RESULT" })], total: 1 });
+    }
+    return originalFetch(input, init);
+  };
+  await click(button("Cases"));
+  await act(() => delay(240));
+  await fillInput(document.querySelector('[aria-label="Search cases"]'), "new");
+  await act(() => delay(240));
+  assert.ok(button("NEWEST FILTER RESULT"));
+  assert.equal(oldSignal.aborted, true);
+  await act(async () => { first.resolve(response({ items: [transcriptCase({ question: "STALE FILTER RESULT" })], total: 1 })); await delay(); });
+  assert.equal(button("STALE FILTER RESULT"), undefined);
+});
+
+test("stopped partial evaluation exports retain exact per-repeat records and old artifacts remain readable", async () => {
+  const originalFetch = globalThis.fetch;
+  const partial = { ...evaluation, status: "failed", progress: 1, total: 2, error: "A safe failure reason", results: {
+    r1: { ...evaluation.results.e5, repeat_index: 1, complete: false, completed_count: 1, selected_count: 2, records: [record] },
+  } };
+  globalThis.fetch = async (input, init = {}) => new URL(input, "http://localhost").pathname === "/v1/evaluations/eval-1"
+    ? response(partial) : originalFetch(input, init);
+  const oldCreate = URL.createObjectURL;
+  const oldRevoke = URL.revokeObjectURL;
+  const oldClick = dom.window.HTMLAnchorElement.prototype.click;
+  let exported;
+  let filename;
+  URL.createObjectURL = blob => { exported = blob; return "blob:synthetic-export"; };
+  URL.revokeObjectURL = () => {};
+  dom.window.HTMLAnchorElement.prototype.click = function () { filename = this.download; };
+  try {
+    await click(button("Experiments"));
+    await click(button("Run evaluation"));
+    assert.match(document.body.textContent, /Repeat summary unavailable for this saved evaluation/);
+    assert.match(document.body.textContent, /accounting unavailable for this saved evaluation/);
+    assert.match(document.body.textContent, /A safe failure reason/);
+    await click(button("Download results"));
+    assert.equal(filename, "evaluation-eval-1.json");
+    assert.deepEqual(JSON.parse(await exported.text()), partial);
+  } finally {
+    URL.createObjectURL = oldCreate;
+    URL.revokeObjectURL = oldRevoke;
+    dom.window.HTMLAnchorElement.prototype.click = oldClick;
+  }
+});
+
+test("preparation cancellation omits absent model values from repeat headings and result labels", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init = {}) => new URL(input, "http://localhost").pathname === "/v1/evaluations/eval-1"
+    ? response({ ...evaluation, status: "cancelled", stop_reason: "user_cancelled", progress: 0, total: 2,
+      group_summaries: [{ ...repeatGroup, group_id: "lexical", planned_count: 2, complete_count: 0, partial_count: 1, missing_count: 1 }],
+      results: { "lexical/repeat/1": { ...evaluation.results.e5, model: null, method: "lexical", group_id: "lexical", repeat_index: 1,
+        complete: false, completed_count: 0, selected_count: 1, records: [], catalog: { intent_count: 800 } } } })
+    : originalFetch(input, init);
+  await click(button("Experiments"));
+  await click(button("Run evaluation"));
+  const heading = document.querySelector(".repeat-summary h2").textContent;
+  assert.equal(heading, "Repeat variability · Lexical baseline · 800 intents");
+  assert.match(document.querySelector(".result-detail-bar").textContent, /Lexical baseline · 800 intents · Repeat 1/);
+  assert.doesNotMatch(document.querySelector(".repeat-summary").textContent + document.querySelector(".result-detail-bar").textContent, /\b(?:null|undefined)\b/);
+});
+
+test("accepted evaluation can cancel during its first status read and ignores the late read", async () => {
+  const originalFetch = globalThis.fetch;
+  const initialStatus = deferred();
+  const cancellation = deferred();
+  const cancelCalls = [];
+  let statusSignal;
+  let statusReads = 0;
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(input, "http://localhost");
+    if (url.pathname === "/v1/evaluations/eval-1") {
+      statusReads++;
+      statusSignal = init.signal;
+      return initialStatus.promise;
+    }
+    if (url.pathname === "/v1/evaluations/eval-1/cancel") {
+      cancelCalls.push({ method: init.method, workspace: url.searchParams.get("workspace") });
+      return cancellation.promise;
+    }
+    return originalFetch(input, init);
+  };
+  await click(button("Experiments"));
+  await click(button("Run evaluation"));
+  assert.match(document.body.textContent, /Evaluation eval-1 accepted/);
+  assert.equal(button("Run evaluation").disabled, true);
+  assert.equal(button("Cancel evaluation").disabled, false, "known accepted jobs are cancellable while status reads hang");
+  await act(() => delay(750));
+  assert.equal(statusReads, 1, "the pending initial status read must not overlap a poll");
+  await click(button("Cancel evaluation"));
+  assert.equal(statusSignal.aborted, true, "cancellation aborts the obsolete initial read");
+  assert.deepEqual(cancelCalls, [{ method: "POST", workspace: "demo" }]);
+  assert.equal(button("Run evaluation").disabled, true);
+  assert.equal(button("Cancellation pending").disabled, true);
+  await act(async () => { cancellation.resolve(response(activeEvaluation({ status: "cancelled", stop_reason: "user_cancelled" }))); await delay(); });
+  assert.match(document.querySelector(".execution-progress").textContent, /Cancelled by user/);
+  assert.equal(button("Run evaluation").disabled, false);
+  await act(async () => { initialStatus.resolve(response(activeEvaluation({ progress: 99, total: 99 }))); await delay(); });
+  assert.match(document.querySelector(".execution-progress").textContent, /Cancelled by user/);
+  assert.doesNotMatch(document.querySelector(".execution-progress").textContent, /99 \/ 99/);
+});
+
+test("a failed cancellation during the initial status read retains the accepted ID and resumes polling", async () => {
+  const originalFetch = globalThis.fetch;
+  const initialStatus = deferred();
+  let reads = 0;
+  globalThis.fetch = async (input, init = {}) => {
+    const path = new URL(input, "http://localhost").pathname;
+    if (path === "/v1/evaluations/eval-1") {
+      reads++;
+      return reads === 1 ? initialStatus.promise : response(activeEvaluation({ status: "stopped", stop_reason: "duration_limit" }));
+    }
+    if (path === "/v1/evaluations/eval-1/cancel") return { ok: false, json: async () => ({ detail: "Cancellation temporarily unavailable" }) };
+    return originalFetch(input, init);
+  };
+  await click(button("Experiments"));
+  await click(button("Run evaluation"));
+  await click(button("Cancel evaluation"));
+  assert.match(document.body.textContent, /Evaluation eval-1 accepted/);
+  assert.match(document.body.textContent, /Cancellation temporarily unavailable/);
+  assert.equal(button("Run evaluation").disabled, true);
+  assert.equal(button("Cancel evaluation").disabled, false);
+  await act(() => delay(750));
+  assert.equal(reads, 2);
+  assert.match(document.querySelector(".execution-progress").textContent, /Duration limit reached/);
+  assert.equal(button("Run evaluation").disabled, false);
+  await act(async () => { initialStatus.resolve(response(activeEvaluation())); await delay(); });
+  assert.match(document.querySelector(".execution-progress").textContent, /Duration limit reached/);
+});

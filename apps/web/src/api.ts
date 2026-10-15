@@ -107,6 +107,8 @@ export type ImportReport = {
   filename: string;
   dataset_version: string;
   imported: number;
+  inserted?: number;
+  already_present?: number;
   rows: number;
   skipped_empty_question: number;
   duplicates: number;
@@ -228,19 +230,42 @@ export type Job = {
   error?: string;
   events: Stage[];
 };
+export type DataSplit = "dev" | "calibration" | "test";
+export type ReviewDecision = "route" | "continue" | "cancel" | "clarify" | "out_of_scope" | "handoff";
+export type PreTurnContext = {
+  active_intent?: string | null;
+  slots?: Record<string, string>;
+  pending_slot?: string | null;
+  pending_confirmation?: boolean;
+  clarification_options?: string[];
+  clarifications?: number;
+  messages?: { role: "user" | "assistant"; content: string }[];
+};
 export type Case = {
   case_id: string;
+  conversation_id?: string | null;
+  source_dataset_id?: string | null;
+  source_session_id?: string;
+  source_message_id?: string;
+  context?: PreTurnContext;
   question: string;
   reference_answer?: string;
   source: string;
   reviewed: boolean;
   source_flag: string | null;
-  expected_decision: string | null;
+  expected_decision: ReviewDecision | null;
   expected_intent_id: string | null;
-  split: string;
+  split: DataSplit;
   suggestions: Candidate[];
   historical_trace?: { action?: string; elapsed_seconds?: number };
 };
+export type CaseSnapshot = Omit<Case, "suggestions">;
+export type CaseVersions = {
+  case_id: string;
+  current: CaseSnapshot;
+  versions: { version: string; created: number; reason: string; case: CaseSnapshot }[];
+};
+export type ConversationSplitResult = { conversation_id: string; split: DataSplit; updated_count: number };
 export type Metrics = {
   stage_quality?: StageQuality;
   total: number;

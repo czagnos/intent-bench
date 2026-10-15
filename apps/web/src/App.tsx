@@ -30,6 +30,11 @@ import {
   download,
   type Candidate,
   type Case,
+  type CaseSnapshot,
+  type CaseVersions,
+  type DataSplit,
+  type ReviewDecision,
+  type ConversationSplitResult,
   type Decision,
   type Evaluation,
   type ImportReport,
@@ -47,6 +52,9 @@ import {
   initialModelIds,
 } from "./ModelPicker";
 import { CaseComparison } from "./CaseComparison";
+import { ExecutionControls, validateExecutionControls, type ExecutionControlValues } from "./components/ExecutionControls";
+import { ExecutionProgress, isEvaluationActive } from "./components/ExecutionProgress";
+import { RepeatSummary } from "./components/RepeatSummary";
 import Calibration, { RejectionControl, RejectionSummary } from "./Calibration";
 import { CatalogSizes, parseCatalogSizes } from "./CatalogSizes";
 import Models from "./Models";
@@ -93,8 +101,18 @@ const methodNames: Record<string, string> = {
 };
 const resultMethod = (id: string, result: EvaluationResult) =>
   result.method || id;
+const baseResultLabel = (id: string, result: EvaluationResult, t: Translate) => {
+  const method = resultMethod(id, result);
+  const model = result.model_labels?.[method === "hybrid_llm" ? "llm" : "embedding"] || result.model;
+  const embedding = method === "hybrid_llm" && result.embedding
+    ? result.model_labels?.embedding || result.embedding.model
+    : null;
+  const models = [model, embedding].filter(Boolean).join(" + ");
+  const name = t(result.retrieval_profile?.name || methodNames[method] || "Experiment");
+  return `${name}${models ? " · " + models : ""}${result.catalog ? " · " + t("{count} intents", { count: result.catalog.intent_count }) : ""}`;
+};
 const resultLabel = (id: string, result: EvaluationResult, t: Translate) =>
-  `${t(result.retrieval_profile?.name || methodNames[resultMethod(id, result)] || "Experiment")} · ${result.model_labels?.[resultMethod(id, result) === "hybrid_llm" ? "llm" : "embedding"] || result.model}${resultMethod(id, result) === "hybrid_llm" && result.embedding ? " + " + (result.model_labels?.embedding || result.embedding.model) : ""}${result.catalog ? " · " + t("{count} intents", { count: result.catalog.intent_count }) : ""}`;
+  baseResultLabel(id, result, t) + (result.repeat_index ? ` · Repeat ${result.repeat_index}` : "");
 const slotNames: Record<string, string> = {
   new_limit: "New limit",
   card_last4: "Last four card digits",
@@ -1135,15 +1153,48 @@ export function Cases({
     total: 0,
   });
   const [selected, setSelected] = useState<Case>();
-  const [decision, setDecision] = useState("route");
+  const [decision, setDecision] = useState<ReviewDecision>("route");
   const [intentId, setIntentId] = useState("");
-  const [split, setSplit] = useState("test");
+  const [split, setSplit] = useState<DataSplit>("test");
+  const [conversationSplit, setConversationSplit] = useState<DataSplit>("test");
+  const [splitMessage, setSplitMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [report, setReport] = useState<ImportReport>();
   const [tick, setTick] = useState(0);
+  const [versions, setVersions] = useState<CaseVersions>();
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const mutationController = useRef<AbortController | null>(null);
+  const versionsController = useRef<AbortController | null>(null);
+  useEffect(() => () => {
+    mutationController.current?.abort();
+    versionsController.current?.abort();
+  }, []);
+  const contextIntent = selected?.context?.active_intent;
+  const activeIntent = catalog.find(item => item.intent_id === contextIntent);
+  const contextDecision = decision === "continue" || decision === "cancel";
+  const requiresIntent = decision === "route" || contextDecision;
+  const labelValid = !requiresIntent || (catalog.some(item => item.intent_id === intentId) && (!contextDecision || intentId === activeIntent?.intent_id));
+  function beginMutation() {
+    if (mutationController.current) return null;
+    const controller = new AbortController();
+    mutationController.current = controller;
+    setBusy(true);
+    setError("");
+    return controller;
+  }
+  function finishMutation(controller: AbortController) {
+    if (controller.signal.aborted) return;
+    if (mutationController.current === controller) mutationController.current = null;
+    setBusy(false);
+  }
+  function clearVersions() {
+    versionsController.current?.abort();
+    setVersions(undefined);
+    setHistoryLoading(false);
+  }
   useEffect(() => {
-    let active = true;
+    const controller = new AbortController();
     const timer = setTimeout(() => {
       api<{ items: Case[]; total: number }>(
         "/cases?source=" +
@@ -1153,70 +1204,109 @@ export function Cases({
           offset +
           "&q=" +
           encodeURIComponent(query),
+        { signal: controller.signal },
       )
         .then((d) => {
-          if (active) setData(d);
+          if (!controller.signal.aborted) setData(d);
         })
         .catch((e) => {
-          if (active) setError(e.message);
+          if (!controller.signal.aborted) setError(e.message);
         });
     }, 200);
     return () => {
-      active = false;
+      controller.abort();
       clearTimeout(timer);
     };
-  }, [source, query, offset, tick, splitFilter]);
+  }, [api, source, query, offset, tick, splitFilter]);
   function open(c: Case) {
+    if (busy) return;
+    clearVersions();
+    setError("");
     setSelected(c);
     setDecision(c.expected_decision || "route");
     setIntentId(c.expected_intent_id || c.suggestions[0]?.intent_id || "");
     setSplit(c.split);
+    setConversationSplit(c.split);
+    setSplitMessage("");
   }
   async function upload(file: File | undefined) {
     if (!file) return;
-    setBusy(true);
-    setError("");
+    const controller = beginMutation();
+    if (!controller) return;
     try {
       const body = new FormData();
       body.append("file", file);
-      const imported = await api<ImportReport>("/cases/import", {
-        method: "POST",
-        body,
-      });
+      const imported = await api<ImportReport>("/cases/import", { method: "POST", body, signal: controller.signal });
+      if (controller.signal.aborted) return;
       setReport(imported);
       setSource("customer");
       setOffset(0);
-      setTick((t) => t + 1);
+      setTick(value => value + 1);
       await refresh();
     } catch (e) {
-      setError((e as Error).message);
+      if (!controller.signal.aborted) setError((e as Error).message);
     } finally {
-      setBusy(false);
+      finishMutation(controller);
     }
   }
   async function review() {
-    if (!selected) return;
-    setBusy(true);
-    setError("");
+    if (!selected || !labelValid) return;
+    const controller = beginMutation();
+    if (!controller) return;
+    clearVersions();
     try {
-      const updated = await api<Case>(
-        "/cases/" + selected.case_id + "/review",
-        {
-          method: "PATCH",
-          body: JSON.stringify({
-            expected_decision: decision,
-            expected_intent_id: decision === "route" ? intentId : null,
-            split,
-          }),
-        },
-      );
+      const updated = await api<CaseSnapshot>("/cases/" + encodeURIComponent(selected.case_id) + "/review", {
+        method: "PATCH", signal: controller.signal,
+        body: JSON.stringify({ expected_decision: decision, expected_intent_id: requiresIntent ? intentId : null, split }),
+      });
+      if (controller.signal.aborted) return;
       setSelected({ ...selected, ...updated });
-      setTick((t) => t + 1);
+      setData(current => ({ ...current, items: current.items.map(item => item.case_id === selected.case_id ? { ...item, ...updated } : item) }));
+      setTick(value => value + 1);
       await refresh();
     } catch (e) {
-      setError((e as Error).message);
+      if (!controller.signal.aborted) setError((e as Error).message);
     } finally {
-      setBusy(false);
+      finishMutation(controller);
+    }
+  }
+  async function moveConversation() {
+    if (!selected?.conversation_id || conversationSplit === selected.split) return;
+    const controller = beginMutation();
+    if (!controller) return;
+    clearVersions();
+    setSplitMessage("");
+    try {
+      const moved = await api<ConversationSplitResult>("/conversations/" + encodeURIComponent(selected.conversation_id) + "/split", {
+        method: "PATCH", signal: controller.signal, body: JSON.stringify({ split: conversationSplit }),
+      });
+      if (controller.signal.aborted) return;
+      setSelected({ ...selected, split: moved.split });
+      setSplit(moved.split);
+      setConversationSplit(moved.split);
+      setData(current => ({ ...current, items: current.items.map(item => item.conversation_id === moved.conversation_id ? { ...item, split: moved.split } : item) }));
+      setSplitMessage(`Moved ${moved.updated_count} turns to ${moved.split}; labels and review status preserved.`);
+      setTick(value => value + 1);
+      await refresh();
+    } catch (e) {
+      if (!controller.signal.aborted) setError((e as Error).message);
+    } finally {
+      finishMutation(controller);
+    }
+  }
+  async function loadVersions() {
+    if (!selected || busy) return;
+    versionsController.current?.abort();
+    const controller = new AbortController();
+    versionsController.current = controller;
+    setHistoryLoading(true);
+    try {
+      const history = await api<CaseVersions>("/cases/" + encodeURIComponent(selected.case_id) + "/versions", { signal: controller.signal });
+      if (!controller.signal.aborted) setVersions(history);
+    } catch (e) {
+      if (!controller.signal.aborted) setError((e as Error).message);
+    } finally {
+      if (!controller.signal.aborted) setHistoryLoading(false);
     }
   }
   return (
@@ -1255,12 +1345,23 @@ export function Cases({
           )}
         </span>
       </div>
+      <section className="panel transcript-guidance" aria-label="Transcript CSV guidance">
+        <h2>Import transcript cases</h2>
+        <p>Use UTF-8 CSV with a Question column; original language is preserved. For stable identity across files, include SourceDatasetId, BenchmarkSessionId and BenchmarkSessionMessageId (each at most 200 characters). Session and message IDs are required with explicit context or a source namespace.</p>
+        <p>Optional Context contains a JSON pre-turn snapshot: active_intent, slots, pending_slot, pending_confirmation, clarification_options, clarifications and prior user/assistant messages. Use only workspace catalog intent IDs. Optional Split is dev, calibration or test (default test); every conversation stays in one split.</p>
+        <p>Context allows up to 12 prior messages of 2,000 characters, 10 string slots, 4 clarification options and 10 clarifications. Labels and future context are never inferred from source answers or flags. Review each imported turn before evaluation.</p>
+        <a className="text-button" href="/v1/cases/template" download="synthetic-demo-banking-transcripts.csv">Download synthetic banking CSV template</a>
+        <p className="field-hint">Synthetic banking demo — not real transcript data. The fixed template uses the Banking workspace catalog; importing it into another workspace requires adapting its intent IDs. Downloading never imports cases.</p>
+      </section>
       {report && (
         <div className="notice success">
           <Check size={18} />
           <span>
             {report.imported}
-            {t(" cases imported. ")}
+            {" unique candidate cases; "}
+            {report.inserted ?? "Unavailable"}{" inserted; "}
+            {report.already_present ?? "Unavailable"}{" already present; "}
+            {report.duplicates}{" duplicate input rows. "}
             {report.skipped_empty_question}
             {t(" empty questions excluded; ")}
             {report.valid_traces}
@@ -1335,6 +1436,7 @@ export function Cases({
                     <td>
                       <button
                         className="text-button question-button"
+                        disabled={busy}
                         onClick={() => open(c)}
                       >
                         {c.question}
@@ -1362,6 +1464,7 @@ export function Cases({
                     <td>
                       <button
                         className="icon-button"
+                        disabled={busy}
                         onClick={() => open(c)}
                         aria-label={t("Review case")}
                       >
@@ -1409,7 +1512,8 @@ export function Cases({
               <h2>{t("Expected decision")}</h2>
               <button
                 className="icon-button"
-                onClick={() => setSelected(undefined)}
+                disabled={busy}
+                onClick={() => { clearVersions(); setSelected(undefined); }}
                 aria-label={t("Close review")}
               >
                 <X size={18} />
@@ -1419,27 +1523,47 @@ export function Cases({
               <blockquote className="review-question">
                 {selected.question}
               </blockquote>
+              <div className="case-review-status"><Badge tone={selected.reviewed ? "green" : "amber"}>{selected.reviewed ? "Reviewed" : "Awaiting review"}</Badge></div>
+              <dl className="transcript-identifiers">
+                <div><dt>Source dataset</dt><dd>{selected.source_dataset_id || "Legacy file-scoped identity"}</dd></div>
+                <div><dt>Source session</dt><dd>{selected.source_session_id || "Unavailable"}</dd></div>
+                <div><dt>Source message</dt><dd>{selected.source_message_id || "Unavailable"}</dd></div>
+                <div><dt>Conversation</dt><dd>{selected.conversation_id || "Unavailable"}</dd></div>
+                <div><dt>Conversation split</dt><dd>{selected.split}</dd></div>
+              </dl>
+              <section className="transcript-context" aria-label="Pre-turn context">
+                <h3>Pre-turn context</h3>
+                {selected.context && Object.keys(selected.context).length ? <pre>{JSON.stringify(selected.context, null, 2)}</pre> : <p>No pre-turn context supplied.</p>}
+              </section>
               <label>
                 {t("Decision type")}
                 <select
                   value={decision}
-                  onChange={(e) => setDecision(e.target.value)}
+                  disabled={busy}
+                  onChange={(e) => {
+                    const next = e.target.value as ReviewDecision;
+                    setDecision(next);
+                    if (next === "continue" || next === "cancel") setIntentId(activeIntent?.intent_id || "");
+                  }}
                 >
                   <option value="route">{t("Route to intent")}</option>
+                  <option value="continue" disabled={!activeIntent}>Continue active workflow</option>
+                  <option value="cancel" disabled={!activeIntent}>Cancel active workflow</option>
                   <option value="clarify">{t("Clarify")}</option>
                   <option value="out_of_scope">{t("Out of scope")}</option>
                   <option value="handoff">{t("Hand off to an agent")}</option>
                 </select>
               </label>
-              {decision === "route" && (
+              {requiresIntent && (
                 <label>
                   {t("Correct intent")}
                   <select
                     value={intentId}
+                    disabled={busy}
                     onChange={(e) => setIntentId(e.target.value)}
                   >
-                    <option value="">{t("Select")}</option>
-                    {catalog.map((i) => (
+                    {!contextDecision && <option value="">{t("Select")}</option>}
+                    {(contextDecision ? (activeIntent ? [activeIntent] : []) : catalog).map((i) => (
                       <option key={i.intent_id} value={i.intent_id}>
                         {i.name}
                       </option>
@@ -1451,13 +1575,15 @@ export function Cases({
                 {t("Data split")}
                 <select
                   value={split}
-                  onChange={(e) => setSplit(e.target.value)}
+                  disabled={busy}
+                  onChange={(e) => setSplit(e.target.value as DataSplit)}
                 >
                   <option value="test">{t("Test")}</option>
                   <option value="dev">{t("Development")}</option>
                   <option value="calibration">{t("Calibration")}</option>
                 </select>
               </label>
+              <p className="field-hint">Continue and cancel require the matching active context intent. Other non-route decisions have no intent label. A conversation cannot cross data splits.</p>
               <p className="field-hint">
                 {t(
                   "The initial selection is a lexical search suggestion. Verify the business meaning before saving.",
@@ -1465,12 +1591,23 @@ export function Cases({
               </p>
               <button
                 className="button primary full"
-                disabled={busy || (decision === "route" && !intentId)}
+                disabled={busy || !labelValid}
                 onClick={() => void review()}
               >
                 <Check size={17} />
                 {t("Confirm and save label")}
               </button>
+              {selected.conversation_id && <section className="conversation-split" aria-label="Whole-conversation split">
+                <h3>Move the whole conversation</h3>
+                <p className="field-hint">Move every turn together. Existing labels and review status stay unchanged.</p>
+                <label>Conversation split<select value={conversationSplit} disabled={busy} onChange={event => setConversationSplit(event.target.value as DataSplit)}>
+                  <option value="test">Test</option><option value="dev">Development</option><option value="calibration">Calibration</option>
+                </select></label>
+                <button className="button full" disabled={busy || conversationSplit === selected.split} onClick={() => void moveConversation()}>Move whole conversation</button>
+                {splitMessage && <p role="status" className="field-hint">{splitMessage}</p>}
+              </section>}
+              <button className="button subtle full" disabled={busy || historyLoading} onClick={() => void loadVersions()}>{historyLoading ? "Loading history…" : "View label history"}</button>
+              {versions && <section aria-label="Label history" className="case-versions"><h3>Label history</h3>{versions.versions.length ? <ul>{versions.versions.map(version => <li key={version.version}><strong>{version.reason}</strong> · {version.version}<br />{version.case.expected_decision || "Unlabelled"} · {version.case.expected_intent_id || "No intent label"} · {version.case.split} · {version.case.reviewed ? "Reviewed" : "Awaiting review"}</li>)}</ul> : <p>No label changes recorded.</p>}</section>}
               <h4>{t("Retrieval suggestions")}</h4>
               {selected.suggestions.slice(0, 3).map((c, i) => (
                 <CandidateRow key={c.intent_id} candidate={c} rank={i + 1} />
@@ -1526,47 +1663,81 @@ export function Experiments({ status }: { status: Status }) {
     catalogMinimum,
     status.intent_count,
   );
+  const [execution, setExecution] = useState<ExecutionControlValues>({
+    repetitions: "1", maxProviderRequests: "", maxDurationSeconds: "", maxReportedCostUsd: "",
+  });
   const [job, setJob] = useState<Evaluation>();
   const [history, setHistory] = useState<Evaluation[]>([]);
   const [error, setError] = useState("");
   const [starting, setStarting] = useState(false);
+  const [acceptedId, setAcceptedId] = useState<string>();
   const [selectedMethod, setSelectedMethod] = useState("lexical");
-  const busy =
-    starting || (!!job && ["queued", "running"].includes(job.status));
-  useEffect(() => {
-    api<Evaluation[]>("/evaluations")
-      .then(setHistory)
-      .catch((e) => setError(e.message));
+  const [cancellationPending, setCancellationPending] = useState(false);
+  const selectionGeneration = useRef(0);
+  const selectionController = useRef<AbortController | null>(null);
+  const cancellationController = useRef<AbortController | null>(null);
+  const pollController = useRef<AbortController | null>(null);
+  const busy = starting || Boolean(acceptedId) || (!!job && isEvaluationActive(job.status));
+  const pollingId = acceptedId || (job && isEvaluationActive(job.status) ? job.id : undefined);
+  useEffect(() => () => {
+    selectionGeneration.current++;
+    selectionController.current?.abort();
+    cancellationController.current?.abort();
+    pollController.current?.abort();
   }, []);
   useEffect(() => {
-    if (!job || !["queued", "running"].includes(job.status)) return;
-    let active = true;
-    const timer = setInterval(() => {
-      api<Evaluation>("/evaluations/" + job.id)
-        .then((j) => {
-          if (active) {
-            setJob(j);
-            if (!["queued", "running"].includes(j.status))
-              api<Evaluation[]>("/evaluations").then(setHistory);
-          }
-        })
-        .catch((e) => {
-          if (active) setError(e.message);
-        });
-    }, 700);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
-  }, [job?.id, job?.status]);
+    if (job && isEvaluationActive(job.status)) return;
+    const controller = new AbortController();
+    api<Evaluation[]>("/evaluations", { signal: controller.signal })
+      .then(items => { if (!controller.signal.aborted) setHistory(items); })
+      .catch(e => { if (!controller.signal.aborted) setError((e as Error).message); });
+    return () => controller.abort();
+  }, [api, job?.id, job?.status]);
+  useEffect(() => {
+    if (!pollingId || starting || cancellationPending) return;
+    const controller = new AbortController();
+    pollController.current = controller;
+    const generation = selectionGeneration.current;
+    const id = pollingId;
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
+      if (controller.signal.aborted || generation !== selectionGeneration.current) return;
+      try {
+        const current = await api<Evaluation>("/evaluations/" + encodeURIComponent(id), { signal: controller.signal });
+        if (controller.signal.aborted || generation !== selectionGeneration.current) return;
+        setJob(current);
+        setAcceptedId(undefined);
+        setError("");
+        if (!isEvaluationActive(current.status)) return;
+      } catch (e) {
+        if (controller.signal.aborted || generation !== selectionGeneration.current) return;
+        setError((e as Error).message);
+      }
+      if (!controller.signal.aborted) timer = setTimeout(() => void poll(), 700);
+    }
+    timer = setTimeout(() => void poll(), 700);
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [api, pollingId, job?.status, cancellationPending, starting]);
+  function beginSelection() {
+    selectionController.current?.abort();
+    pollController.current?.abort();
+    const controller = new AbortController();
+    selectionController.current = controller;
+    return { controller, generation: ++selectionGeneration.current };
+  }
   async function run() {
+    if (busy || invalidSelection || !executionValidation.valid) return;
+    const { controller, generation } = beginSelection();
     setError("");
     setStarting(true);
+    setJob(undefined);
     try {
       const created = await api<{ id: string }>("/evaluations", {
         method: "POST",
+        signal: controller.signal,
         body: JSON.stringify({
           methods,
+          ...executionValidation.payload,
           semantic_rejection: rejection,
           embedding_ids: embeddingIds.length ? embeddingIds : ["default"],
           llm_ids: llmIds.length ? llmIds : ["default"],
@@ -1579,21 +1750,54 @@ export function Experiments({ status }: { status: Status }) {
           scale_max_oos_false_accept_rate: calibrationTarget / 100,
         }),
       });
+      if (controller.signal.aborted || generation !== selectionGeneration.current) return;
+      setAcceptedId(created.id);
+      const current = await api<Evaluation>("/evaluations/" + encodeURIComponent(created.id), { signal: controller.signal });
+      if (controller.signal.aborted || generation !== selectionGeneration.current) return;
       setSelectedMethod(methods[0]);
-      setJob(await api<Evaluation>("/evaluations/" + created.id));
+      setJob(current);
+      setAcceptedId(undefined);
     } catch (e) {
-      setError((e as Error).message);
+      if (!controller.signal.aborted && generation === selectionGeneration.current) setError((e as Error).message);
     } finally {
-      setStarting(false);
+      if (!controller.signal.aborted && generation === selectionGeneration.current) setStarting(false);
     }
   }
   async function open(id: string) {
+    if (busy) return;
+    const { controller, generation } = beginSelection();
+    setError("");
     try {
-      const j = await api<Evaluation>("/evaluations/" + id);
-      setJob(j);
-      setSelectedMethod(Object.keys(j.results || {})[0] || "lexical");
+      const current = await api<Evaluation>("/evaluations/" + encodeURIComponent(id), { signal: controller.signal });
+      if (controller.signal.aborted || generation !== selectionGeneration.current) return;
+      setJob(current);
+      setSelectedMethod(Object.keys(current.results || {})[0] || "lexical");
     } catch (e) {
-      setError((e as Error).message);
+      if (!controller.signal.aborted && generation === selectionGeneration.current) setError((e as Error).message);
+    }
+  }
+  async function cancel() {
+    const id = acceptedId || job?.id;
+    if (!id || (!acceptedId && (!job || !isEvaluationActive(job.status) || job.cancel_requested)) || cancellationPending || (starting && !acceptedId)) return;
+    selectionController.current?.abort();
+    pollController.current?.abort();
+    const generation = ++selectionGeneration.current;
+    const controller = new AbortController();
+    cancellationController.current = controller;
+    // Cancellation takes ownership even when the accepted job's first status read is still pending.
+    setStarting(false);
+    setCancellationPending(true);
+    setError("");
+    try {
+      const current = await api<Evaluation>("/evaluations/" + encodeURIComponent(id) + "/cancel", { method: "POST", signal: controller.signal });
+      if (!controller.signal.aborted && generation === selectionGeneration.current) {
+        setJob(current);
+        setAcceptedId(undefined);
+      }
+    } catch (e) {
+      if (!controller.signal.aborted && generation === selectionGeneration.current) setError((e as Error).message);
+    } finally {
+      if (!controller.signal.aborted && generation === selectionGeneration.current) setCancellationPending(false);
     }
   }
   const selectedId = job?.results?.[selectedMethod]
@@ -1642,8 +1846,9 @@ export function Experiments({ status }: { status: Status }) {
         ? status.reviewed_customer_test_count
         : status.seed_case_count + status.reviewed_customer_test_count,
   );
+  const executionValidation = validateExecutionControls(execution, preview.length * caseCount);
   const invalidSelection =
-    !preview.length ||
+    !preview.length || !caseCount || !Number.isInteger(limit) || limit < 1 || limit > 2000 ||
     (methods.includes("e5") &&
       rejection === "calibrated" &&
       (!Number.isFinite(calibrationTarget) ||
@@ -1668,7 +1873,7 @@ export function Experiments({ status }: { status: Status }) {
             )}
           </p>
         </div>
-        {job?.status === "completed" && (
+        {job && !isEvaluationActive(job.status) && (
           <button
             className="button"
             onClick={() => download("evaluation-" + job.id + ".json", job)}
@@ -1711,7 +1916,7 @@ export function Experiments({ status }: { status: Status }) {
           </label>
           <button
             className="button primary"
-            disabled={busy || invalidSelection || limit < 1 || limit > 2000}
+            disabled={busy || invalidSelection || !executionValidation.valid}
             onClick={() => void run()}
           >
             {busy ? (
@@ -1729,6 +1934,7 @@ export function Experiments({ status }: { status: Status }) {
           maximum={status.intent_count}
           disabled={busy}
         />
+        <ExecutionControls value={execution} baseExecutionCount={preview.length * caseCount} disabled={busy} onChange={setExecution} />
         <div className="method-checks">
           {status.methods.map((m) => (
             <label key={m.id} className={!m.available ? "disabled" : ""}>
@@ -1824,8 +2030,9 @@ export function Experiments({ status }: { status: Status }) {
             {t(" combinations · ")}
             {caseCount}
             {t(" cases · ")}
-            {preview.length * caseCount}
+            {executionValidation.plannedCount ?? "—"}
             {t(" decisions")}
+            {execution.repetitions !== "1" ? ` · ${execution.repetitions} repetitions` : ""}
           </strong>
           <p>
             {needsLlm && !compareProfiles
@@ -1894,42 +2101,13 @@ export function Experiments({ status }: { status: Status }) {
       </section>
       {error && <ErrorBox message={error} />}{" "}
       {job?.error && <ErrorBox message={job.error} />}
-      {busy && job && (
-        <div className="evaluation-progress">
-          <div>
-            <LoaderCircle size={17} className="spin" />
-            <span>
-              {job.progress} / {job.total}
-              {t(" decisions evaluated")}
-              {activeVariant && (
-                <small className="active-variant">
-                  {activeVariant.llm?.model ||
-                    activeVariant.embedding?.model ||
-                    t(activeVariant.name)}
-                  {activeVariant.llm && activeVariant.embedding
-                    ? " + " + activeVariant.embedding.model
-                    : ""}{" "}
-                  ·{" "}
-                  {activeVariant.catalog && (
-                    <>
-                      {t("{count} intents", {
-                        count: activeVariant.catalog.intent_count,
-                      })}{" "}
-                      ·{" "}
-                    </>
-                  )}
-                  {job.phase === "calibration"
-                    ? t("Fitting threshold")
-                    : job.phase === "index"
-                      ? t("Preparing index")
-                      : t("Running cases")}
-                </small>
-              )}
-            </span>
-          </div>
-          <progress value={job.progress} max={job.total} />
-        </div>
-      )}
+      {acceptedId && !job && <div className="notice"><span>Evaluation {acceptedId} accepted. Loading evaluation status…</span><button className="button subtle" disabled={cancellationPending} onClick={() => void cancel()}>{cancellationPending ? "Cancellation pending" : "Cancel evaluation"}</button></div>}
+      {job && <ExecutionProgress evaluation={job} cancellationPending={cancellationPending} onCancel={() => void cancel()} />}
+      {activeVariant && <p className="field-hint">Active combination: {activeVariant.name}{activeVariant.repeat_index ? ` · Repeat ${activeVariant.repeat_index}` : ""}</p>}
+      {job && (job.group_summaries?.length ? job.group_summaries.map(summary => {
+        const entry = Object.entries(job.results || {}).find(([, item]) => item.group_id === summary.group_id);
+        return <RepeatSummary key={summary.group_id} summary={summary} label={entry ? baseResultLabel(entry[0], entry[1], t) : summary.group_id} />;
+      }) : <RepeatSummary />)}
       {job && metrics && result ? (
         <>
           <div className="result-context">
@@ -2142,7 +2320,9 @@ export function Experiments({ status }: { status: Status }) {
                           onClick={() => setSelectedMethod(id)}
                         >
                           {t(r.retrieval_profile?.name || methodNames[resultMethod(id, r)] || "Experiment")}
+                          {r.repeat_index ? ` · Repeat ${r.repeat_index}` : ""}
                         </button>
+                        {r.complete === false ? <div className="selection-warning">Incomplete · {r.completed_count ?? r.records.length} / {r.selected_count ?? job.selected_count} cases</div> : null}
                         <div className="muted">{r.model}</div>
                         {r.reranker && <div className="muted">Reranker: {r.reranker.model}</div>}
                         {r.retrieval_profile && <div className="muted">{t("Pool {pool} → LLM {final}", { pool: r.retrieval_profile.pool_k, final: r.retrieval_profile.candidate_k })}</div>}
@@ -2185,7 +2365,7 @@ export function Experiments({ status }: { status: Status }) {
                       <td>{pct(r.metrics.recall_at_k)}<small className="muted"> K={r.metrics.k}</small></td>
                       <td>{ms(r.metrics.stage_latency_ms?.retrieval?.p95)}</td>
                       <td>
-                        {r.scaling?.accuracy_delta_pp == null
+                        {r.complete === false || r.scaling?.accuracy_delta_pp == null
                           ? "—"
                           : new Intl.NumberFormat(tag, {
                               signDisplay: "exceptZero",
@@ -2193,7 +2373,7 @@ export function Experiments({ status }: { status: Status }) {
                             }).format(r.scaling.accuracy_delta_pp)}
                       </td>
                       <td>
-                        {r.scaling?.p95_ratio == null
+                        {r.complete === false || r.scaling?.p95_ratio == null
                           ? "—"
                           : r.scaling.p95_ratio.toFixed(2) + "×"}
                       </td>
@@ -2245,10 +2425,11 @@ export function Experiments({ status }: { status: Status }) {
               )}
             />
           )}
+          {result.complete === false ? <div className="notice">Incomplete result: {result.completed_count ?? result.records.length} of {result.selected_count ?? job.selected_count} cases completed. These metrics describe finished cases only and are excluded from repeat summaries and scaling comparisons.</div> : null}
           <div className="result-detail-bar">
             <h2>{t("Results by case")}</h2>
             <span>
-              {result.model} · {metrics.errors}
+              {resultLabel(selectedId, result, t)} · {metrics.errors}
               {t(" technical errors")}
             </span>
           </div>
@@ -2335,7 +2516,7 @@ export function Experiments({ status }: { status: Status }) {
         <section className="history">
           <h2>{t("Previous runs")}</h2>
           {history.slice(0, 8).map((h) => (
-            <button key={h.id} onClick={() => void open(h.id)}>
+            <button key={h.id} disabled={busy} onClick={() => void open(h.id)}>
               <FlaskConical size={17} />
               <span>{new Date(h.created * 1000).toLocaleString(tag)}</span>
               <span>
@@ -2349,11 +2530,7 @@ export function Experiments({ status }: { status: Status }) {
                 </span>
               )}
               <Badge>
-                {h.status === "completed"
-                  ? t("Completed")
-                  : h.status === "failed"
-                    ? t("Failed")
-                    : t("Running")}
+                {h.status.charAt(0).toUpperCase() + h.status.slice(1)}
               </Badge>
               <ArrowRight size={16} />
             </button>

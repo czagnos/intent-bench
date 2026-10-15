@@ -2039,3 +2039,20 @@ dialog.overlay::backdrop {
   .execution-progress-heading { align-items: flex-start; }
   .execution-progress-heading button { margin-left: 0; }
 }
+
+.transcript-guidance {
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.transcript-guidance h2 { margin: 0 0 12px; font-size: 16px; }
+.transcript-guidance p { line-height: 1.6; }
+.transcript-identifiers { display: grid; gap: 10px; margin: 20px 0; }
+.transcript-identifiers dt { font-size: 12px; color: var(--muted); }
+.transcript-identifiers dd { margin: 4px 0 0; overflow-wrap: anywhere; font-size: 13px; }
+.transcript-context { margin-bottom: 20px; }
+.transcript-context h3, .case-versions h3 { font-size: 14px; }
+.transcript-context pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.5; background: #f5f7fa; padding: 12px; border-radius: 8px; }
+.case-versions ul { padding-left: 18px; overflow-wrap: anywhere; font-size: 13px; line-height: 1.5; }
+.case-versions li + li { margin-top: 10px; }
+.conversation-split { padding: 16px 0; margin: 16px 0; border-top: 1px solid #e6eaf0; border-bottom: 1px solid #e6eaf0; }
+.conversation-split h3 { font-size: 14px; margin-top: 0; }
