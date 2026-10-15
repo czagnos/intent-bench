@@ -138,6 +138,20 @@ class EvaluationController:
         self._started_at = time.monotonic()
         self._totals = _UsageAccumulator()
         self._rows: dict[tuple[ProviderService, ExecutionStage], _UsageAccumulator] = {}
+        self._bookkeeping_seconds = 0.0
+        self._bookkeeping_depth = 0
+
+    @contextmanager
+    def _bookkeeping(self) -> Iterator[None]:
+        """Exclude control work once, including nested checks and failing callbacks."""
+        started = time.perf_counter()
+        self._bookkeeping_depth += 1
+        try:
+            yield
+        finally:
+            self._bookkeeping_depth -= 1
+            if self._bookkeeping_depth == 0:
+                self._bookkeeping_seconds += time.perf_counter() - started
 
     def accounting(self) -> ExecutionAccounting:
         return ExecutionAccounting(
@@ -147,31 +161,34 @@ class EvaluationController:
         )
 
     def checkpoint(self) -> None:
-        if self.cancel_requested is not None and self.cancel_requested():
-            raise EvaluationStopped("user_cancelled")
-        if (self.limits.max_duration_seconds is not None
-                and time.monotonic() - self._started_at >= self.limits.max_duration_seconds):
-            raise EvaluationStopped("duration_limit")
-        if self.limits.max_reported_cost_usd is not None:
-            if self._totals.unknown_cost_requests:
-                raise EvaluationStopped("reported_cost_unknown")
-            if self._totals.known_cost_usd >= Decimal(str(self.limits.max_reported_cost_usd)):
-                raise EvaluationStopped("reported_cost_limit")
+        with self._bookkeeping():
+            if self.cancel_requested is not None and self.cancel_requested():
+                raise EvaluationStopped("user_cancelled")
+            if (self.limits.max_duration_seconds is not None
+                    and time.monotonic() - self._started_at >= self.limits.max_duration_seconds):
+                raise EvaluationStopped("duration_limit")
+            if self.limits.max_reported_cost_usd is not None:
+                if self._totals.unknown_cost_requests:
+                    raise EvaluationStopped("reported_cost_unknown")
+                if self._totals.known_cost_usd >= Decimal(str(self.limits.max_reported_cost_usd)):
+                    raise EvaluationStopped("reported_cost_limit")
 
     def reserve_request(self, service: ProviderService, stage: ExecutionStage) -> ProviderAttempt:
-        self.checkpoint()
-        if self.limits.max_provider_requests is not None and self._totals.provider_requests >= self.limits.max_provider_requests:
-            raise EvaluationStopped("request_limit")
-        self._totals.reserve()
-        self._rows.setdefault((service, stage), _UsageAccumulator()).reserve()
-        self._persist()
-        return ProviderAttempt(self, service, stage)
+        with self._bookkeeping():
+            self.checkpoint()
+            if self.limits.max_provider_requests is not None and self._totals.provider_requests >= self.limits.max_provider_requests:
+                raise EvaluationStopped("request_limit")
+            self._totals.reserve()
+            self._rows.setdefault((service, stage), _UsageAccumulator()).reserve()
+            self._persist()
+            return ProviderAttempt(self, service, stage)
 
     def record_usage(self, service: ProviderService, stage: ExecutionStage, usage: ReportedUsage) -> None:
-        self._totals.record(usage)
-        self._rows[(service, stage)].record(usage)
-        # Keep the just-finished response available; stop at the next checkpoint.
-        self._persist()
+        with self._bookkeeping():
+            self._totals.record(usage)
+            self._rows[(service, stage)].record(usage)
+            # Keep the just-finished response available; stop at the next checkpoint.
+            self._persist()
 
     def _persist(self) -> None:
         if self.on_checkpoint is not None:
@@ -180,6 +197,17 @@ class EvaluationController:
 
 _controller: ContextVar[EvaluationController | None] = ContextVar("evaluation_controller", default=None)
 _stage: ContextVar[ExecutionStage] = ContextVar("evaluation_stage", default="evaluation")
+
+
+def compute_time() -> float:
+    """Elapsed-time clock for inference/preparation, excluding evaluation control I/O.
+
+    Use differences within one execution scope. Duration limits deliberately use
+    the ordinary monotonic clock, so bookkeeping still consumes the wall budget.
+    Live routing and standalone model work have no controller and use normal time.
+    """
+    controller = _controller.get()
+    return time.perf_counter() - (controller._bookkeeping_seconds if controller is not None else 0.0)
 
 
 @contextmanager

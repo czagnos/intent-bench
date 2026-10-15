@@ -1,7 +1,6 @@
 import math
 import re
 import threading
-import time
 from collections import Counter
 
 import httpx
@@ -9,7 +8,7 @@ import numpy as np
 
 from .config import Settings
 from .contracts import Candidate, Intent
-from .execution import execution_checkpoint, reserve_provider_request
+from .execution import compute_time, execution_checkpoint, reserve_provider_request
 from .providers import ModelUnavailable, account_provider_response, is_openrouter, response_json
 from .vector_index import IndexPreparation, IndexSnapshot, VectorIndex, build_corpus
 
@@ -138,7 +137,7 @@ class Retriever:
 
     def prepare_index(self) -> IndexPreparation:
         execution_checkpoint()
-        started = time.perf_counter()
+        started = compute_time()
         source = "memory"
         with self.index_lock:
             execution_checkpoint()
@@ -156,19 +155,19 @@ class Retriever:
         execution_checkpoint()
         return IndexPreparation(source=source, generation=self.snapshot.metadata.generation if self.snapshot else None,
                                 document_count=len(self.documents), dimensions=self.matrix.shape[1],
-                                elapsed_ms=round((time.perf_counter() - started) * 1000, 2))
+                                elapsed_ms=round((compute_time() - started) * 1000, 2))
 
     def rebuild_index(self) -> IndexPreparation:
         """Publish a new generation; callers already holding this matrix keep it."""
         execution_checkpoint()
         if self.vector_index is None:
             raise ModelUnavailable("A persistent index is not configured.")
-        started = time.perf_counter()
+        started = compute_time()
         acquired = self.vector_index.rebuild(lambda: self.embeddings.encode([d.text for d in self.documents]))
         execution_checkpoint()
         return IndexPreparation(source=acquired.source, generation=acquired.snapshot.metadata.generation,
                                 document_count=len(self.documents), dimensions=acquired.snapshot.metadata.dimensions,
-                                elapsed_ms=round((time.perf_counter() - started) * 1000, 2))
+                                elapsed_ms=round((compute_time() - started) * 1000, 2))
 
     def index_is_current(self) -> bool:
         return self.snapshot is None or self.vector_index is None or self.snapshot.revision == self.vector_index.revision()

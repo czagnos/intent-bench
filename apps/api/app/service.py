@@ -16,7 +16,7 @@ from .importer import parse_benchmark
 from .transcript_data import StoredImportReportData
 from .evaluation import summarize, diagnose
 from .evaluation_types import EvaluationCheckpoint, EvaluationMetrics, EvaluationResult
-from .execution import EvaluationController, EvaluationStopped, ExecutionAccounting, ExecutionLimits, activate_execution, execution_checkpoint, execution_stage
+from .execution import EvaluationController, EvaluationStopped, ExecutionAccounting, ExecutionLimits, activate_execution, compute_time, execution_checkpoint, execution_stage
 from .model_catalog import MAX_VARIANTS, ModelCatalog, embedding_key, embedding_runtime_key, llm_metadata
 from .policy import apply_decision, baseline_decision, context_decision, explicit_workflow_slots
 from .providers import is_openrouter
@@ -209,7 +209,7 @@ class Studio:
             return self.reranker_clients[key]
 
     def compute(self, text, state, method, retriever, channel="chat", emit=None, variant=None, preparation_error=None, calibration=None, reranker: Reranker | None = None):
-        started = time.perf_counter()
+        started = compute_time()
         settings = variant.settings if variant else self.settings
         timings, candidates, usage = {}, [], {}
         trace = {"executed": False, "context_bypass": False}
@@ -222,14 +222,14 @@ class Studio:
             if preparation_error:
                 phase = "preparation"
                 raise preparation_error
-            t = time.perf_counter()
+            t = compute_time()
             proposal = context_decision(text, state)
             trace["context_bypass"] = proposal is not None
-            timings["context"] = (time.perf_counter()-t)*1000
+            timings["context"] = (compute_time()-t)*1000
             emit("context", "Conversation context ready")
             if proposal is None:
                 phase = "retrieval"
-                t = time.perf_counter()
+                t = compute_time()
                 query = text
                 if len(tokens(text)) < 5 and state.get("messages"):
                     query += " " + state["messages"][-1]["content"][:200]
@@ -241,46 +241,46 @@ class Studio:
                                                         state.get("active_intent"), profile.source_k if profile else 40,
                                                         profile.semantic_weight if profile else .5)
                 candidates = pool[:settings.candidate_k]
-                timings["retrieval"] = (time.perf_counter()-t)*1000
+                timings["retrieval"] = (compute_time()-t)*1000
                 emit("retrieval", f"{len(pool)} intent candidates retrieved", candidates=[c.model_dump() for c in pool])
                 trace["reranker_used"] = bool(profile and profile.reranker_id)
                 if profile and profile.reranker_id:
                     phase = "reranking"
                     candidates = []
                     trace["final"] = []
-                    t = time.perf_counter()
+                    t = compute_time()
                     candidates = (reranker or self.get_reranker(settings)).rank(query, pool, retriever.intents, settings.candidate_k)
-                    timings["reranking"] = (time.perf_counter()-t)*1000
+                    timings["reranking"] = (compute_time()-t)*1000
                     emit("reranking", f"{len(candidates)} candidates reranked", candidates=[c.model_dump() for c in candidates])
                 trace["final"] = [c.intent_id for c in candidates]
                 phase = "selection"
-                t = time.perf_counter()
+                t = compute_time()
                 if method == "hybrid_llm":
                     selector = Selector(settings, transport=self.selector.transport) if variant else self.selector
                     proposal, usage = selector.select(text, state, candidates, retriever.intents)
                 else:
                     threshold = calibration.get("threshold") if method == "e5" and calibration else None
                     proposal = baseline_decision(text, candidates, state, semantic=method == "e5", rejection_threshold=threshold)
-                timings["selection"] = (time.perf_counter()-t)*1000
+                timings["selection"] = (compute_time()-t)*1000
                 trace["selection_completed"] = True
                 trace["proposal_decision"] = proposal.decision
                 trace["proposal_intent_id"] = proposal.intent_id
                 emit("selection", "Intent decision generated")
             phase = "policy"
-            t = time.perf_counter()
+            t = compute_time()
             if proposal.decision == "route" and proposal.intent_id in retriever.intents:
                 proposal.slots = explicit_workflow_slots(text, retriever.intents[proposal.intent_id])
             result, new_state = apply_decision(proposal, state, retriever.intents, channel)
-            timings["policy"] = (time.perf_counter()-t)*1000
+            timings["policy"] = (compute_time()-t)*1000
             emit("policy", "Decision and workflow mapping validated")
         except (ModelUnavailable, ValueError) as exc:
             error_stage = phase
             if phase not in timings and phase not in ("preparation",):
-                timings[phase] = (time.perf_counter()-t)*1000
+                timings[phase] = (compute_time()-t)*1000
             result = {"decision": "error", "intent_id": None, "intent_name": None, "workflow_id": None, "slots": {}, "missing_slots": [], "clarification_options": [], "message": str(exc), "reason_code": "technical_error", "simulation": True, "simulation_complete": False}
             result["diagnostics"] = getattr(exc, "diagnostics", None)
             new_state = copy.deepcopy(state)
-        timings["compute_total"] = (time.perf_counter()-started)*1000
+        timings["compute_total"] = (compute_time()-started)*1000
         result.update(method=method, candidates=[c.model_dump() for c in candidates], timings_ms={k: round(v, 2) for k, v in timings.items()}, usage=usage, catalog_version=retriever.version, prompt_version=prompt_version(settings) if method == "hybrid_llm" else None, model=settings.llm_model if method == "hybrid_llm" else (settings.embedding_model if method == "e5" else "char-tfidf+bm25-v1"), calibration=None)
         result["embedding"] = retriever.embeddings.metadata if method in ("e5", "hybrid_llm") else None
         result["llm"] = llm_metadata(settings) if method == "hybrid_llm" else None
@@ -364,7 +364,7 @@ class Studio:
             "cancel_requested": False, "stop_reason": None, "accounting": ExecutionAccounting().model_dump(),
             "scale_calibration": {"source": options.scale_calibration_source, "sample_count": len(fit_cases),
                                   "dataset_fingerprint": data_fingerprint(fit_cases), "max_oos_false_accept_rate": options.scale_max_oos_false_accept_rate} if scale_fit else None,
-            "latency_protocol": "sequential-warm-index-v2", "source_counts": dict(__import__('collections').Counter(c['source'] for c in cases))})
+            "latency_protocol": "sequential-warm-index-v3", "source_counts": dict(__import__('collections').Counter(c['source'] for c in cases))})
         self.evaluation_pool.submit(self.run_evaluation, workspace, job["id"], cases, runs, calibrations, fit_cases)
         return job
 
@@ -408,7 +408,7 @@ class Studio:
                           "scaling": {"baseline_intent_count": None, "accuracy_delta_pp": None, "p95_ratio": None}}
                 results[run_id] = result
                 checkpoint({"active_variant": run_id, "phase": "index", "results": results})
-                started = time.perf_counter()
+                started = compute_time()
                 model_key = embedding_key(variant.settings)
                 runtime_key = embedding_runtime_key(variant.settings)
                 cache_key = (workspace, scope["version"], runtime_key)
@@ -433,7 +433,7 @@ class Studio:
                         cache_hit = index_preparation.source in ("memory", "disk")
                     except ModelUnavailable as exc:
                         preparation_error = index_errors[preparation_key] = exc
-                index_ms = round((time.perf_counter()-started)*1000, 2)
+                index_ms = round((compute_time()-started)*1000, 2)
                 reranker_ms = 0
                 reranker = None
                 if variant.retrieval and variant.retrieval.reranker_id and preparation_error is None:
@@ -442,17 +442,17 @@ class Studio:
                         pinned_rerankers[reranker_key] = Reranker(
                             variant.settings.model_copy(deep=True), transport=self.reranker.transport)
                     reranker = pinned_rerankers[reranker_key]
-                    started = time.perf_counter()
+                    started = compute_time()
                     try:
                         with execution_stage("index"):
                             reranker.prepare()
                     except ModelUnavailable as exc:
                         preparation_error = exc
-                    reranker_ms = round((time.perf_counter()-started)*1000, 2)
+                    reranker_ms = round((compute_time()-started)*1000, 2)
                 calibration_ms = 0
                 if method == "e5" and fit_cases and preparation_error is None:
                     checkpoint({"phase": "calibration"})
-                    started = time.perf_counter()
+                    started = compute_time()
                     if preparation_key not in fitted and preparation_key not in fit_errors:
                         try:
                             with execution_stage("calibration"):
@@ -462,7 +462,7 @@ class Studio:
                     preparation_error = fit_errors.get(preparation_key)
                     if preparation_key in fitted:
                         calibrations[group_id] = public_calibration(fitted[preparation_key])
-                    calibration_ms = round((time.perf_counter()-started)*1000, 2)
+                    calibration_ms = round((compute_time()-started)*1000, 2)
                     checkpoint({"calibrations": calibrations, "calibration_fits": list(fitted.values())})
                 result.update(calibration=calibrations.get(group_id), calibration_build_ms=calibration_ms,
                               reranker_prepare_ms=reranker_ms,
