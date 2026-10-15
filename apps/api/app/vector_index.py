@@ -138,7 +138,7 @@ class VectorIndex:
         except FileNotFoundError:
             raise
         except (OSError, ValueError, TypeError, KeyError, EOFError, BadZipFile) as exc:
-            raise ModelUnavailable("Kalıcı indeks geçersiz veya okunamadı; scripts/reindex.py ile yeniden oluşturun.") from exc
+            raise ModelUnavailable("The persistent index is invalid or unreadable; rebuild it with scripts/reindex.py.") from exc
         matrix.setflags(write=False)
         return IndexSnapshot(matrix, metadata, revision)
 
@@ -148,12 +148,12 @@ class VectorIndex:
             self.directory.mkdir(parents=True, exist_ok=True)
             stream = self.path.with_suffix(".lock").open("a+b")
         except OSError as exc:
-            raise ModelUnavailable("Kalıcı indeks kilidi açılamadı; depolama izinlerini kontrol edin.") from exc
+            raise ModelUnavailable("The persistent index lock could not be opened; check storage permissions.") from exc
         with stream:
             try:
                 fcntl.flock(stream.fileno(), fcntl.LOCK_EX)
             except OSError as exc:
-                raise ModelUnavailable("Kalıcı indeks kilidi alınamadı; depolamayı kontrol edin.") from exc
+                raise ModelUnavailable("The persistent index lock could not be acquired; check storage.") from exc
             try:
                 yield
             finally:
@@ -191,7 +191,7 @@ class VectorIndex:
             os.replace(temporary, self.path)
             temporary = None
         except (OSError, ValueError, TypeError) as exc:
-            raise ModelUnavailable("Kalıcı indeks yazılamadı; mevcut indeks korundu. Depolamayı kontrol edip reindex çalıştırın.") from exc
+            raise ModelUnavailable("The persistent index could not be written; the existing index was preserved. Check storage and run reindex.") from exc
         finally:
             if temporary is not None:
                 temporary.unlink(missing_ok=True)

@@ -50,7 +50,7 @@ def endpoint(value):
                         or (getattr(address, "ipv4_mapped", None) and address.ipv4_mapped.is_link_local)):
             raise ValueError()
     except ValueError as exc:
-        raise ValueError("Geçerli bir HTTP(S) API kök adresi girin; URL içinde anahtar kullanmayın.") from exc
+        raise ValueError("Enter a valid HTTP(S) API base URL without credentials in the URL.") from exc
     return value
 
 
@@ -81,37 +81,37 @@ class Registration(BaseModel):
     @classmethod
     def providers(cls, values):
         if any(not re.fullmatch(r"[A-Za-z0-9_./-]{1,100}", v) for v in values):
-            raise ValueError("Sağlayıcı kimliği geçersiz.")
+            raise ValueError("Invalid provider ID.")
         return list(dict.fromkeys(values))
 
     @model_validator(mode="after")
     def validate_connection(self):
         if self.kind == "reranker" and self.connection != "onprem":
-            raise ValueError("Reranker için özel /rerank endpoint bağlantısı ekleyin.")
+            raise ValueError("Add a dedicated /rerank endpoint connection for a reranker.")
         if self.connection == "typesafe":
             if self.kind != "llm" or self.auth != "env":
-                raise ValueError("TypeSafe yalnız LLM ve sunucudaki anahtar değişkeni ile kullanılabilir.")
+                raise ValueError("TypeSafe supports only LLM connections with a server-side key variable.")
             if self.base_url and self.base_url.rstrip("/") != TYPESAFE_BASE_URL:
-                raise ValueError("TypeSafe için resmi API adresi kullanılmalı.")
+                raise ValueError("Use the official API URL for TypeSafe.")
             self.base_url = TYPESAFE_BASE_URL
             if self.provider_only:
-                raise ValueError("Sağlayıcı filtresi yalnızca OpenRouter bağlantısında kullanılabilir.")
+                raise ValueError("Provider filters are available only for OpenRouter connections.")
         elif self.connection == "openrouter":
             if self.base_url and not is_openrouter(self.base_url):
-                raise ValueError("OpenRouter için resmi API adresi kullanılmalı.")
+                raise ValueError("Use the official API URL for OpenRouter.")
             self.base_url = OPENROUTER_BASE_URL
             if self.auth == "none":
-                raise ValueError("OpenRouter API anahtarı gerekli.")
+                raise ValueError("An OpenRouter API key is required.")
         else:
             self.base_url = endpoint(self.base_url)
             if is_openrouter(self.base_url) or self.auth == "shared_openrouter":
-                raise ValueError("On-prem bağlantısı kendi kimlik doğrulama ayarını kullanmalı.")
+                raise ValueError("An on-prem connection must use its own authentication settings.")
             if self.provider_only:
-                raise ValueError("Sağlayıcı filtresi yalnızca OpenRouter bağlantısında kullanılabilir.")
+                raise ValueError("Provider filters are available only for OpenRouter connections.")
         if self.auth == "env" and not self.credential_env:
-            raise ValueError("INTENT_MODEL_KEY_ ile başlayan anahtar değişkenini girin.")
+            raise ValueError("Enter a key variable beginning with INTENT_MODEL_KEY_.")
         if self.credential_env == "INTENT_TYPESAFE_API_KEY" and self.connection != "typesafe":
-            raise ValueError("TypeSafe anahtarı yalnız resmi TypeSafe bağlantısında kullanılabilir.")
+            raise ValueError("A TypeSafe key can only be used with the official TypeSafe connection.")
         if self.auth != "env":
             self.credential_env = ""
         return self
@@ -138,9 +138,9 @@ class ModelRegistry:
     def save(self, workspace, body, model_id=None):
         previous = self.get(workspace, model_id) if model_id else None
         if model_id and not previous:
-            raise KeyError("Model kaydı bulunamadı.")
+            raise KeyError("Model registration not found.")
         if previous and previous["kind"] != body.kind:
-            raise ValueError("Model türü değiştirilemez; yeni kayıt ekleyin.")
+            raise ValueError("Model type cannot be changed; add a new registration.")
         record = body.model_dump()
         # Stable connection identity for renames/toggles; changed inference settings invalidate calibration.
         config = {k: v for k, v in record.items() if k not in ("name", "description", "license", "weights_url", "enabled")}
@@ -166,15 +166,15 @@ class ModelRegistry:
     def public(self, record):
         configured = record["auth"] == "none" or bool(self.credential(record))
         return {**record, "available": bool(record["enabled"] and configured), "credential_configured": configured,
-                "unavailable_reason": ("Model devre dışı." if not record["enabled"] else
-                                       "Model için sunucuda API anahtarı tanımlayın." if not configured else None)}
+                "unavailable_reason": ("Model is disabled." if not record["enabled"] else
+                                       "Configure this model’s API key on the server." if not configured else None)}
 
     def resolve(self, current, record):
         if not record["enabled"]:
-            raise ValueError("Model devre dışı.")
+            raise ValueError("Model is disabled.")
         key = self.credential(record)
         if record["auth"] != "none" and not key:
-            raise ValueError("Model için sunucuda API anahtarı tanımlayın.")
+            raise ValueError("Configure this model’s API key on the server.")
         kind = record["kind"]
         setattr(current, f"{kind}_base_url", record["base_url"])
         setattr(current, f"{kind}_api_key", key)
@@ -217,7 +217,7 @@ class ModelRegistry:
                         for chunk in response.iter_bytes():
                             size += len(chunk)
                             if size > 12 * 1024 * 1024:
-                                raise ModelUnavailable("OpenRouter: Model listesi yanıtı boyut sınırını aştı.", diagnostics={"category": "response_size"})
+                                raise ModelUnavailable("OpenRouter: The model list response exceeds the size limit.", diagnostics={"category": "response_size"})
                             chunks.append(chunk)
                         # iter_bytes() has already decompressed gzip/deflate/etc. Keeping
                         # Content-Encoding would make Response decode the same bytes again.
@@ -256,12 +256,12 @@ class ModelRegistry:
                 category = exc.diagnostics.get("category", "upstream_error")
                 raise discovery_error(kind, category, str(exc), upstream_status, exc.diagnostics) from exc
             except httpx.TimeoutException as exc:
-                raise discovery_error(kind, "timeout", "OpenRouter: Model listesi isteği süre sınırını aştı. Yeniden deneyin.", upstream_status) from exc
+                raise discovery_error(kind, "timeout", "OpenRouter: The model list request timed out. Try again.", upstream_status) from exc
             except httpx.DecodingError as exc:
-                raise discovery_error(kind, "response_decoding", "OpenRouter: Sıkıştırılmış model listesi yanıtı çözümlenemedi.", upstream_status) from exc
+                raise discovery_error(kind, "response_decoding", "OpenRouter: The compressed model list response could not be decoded.", upstream_status) from exc
             except httpx.HTTPError as exc:
-                raise discovery_error(kind, "connection", "OpenRouter: Bağlantı kurulamadı. Ağ, proxy ve TLS ayarlarını kontrol edin.", upstream_status) from exc
+                raise discovery_error(kind, "connection", "OpenRouter: Connection failed. Check network, proxy, and TLS settings.", upstream_status) from exc
             except ImportError as exc:
-                raise discovery_error(kind, "client_configuration", "OpenRouter: HTTP istemcisi başlatılamadı. Python bağımlılıklarını requirements.lock ile kurun.", upstream_status) from exc
+                raise discovery_error(kind, "client_configuration", "OpenRouter: The HTTP client could not start. Install Python dependencies from requirements.lock.", upstream_status) from exc
             except (ValueError, TypeError, AttributeError) as exc:
-                raise discovery_error(kind, phase, "OpenRouter: Model listesi yanıt formatı geçersiz.", upstream_status) from exc
+                raise discovery_error(kind, phase, "OpenRouter: Invalid model list response format.", upstream_status) from exc

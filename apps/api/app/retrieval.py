@@ -63,7 +63,7 @@ class Embeddings:
 
     def encode(self, texts: list[str], query=False):
         if not self.enabled:
-            raise ModelUnavailable("Embedding bağlantısı tanımlı değil. Model modu, endpoint ve gerekiyorsa API anahtarını yapılandırın.")
+            raise ModelUnavailable("The embedding connection is not configured. Set the model mode, endpoint and API key if required.")
         prepared = self.prepare_texts(texts, query)
         if self.settings.embedding_mode == "local":
             with self.lock:
@@ -74,7 +74,7 @@ class Embeddings:
                         torch.set_num_threads(self.settings.embedding_cpu_threads)
                         self.model = SentenceTransformer(self.settings.embedding_model, local_files_only=self.settings.embedding_local_files_only)
                     except Exception as exc:
-                        raise ModelUnavailable("Embedding modeli yüklenemedi. ML bağımlılıklarını ve model dosyalarına erişimi kontrol edin.") from exc
+                        raise ModelUnavailable("The embedding model could not be loaded. Check ML dependencies and access to model files.") from exc
                 # Input formatting is already applied for this model family.
                 values = self.model.encode(prepared, prompt="", normalize_embeddings=True, show_progress_bar=False, batch_size=self.settings.embedding_batch_size)
         else:
@@ -91,21 +91,21 @@ class Embeddings:
                         response = client.post(self.settings.embedding_base_url.strip().rstrip("/") + "/embeddings", headers=headers, json=payload)
                         data = sorted(response_json(response, "Embedding")["data"], key=lambda item: item["index"])
                         if [item["index"] for item in data] != list(range(len(batch))):
-                            raise ModelUnavailable("Embedding yanıtında eksik veya tekrarlanan sıra numarası var.")
+                            raise ModelUnavailable("The embedding response has missing or duplicate indices.")
                         values.extend(item["embedding"] for item in data)
             except httpx.TimeoutException as exc:
-                raise ModelUnavailable("Embedding servisi süre sınırını aştı.") from exc
+                raise ModelUnavailable("The embedding service timed out.") from exc
             except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError) as exc:
-                raise ModelUnavailable("Embedding servisine erişilemedi veya yanıt geçersiz.") from exc
+                raise ModelUnavailable("The embedding service could not be reached or returned an invalid response.") from exc
         try:
             array = np.asarray(values, dtype=np.float32)
         except (ValueError, TypeError) as exc:
-            raise ModelUnavailable("Embedding boyutu veya değerleri geçersiz.") from exc
+            raise ModelUnavailable("Invalid embedding dimensions or values.") from exc
         if array.ndim != 2 or len(array) != len(texts) or not array.shape[1] or not np.isfinite(array).all():
-            raise ModelUnavailable("Embedding boyutu veya değerleri geçersiz.")
+            raise ModelUnavailable("Invalid embedding dimensions or values.")
         norms = np.linalg.norm(array, axis=1, keepdims=True)
         if not np.isfinite(norms).all() or (norms <= 1e-12).any():
-            raise ModelUnavailable("Embedding servisi geçersiz sıfır vektörü döndürdü.")
+            raise ModelUnavailable("The embedding service returned an invalid zero vector.")
         return array / norms
 
 
@@ -149,7 +149,7 @@ class Retriever:
     def rebuild_index(self) -> IndexPreparation:
         """Publish a new generation; callers already holding this matrix keep it."""
         if self.vector_index is None:
-            raise ModelUnavailable("Kalıcı indeks yapılandırılmadı.")
+            raise ModelUnavailable("A persistent index is not configured.")
         started = time.perf_counter()
         acquired = self.vector_index.rebuild(lambda: self.embeddings.encode([d.text for d in self.documents]))
         return IndexPreparation(source=acquired.source, generation=acquired.snapshot.metadata.generation,
@@ -197,7 +197,7 @@ class Retriever:
             trace["index_preparation"] = self.prepare_index().model_dump()
             qvector = self.embeddings.encode([query], query=True)
             if qvector.shape[1] != self.matrix.shape[1]:
-                raise ModelUnavailable("Sorgu ve indeks embedding boyutları farklı.")
+                raise ModelUnavailable("Query and index embedding dimensions differ.")
             semantic = (self.matrix @ qvector[0]).tolist()
             sem_order = sorted(range(len(semantic)), key=lambda j: (-semantic[j], j))
             trace["semantic"] = intent_ids(sem_order)[:source_k]

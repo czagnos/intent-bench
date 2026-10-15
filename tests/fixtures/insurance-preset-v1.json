@@ -1,0 +1,2550 @@
+{
+  "intents": [
+    {
+      "intent_id": "insurance.quote.motor",
+      "name": "Motor insurance quote",
+      "domain": "Quotes",
+      "description": "Request a quote for motor insurance before taking out cover.",
+      "examples": [
+        "I need a quote to insure my car.",
+        "I would like to request a quote for motor insurance before taking out cover."
+      ],
+      "exclusions": [
+        "Request a quote for home building or contents insurance.",
+        "Begin an insurance application after selecting a product."
+      ],
+      "confusable_with": [
+        "insurance.quote.home",
+        "insurance.application.create"
+      ],
+      "workflow_id": "workflow.insurance.quote.motor",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Request a quote for motor insurance before taking out cover. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.quote.home",
+      "name": "Home insurance quote",
+      "domain": "Quotes",
+      "description": "Request a quote for home building or contents insurance.",
+      "examples": [
+        "How much would it cost to insure my apartment and belongings?",
+        "I would like to request a quote for home building or contents insurance."
+      ],
+      "exclusions": [
+        "Ask about building, contents, or specified home risks."
+      ],
+      "confusable_with": [
+        "insurance.coverage.home"
+      ],
+      "workflow_id": "workflow.insurance.quote.home",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Request a quote for home building or contents insurance. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.quote.health",
+      "name": "Health insurance quote",
+      "domain": "Quotes",
+      "description": "Request a quote for a health insurance product.",
+      "examples": [
+        "I want a health insurance quote for my family.",
+        "I would like to request a quote for a health insurance product."
+      ],
+      "exclusions": [
+        "Ask about covered medical services under a health policy."
+      ],
+      "confusable_with": [
+        "insurance.coverage.health"
+      ],
+      "workflow_id": "workflow.insurance.quote.health",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Request a quote for a health insurance product. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.quote.life",
+      "name": "Life insurance quote",
+      "domain": "Quotes",
+      "description": "Request a quote for a life insurance product.",
+      "examples": [
+        "Can I get a quotation for life cover?",
+        "I would like to request a quote for a life insurance product."
+      ],
+      "exclusions": [
+        "Update beneficiary nominations or benefit allocations."
+      ],
+      "confusable_with": [
+        "insurance.beneficiary.change"
+      ],
+      "workflow_id": "workflow.insurance.quote.life",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Request a quote for a life insurance product. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.quote.travel",
+      "name": "Travel insurance quote",
+      "domain": "Quotes",
+      "description": "Request a quote for travel insurance.",
+      "examples": [
+        "I need insurance pricing for a two-week trip abroad.",
+        "I would like to request a quote for travel insurance."
+      ],
+      "exclusions": [
+        "Ask about insured travel risks or territorial coverage."
+      ],
+      "confusable_with": [
+        "insurance.coverage.travel"
+      ],
+      "workflow_id": "workflow.insurance.quote.travel",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Request a quote for travel insurance. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.quote.business",
+      "name": "Business insurance quote",
+      "domain": "Quotes",
+      "description": "Request a quote for business property or liability insurance.",
+      "examples": [
+        "I want a quote for liability cover for my small business.",
+        "I would like to request a quote for business property or liability insurance."
+      ],
+      "exclusions": [
+        "Ask about business property, interruption, or liability cover."
+      ],
+      "confusable_with": [
+        "insurance.coverage.business"
+      ],
+      "workflow_id": "workflow.insurance.quote.business",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Request a quote for business property or liability insurance. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.quote.pet",
+      "name": "Pet insurance quote",
+      "domain": "Quotes",
+      "description": "Request a quote for veterinary or pet insurance.",
+      "examples": [
+        "Can you quote insurance for my dog?",
+        "I would like to request a quote for veterinary or pet insurance."
+      ],
+      "exclusions": [
+        "Request a quote for a health insurance product."
+      ],
+      "confusable_with": [
+        "insurance.quote.health"
+      ],
+      "workflow_id": "workflow.insurance.quote.pet",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Request a quote for veterinary or pet insurance. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.application.create",
+      "name": "Start insurance application",
+      "domain": "Applications",
+      "description": "Begin an insurance application after selecting a product.",
+      "examples": [
+        "I have chosen a policy and want to apply.",
+        "I would like to begin an insurance application after selecting a product."
+      ],
+      "exclusions": [
+        "Request a quote for motor insurance before taking out cover."
+      ],
+      "confusable_with": [
+        "insurance.quote.motor"
+      ],
+      "workflow_id": "workflow.insurance.application.create",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Begin an insurance application after selecting a product. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.application.status",
+      "name": "Insurance application status",
+      "domain": "Applications",
+      "description": "Track an application before a policy is issued.",
+      "examples": [
+        "Has the insurer decided on my application yet?",
+        "I would like to track an application before a policy is issued."
+      ],
+      "exclusions": [
+        "Check whether a policy is active and its coverage dates."
+      ],
+      "confusable_with": [
+        "insurance.policy.validity"
+      ],
+      "workflow_id": "workflow.insurance.application.status",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Track an application before a policy is issued. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.application.documents",
+      "name": "Application documents",
+      "domain": "Applications",
+      "description": "Find or supply documents requested for an insurance application.",
+      "examples": [
+        "Which supporting documents does my policy application need?",
+        "I would like to find or supply documents requested for an insurance application."
+      ],
+      "exclusions": [
+        "Find the evidence needed for an existing or proposed claim."
+      ],
+      "confusable_with": [
+        "insurance.claim.documents"
+      ],
+      "workflow_id": "workflow.insurance.application.documents",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Find or supply documents requested for an insurance application. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.application.underwriting",
+      "name": "Underwriting questions",
+      "domain": "Applications",
+      "description": "Ask about an underwriting review, assessment, or requested clarification.",
+      "examples": [
+        "Why has my application been referred for underwriting?",
+        "I would like to ask about an underwriting review, assessment, or requested clarification."
+      ],
+      "exclusions": [
+        "Track an application before a policy is issued."
+      ],
+      "confusable_with": [
+        "insurance.application.status"
+      ],
+      "workflow_id": "workflow.insurance.application.underwriting",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about an underwriting review, assessment, or requested clarification. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.application.disclosure",
+      "name": "Correct application disclosure",
+      "domain": "Applications",
+      "description": "Update material information or declarations in a pending application.",
+      "examples": [
+        "I need to correct an answer on my insurance application.",
+        "I would like to update material information or declarations in a pending application."
+      ],
+      "exclusions": [
+        "Notify a material change to the insured property, activity, or circumstances."
+      ],
+      "confusable_with": [
+        "insurance.policy.risk_change"
+      ],
+      "workflow_id": "workflow.insurance.application.disclosure",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Update material information or declarations in a pending application. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.coverage.summary",
+      "name": "Policy coverage summary",
+      "domain": "Coverage",
+      "description": "Explain the scope of an existing policy without assessing a specific claim.",
+      "examples": [
+        "What types of loss does my current policy cover?",
+        "I would like to explain the scope of an existing policy without assessing a specific claim."
+      ],
+      "exclusions": [
+        "Explain situations that are excluded from a policy."
+      ],
+      "confusable_with": [
+        "insurance.coverage.exclusions"
+      ],
+      "workflow_id": "workflow.insurance.coverage.summary",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Explain the scope of an existing policy without assessing a specific claim. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.coverage.exclusions",
+      "name": "Policy exclusions",
+      "domain": "Coverage",
+      "description": "Explain situations that are excluded from a policy.",
+      "examples": [
+        "Which events are not covered by this policy?",
+        "I would like to explain situations that are excluded from a policy."
+      ],
+      "exclusions": [
+        "Explain the scope of an existing policy without assessing a specific claim."
+      ],
+      "confusable_with": [
+        "insurance.coverage.summary"
+      ],
+      "workflow_id": "workflow.insurance.coverage.exclusions",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Explain situations that are excluded from a policy. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.coverage.deductible",
+      "name": "Deductible or excess",
+      "domain": "Coverage",
+      "description": "Explain the amount paid by the insured on an eligible claim.",
+      "examples": [
+        "How much excess would I have to pay on a claim?",
+        "I would like to explain the amount paid by the insured on an eligible claim."
+      ],
+      "exclusions": [
+        "Explain maximum insured sums or benefit limits."
+      ],
+      "confusable_with": [
+        "insurance.coverage.limit"
+      ],
+      "workflow_id": "workflow.insurance.coverage.deductible",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Explain the amount paid by the insured on an eligible claim. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.coverage.limit",
+      "name": "Policy coverage limits",
+      "domain": "Coverage",
+      "description": "Explain maximum insured sums or benefit limits.",
+      "examples": [
+        "What is the maximum payout under my policy?",
+        "I would like to explain maximum insured sums or benefit limits."
+      ],
+      "exclusions": [
+        "Explain the amount paid by the insured on an eligible claim."
+      ],
+      "confusable_with": [
+        "insurance.coverage.deductible"
+      ],
+      "workflow_id": "workflow.insurance.coverage.limit",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Explain maximum insured sums or benefit limits. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.coverage.waiting",
+      "name": "Waiting periods",
+      "domain": "Coverage",
+      "description": "Explain waiting or qualifying periods before coverage applies.",
+      "examples": [
+        "Is there a waiting period before I can use this cover?",
+        "I would like to explain waiting or qualifying periods before coverage applies."
+      ],
+      "exclusions": [
+        "Check whether a policy is active and its coverage dates."
+      ],
+      "confusable_with": [
+        "insurance.policy.validity"
+      ],
+      "workflow_id": "workflow.insurance.coverage.waiting",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Explain waiting or qualifying periods before coverage applies. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.coverage.preexisting",
+      "name": "Pre-existing condition coverage",
+      "domain": "Coverage",
+      "description": "Explain the policy's treatment of pre-existing conditions.",
+      "examples": [
+        "How does this policy handle conditions I already had?",
+        "I would like to explain the policy's treatment of pre-existing conditions."
+      ],
+      "exclusions": [
+        "Explain situations that are excluded from a policy."
+      ],
+      "confusable_with": [
+        "insurance.coverage.exclusions"
+      ],
+      "workflow_id": "workflow.insurance.coverage.preexisting",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Explain the policy's treatment of pre-existing conditions. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.coverage.motor",
+      "name": "Motor coverage options",
+      "domain": "Coverage",
+      "description": "Ask about motor collision, liability, theft, or optional cover.",
+      "examples": [
+        "Does my motor policy include theft protection?",
+        "I would like to ask about motor collision, liability, theft, or optional cover."
+      ],
+      "exclusions": [
+        "Request a quote for motor insurance before taking out cover."
+      ],
+      "confusable_with": [
+        "insurance.quote.motor"
+      ],
+      "workflow_id": "workflow.insurance.coverage.motor",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about motor collision, liability, theft, or optional cover. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.coverage.home",
+      "name": "Home coverage options",
+      "domain": "Coverage",
+      "description": "Ask about building, contents, or specified home risks.",
+      "examples": [
+        "Are my belongings covered for water damage?",
+        "I would like to ask about building, contents, or specified home risks."
+      ],
+      "exclusions": [
+        "Request a quote for home building or contents insurance."
+      ],
+      "confusable_with": [
+        "insurance.quote.home"
+      ],
+      "workflow_id": "workflow.insurance.coverage.home",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about building, contents, or specified home risks. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.coverage.health",
+      "name": "Health benefit coverage",
+      "domain": "Coverage",
+      "description": "Ask about covered medical services under a health policy.",
+      "examples": [
+        "Does my plan cover outpatient consultations?",
+        "I would like to ask about covered medical services under a health policy."
+      ],
+      "exclusions": [
+        "Request insurer authorization before planned treatment."
+      ],
+      "confusable_with": [
+        "insurance.provider.preauthorization"
+      ],
+      "workflow_id": "workflow.insurance.coverage.health",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about covered medical services under a health policy. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.coverage.life",
+      "name": "Life benefit conditions",
+      "domain": "Coverage",
+      "description": "Ask about life policy benefits and benefit triggers.",
+      "examples": [
+        "What event triggers payment under this life policy?",
+        "I would like to ask about life policy benefits and benefit triggers."
+      ],
+      "exclusions": [
+        "Start a claim for life insurance benefits."
+      ],
+      "confusable_with": [
+        "insurance.claim.life"
+      ],
+      "workflow_id": "workflow.insurance.coverage.life",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about life policy benefits and benefit triggers. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.coverage.travel",
+      "name": "Travel coverage options",
+      "domain": "Coverage",
+      "description": "Ask about insured travel risks or territorial coverage.",
+      "examples": [
+        "Does my travel policy include missed departures?",
+        "I would like to ask about insured travel risks or territorial coverage."
+      ],
+      "exclusions": [
+        "Request the insurer's travel assistance service while away."
+      ],
+      "confusable_with": [
+        "insurance.assistance.travel"
+      ],
+      "workflow_id": "workflow.insurance.coverage.travel",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about insured travel risks or territorial coverage. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.coverage.business",
+      "name": "Business coverage options",
+      "domain": "Coverage",
+      "description": "Ask about business property, interruption, or liability cover.",
+      "examples": [
+        "Does this policy include business interruption?",
+        "I would like to ask about business property, interruption, or liability cover."
+      ],
+      "exclusions": [
+        "Request a quote for business property or liability insurance."
+      ],
+      "confusable_with": [
+        "insurance.quote.business"
+      ],
+      "workflow_id": "workflow.insurance.coverage.business",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about business property, interruption, or liability cover. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.policy.copy",
+      "name": "Policy document copy",
+      "domain": "Policy servicing",
+      "description": "Download or resend an issued policy document.",
+      "examples": [
+        "Please send me a copy of my insurance policy.",
+        "I would like to download or resend an issued policy document."
+      ],
+      "exclusions": [
+        "Request a certificate or proof of insurance for a third party."
+      ],
+      "confusable_with": [
+        "insurance.policy.certificate"
+      ],
+      "workflow_id": "workflow.insurance.policy.copy",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Download or resend an issued policy document. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.policy.certificate",
+      "name": "Insurance certificate",
+      "domain": "Policy servicing",
+      "description": "Request a certificate or proof of insurance for a third party.",
+      "examples": [
+        "I need proof of cover for my landlord.",
+        "I would like to request a certificate or proof of insurance for a third party."
+      ],
+      "exclusions": [
+        "Download or resend an issued policy document."
+      ],
+      "confusable_with": [
+        "insurance.policy.copy"
+      ],
+      "workflow_id": "workflow.insurance.policy.certificate",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Request a certificate or proof of insurance for a third party. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.policy.validity",
+      "name": "Policy dates and status",
+      "domain": "Policy servicing",
+      "description": "Check whether a policy is active and its coverage dates.",
+      "examples": [
+        "Is my insurance still active today?",
+        "I would like to check whether a policy is active and its coverage dates."
+      ],
+      "exclusions": [
+        "Request renewal of an expiring policy."
+      ],
+      "confusable_with": [
+        "insurance.policy.renew"
+      ],
+      "workflow_id": "workflow.insurance.policy.validity",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check whether a policy is active and its coverage dates. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.policy.contact",
+      "name": "Change contact details",
+      "domain": "Policy servicing",
+      "description": "Update the policyholder's address, email, or telephone details.",
+      "examples": [
+        "Please change the email address on my policy.",
+        "I would like to update the policyholder's address, email, or telephone details."
+      ],
+      "exclusions": [
+        "Notify a material change to the insured property, activity, or circumstances."
+      ],
+      "confusable_with": [
+        "insurance.policy.risk_change"
+      ],
+      "workflow_id": "workflow.insurance.policy.contact",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Update the policyholder's address, email, or telephone details. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.policy.risk_change",
+      "name": "Report changed insured risk",
+      "domain": "Policy servicing",
+      "description": "Notify a material change to the insured property, activity, or circumstances.",
+      "examples": [
+        "I moved to a different home and need to update the insured property.",
+        "I would like to notify a material change to the insured property, activity, or circumstances."
+      ],
+      "exclusions": [
+        "Update the policyholder's address, email, or telephone details."
+      ],
+      "confusable_with": [
+        "insurance.policy.contact"
+      ],
+      "workflow_id": "workflow.insurance.policy.risk_change",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Notify a material change to the insured property, activity, or circumstances. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.policy.add_person",
+      "name": "Add insured person",
+      "domain": "Policy servicing",
+      "description": "Request addition of a person to an existing eligible policy.",
+      "examples": [
+        "I need to add my spouse to the health policy.",
+        "I would like to request addition of a person to an existing eligible policy."
+      ],
+      "exclusions": [
+        "Request removal of a named insured person from a policy."
+      ],
+      "confusable_with": [
+        "insurance.policy.remove_person"
+      ],
+      "workflow_id": "workflow.insurance.policy.add_person",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request addition of a person to an existing eligible policy. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.policy.remove_person",
+      "name": "Remove insured person",
+      "domain": "Policy servicing",
+      "description": "Request removal of a named insured person from a policy.",
+      "examples": [
+        "Please remove a dependent from my cover.",
+        "I would like to request removal of a named insured person from a policy."
+      ],
+      "exclusions": [
+        "Request addition of a person to an existing eligible policy."
+      ],
+      "confusable_with": [
+        "insurance.policy.add_person"
+      ],
+      "workflow_id": "workflow.insurance.policy.remove_person",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request removal of a named insured person from a policy. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.policy.add_cover",
+      "name": "Change coverage options",
+      "domain": "Policy servicing",
+      "description": "Request an endorsement, optional benefit, or sum-insured change.",
+      "examples": [
+        "I want to increase the insured value of my contents.",
+        "I would like to request an endorsement, optional benefit, or sum-insured change."
+      ],
+      "exclusions": [
+        "Explain maximum insured sums or benefit limits."
+      ],
+      "confusable_with": [
+        "insurance.coverage.limit"
+      ],
+      "workflow_id": "workflow.insurance.policy.add_cover",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request an endorsement, optional benefit, or sum-insured change. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.policy.renew",
+      "name": "Renew policy",
+      "domain": "Policy servicing",
+      "description": "Request renewal of an expiring policy.",
+      "examples": [
+        "My policy expires soon and I want to renew it.",
+        "I would like to request renewal of an expiring policy."
+      ],
+      "exclusions": [
+        "Enable or disable automatic renewal without cancelling current cover."
+      ],
+      "confusable_with": [
+        "insurance.policy.autorenew"
+      ],
+      "workflow_id": "workflow.insurance.policy.renew",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request renewal of an expiring policy. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.policy.autorenew",
+      "name": "Change automatic renewal",
+      "domain": "Policy servicing",
+      "description": "Enable or disable automatic renewal without cancelling current cover.",
+      "examples": [
+        "Turn off automatic renewal but keep this year's policy active.",
+        "I would like to enable or disable automatic renewal without cancelling current cover."
+      ],
+      "exclusions": [
+        "Request termination of current insurance cover."
+      ],
+      "confusable_with": [
+        "insurance.policy.cancel"
+      ],
+      "workflow_id": "workflow.insurance.policy.autorenew",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Enable or disable automatic renewal without cancelling current cover. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.policy.cancel",
+      "name": "Cancel policy",
+      "domain": "Policy servicing",
+      "description": "Request termination of current insurance cover.",
+      "examples": [
+        "I want to cancel my insurance policy.",
+        "I would like to request termination of current insurance cover."
+      ],
+      "exclusions": [
+        "Enable or disable automatic renewal without cancelling current cover.",
+        "Request repayment of an eligible premium balance."
+      ],
+      "confusable_with": [
+        "insurance.policy.autorenew",
+        "insurance.refund.request"
+      ],
+      "workflow_id": "workflow.insurance.policy.cancel",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request termination of current insurance cover. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.policy.reinstate",
+      "name": "Reinstate lapsed policy",
+      "domain": "Policy servicing",
+      "description": "Ask to restore a policy that has lapsed or been cancelled.",
+      "examples": [
+        "Can my lapsed policy be reinstated?",
+        "I would like to ask to restore a policy that has lapsed or been cancelled."
+      ],
+      "exclusions": [
+        "Request renewal of an expiring policy."
+      ],
+      "confusable_with": [
+        "insurance.policy.renew"
+      ],
+      "workflow_id": "workflow.insurance.policy.reinstate",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Ask to restore a policy that has lapsed or been cancelled. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.premium.amount",
+      "name": "Premium amount and schedule",
+      "domain": "Premiums and billing",
+      "description": "Check the premium amount, installments, or next due date.",
+      "examples": [
+        "How much is my next premium and when is it due?",
+        "I would like to check the premium amount, installments, or next due date."
+      ],
+      "exclusions": [
+        "Make an insurance premium payment."
+      ],
+      "confusable_with": [
+        "insurance.premium.pay"
+      ],
+      "workflow_id": "workflow.insurance.premium.amount",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check the premium amount, installments, or next due date. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.premium.pay",
+      "name": "Pay premium",
+      "domain": "Premiums and billing",
+      "description": "Make an insurance premium payment.",
+      "examples": [
+        "I want to pay this month's insurance installment.",
+        "I would like to make an insurance premium payment."
+      ],
+      "exclusions": [
+        "Resolve a rejected or unsuccessful premium collection."
+      ],
+      "confusable_with": [
+        "insurance.premium.failed"
+      ],
+      "workflow_id": "workflow.insurance.premium.pay",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Make an insurance premium payment. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.premium.failed",
+      "name": "Failed premium payment",
+      "domain": "Premiums and billing",
+      "description": "Resolve a rejected or unsuccessful premium collection.",
+      "examples": [
+        "My direct debit premium payment failed.",
+        "I would like to resolve a rejected or unsuccessful premium collection."
+      ],
+      "exclusions": [
+        "Ask about missed premiums, grace periods, or coverage consequences."
+      ],
+      "confusable_with": [
+        "insurance.premium.overdue"
+      ],
+      "workflow_id": "workflow.insurance.premium.failed",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Resolve a rejected or unsuccessful premium collection. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.premium.method",
+      "name": "Change premium payment method",
+      "domain": "Premiums and billing",
+      "description": "Update the payment card, bank account, or collection method.",
+      "examples": [
+        "I need to replace the bank account used for premiums.",
+        "I would like to update the payment card, bank account, or collection method."
+      ],
+      "exclusions": [
+        "Make an insurance premium payment."
+      ],
+      "confusable_with": [
+        "insurance.premium.pay"
+      ],
+      "workflow_id": "workflow.insurance.premium.method",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Update the payment card, bank account, or collection method. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.premium.frequency",
+      "name": "Change premium frequency",
+      "domain": "Premiums and billing",
+      "description": "Request a different premium payment frequency.",
+      "examples": [
+        "Can I switch from monthly to annual premium payments?",
+        "I would like to request a different premium payment frequency."
+      ],
+      "exclusions": [
+        "Check the premium amount, installments, or next due date."
+      ],
+      "confusable_with": [
+        "insurance.premium.amount"
+      ],
+      "workflow_id": "workflow.insurance.premium.frequency",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request a different premium payment frequency. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.premium.overdue",
+      "name": "Overdue premium and grace period",
+      "domain": "Premiums and billing",
+      "description": "Ask about missed premiums, grace periods, or coverage consequences.",
+      "examples": [
+        "I missed an installment; is there a grace period?",
+        "I would like to ask about missed premiums, grace periods, or coverage consequences."
+      ],
+      "exclusions": [
+        "Ask to restore a policy that has lapsed or been cancelled."
+      ],
+      "confusable_with": [
+        "insurance.policy.reinstate"
+      ],
+      "workflow_id": "workflow.insurance.premium.overdue",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about missed premiums, grace periods, or coverage consequences. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.premium.receipt",
+      "name": "Premium receipt or tax document",
+      "domain": "Premiums and billing",
+      "description": "Obtain a payment receipt or insurance tax certificate.",
+      "examples": [
+        "I need the receipt for the premium I paid.",
+        "I would like to obtain a payment receipt or insurance tax certificate."
+      ],
+      "exclusions": [
+        "Download or resend an issued policy document."
+      ],
+      "confusable_with": [
+        "insurance.policy.copy"
+      ],
+      "workflow_id": "workflow.insurance.premium.receipt",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Obtain a payment receipt or insurance tax certificate. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.premium.dispute",
+      "name": "Dispute premium charge",
+      "domain": "Premiums and billing",
+      "description": "Query or dispute an incorrect premium amount or duplicate charge.",
+      "examples": [
+        "The premium debit is higher than the agreed amount.",
+        "I would like to query or dispute an incorrect premium amount or duplicate charge."
+      ],
+      "exclusions": [
+        "Check an already requested premium refund."
+      ],
+      "confusable_with": [
+        "insurance.refund.status"
+      ],
+      "workflow_id": "workflow.insurance.premium.dispute",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Query or dispute an incorrect premium amount or duplicate charge. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.refund.request",
+      "name": "Request premium refund",
+      "domain": "Refunds",
+      "description": "Request repayment of an eligible premium balance.",
+      "examples": [
+        "I cancelled my cover and want to request the unused premium back.",
+        "I would like to request repayment of an eligible premium balance."
+      ],
+      "exclusions": [
+        "Check an already requested premium refund."
+      ],
+      "confusable_with": [
+        "insurance.refund.status"
+      ],
+      "workflow_id": "workflow.insurance.refund.request",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request repayment of an eligible premium balance. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.refund.status",
+      "name": "Track premium refund",
+      "domain": "Refunds",
+      "description": "Check an already requested premium refund.",
+      "examples": [
+        "When will my approved insurance refund reach my account?",
+        "I would like to check an already requested premium refund."
+      ],
+      "exclusions": [
+        "Request repayment of an eligible premium balance."
+      ],
+      "confusable_with": [
+        "insurance.refund.request"
+      ],
+      "workflow_id": "workflow.insurance.refund.status",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check an already requested premium refund. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.claim.file",
+      "name": "File general insurance claim",
+      "domain": "Claims",
+      "description": "Notify a new insured event when no product-specific claim intent matches.",
+      "examples": [
+        "I need to report an insured loss and open a claim.",
+        "I would like to notify a new insured event when no product-specific claim intent matches."
+      ],
+      "exclusions": [
+        "Report a new motor accident, theft, or vehicle damage claim.",
+        "Report a new home building or contents loss claim.",
+        "Submit a claim for eligible medical expenses already paid.",
+        "Start a claim for life insurance benefits.",
+        "Report an insured loss related to travel."
+      ],
+      "confusable_with": [
+        "insurance.claim.motor",
+        "insurance.claim.home",
+        "insurance.claim.health",
+        "insurance.claim.life",
+        "insurance.claim.travel"
+      ],
+      "workflow_id": "workflow.insurance.claim.file",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Use this general claim-opening intent only when the type of insured loss is unspecified or has no matching product-specific claim intent. When motor, home, medical reimbursement, life, or travel loss is explicit, choose its specific claim intent. Missing execution details belong to the workflow."
+    },
+    {
+      "intent_id": "insurance.claim.motor",
+      "name": "File motor claim",
+      "domain": "Claims",
+      "description": "Report a new motor accident, theft, or vehicle damage claim.",
+      "examples": [
+        "I had a car collision and need to start a motor claim.",
+        "I would like to report a new motor accident, theft, or vehicle damage claim."
+      ],
+      "exclusions": [
+        "Request dispatch under an eligible motor assistance benefit.",
+        "Unspecified insured loss without an explicit matching product or event."
+      ],
+      "confusable_with": [
+        "insurance.assistance.roadside",
+        "insurance.claim.file"
+      ],
+      "workflow_id": "workflow.insurance.claim.motor",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Report a new motor accident, theft, or vehicle damage claim. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction. Prefer this specific claim intent over insurance.claim.file when the product or event matches explicitly."
+    },
+    {
+      "intent_id": "insurance.claim.home",
+      "name": "File property claim",
+      "domain": "Claims",
+      "description": "Report a new home building or contents loss claim.",
+      "examples": [
+        "A burst pipe damaged my house; I want to make a claim.",
+        "I would like to report a new home building or contents loss claim."
+      ],
+      "exclusions": [
+        "Request urgent home assistance under an eligible policy benefit.",
+        "Unspecified insured loss without an explicit matching product or event."
+      ],
+      "confusable_with": [
+        "insurance.assistance.home",
+        "insurance.claim.file"
+      ],
+      "workflow_id": "workflow.insurance.claim.home",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Report a new home building or contents loss claim. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction. Prefer this specific claim intent over insurance.claim.file when the product or event matches explicitly."
+    },
+    {
+      "intent_id": "insurance.claim.health",
+      "name": "File medical reimbursement claim",
+      "domain": "Claims",
+      "description": "Submit a claim for eligible medical expenses already paid.",
+      "examples": [
+        "I paid the clinic myself and want reimbursement.",
+        "I would like to submit a claim for eligible medical expenses already paid."
+      ],
+      "exclusions": [
+        "Request insurer authorization before planned treatment.",
+        "Unspecified insured loss without an explicit matching product or event."
+      ],
+      "confusable_with": [
+        "insurance.provider.preauthorization",
+        "insurance.claim.file"
+      ],
+      "workflow_id": "workflow.insurance.claim.health",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Submit a claim for eligible medical expenses already paid. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction. Prefer this specific claim intent over insurance.claim.file when the product or event matches explicitly."
+    },
+    {
+      "intent_id": "insurance.claim.life",
+      "name": "File life benefit claim",
+      "domain": "Claims",
+      "description": "Start a claim for life insurance benefits.",
+      "examples": [
+        "I need to claim the life insurance benefit after the insured person died.",
+        "I would like to start a claim for life insurance benefits."
+      ],
+      "exclusions": [
+        "Check who is recorded to receive policy benefits.",
+        "Unspecified insured loss without an explicit matching product or event."
+      ],
+      "confusable_with": [
+        "insurance.beneficiary.details",
+        "insurance.claim.file"
+      ],
+      "workflow_id": "workflow.insurance.claim.life",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Start a claim for life insurance benefits. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction. Prefer this specific claim intent over insurance.claim.file when the product or event matches explicitly."
+    },
+    {
+      "intent_id": "insurance.claim.travel",
+      "name": "File travel claim",
+      "domain": "Claims",
+      "description": "Report an insured loss related to travel.",
+      "examples": [
+        "My luggage was stolen on holiday; I want to claim on travel insurance.",
+        "I would like to report an insured loss related to travel."
+      ],
+      "exclusions": [
+        "Request the insurer's travel assistance service while away.",
+        "Unspecified insured loss without an explicit matching product or event."
+      ],
+      "confusable_with": [
+        "insurance.assistance.travel",
+        "insurance.claim.file"
+      ],
+      "workflow_id": "workflow.insurance.claim.travel",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Report an insured loss related to travel. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction. Prefer this specific claim intent over insurance.claim.file when the product or event matches explicitly."
+    },
+    {
+      "intent_id": "insurance.claim.documents",
+      "name": "Claim evidence requirements",
+      "domain": "Claims",
+      "description": "Find the evidence needed for an existing or proposed claim.",
+      "examples": [
+        "Which documents are missing from my claim file?",
+        "I would like to find the evidence needed for an existing or proposed claim."
+      ],
+      "exclusions": [
+        "Add receipts, reports, photographs, or other evidence to a claim."
+      ],
+      "confusable_with": [
+        "insurance.claim.upload"
+      ],
+      "workflow_id": "workflow.insurance.claim.documents",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Find the evidence needed for an existing or proposed claim. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.claim.upload",
+      "name": "Submit claim evidence",
+      "domain": "Claims",
+      "description": "Add receipts, reports, photographs, or other evidence to a claim.",
+      "examples": [
+        "I want to upload the repair estimate to my claim.",
+        "I would like to add receipts, reports, photographs, or other evidence to a claim."
+      ],
+      "exclusions": [
+        "Find the evidence needed for an existing or proposed claim."
+      ],
+      "confusable_with": [
+        "insurance.claim.documents"
+      ],
+      "workflow_id": "workflow.insurance.claim.upload",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Add receipts, reports, photographs, or other evidence to a claim. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.claim.status",
+      "name": "Track claim status",
+      "domain": "Claims",
+      "description": "Check the progress of an already reported claim.",
+      "examples": [
+        "What stage has my claim investigation reached?",
+        "I would like to check the progress of an already reported claim."
+      ],
+      "exclusions": [
+        "Notify a new insured event when no product-specific claim intent matches."
+      ],
+      "confusable_with": [
+        "insurance.claim.file"
+      ],
+      "workflow_id": "workflow.insurance.claim.status",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check the progress of an already reported claim. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.claim.assessment",
+      "name": "Claim assessment appointment",
+      "domain": "Claims",
+      "description": "Arrange or follow up an inspection, assessor visit, or medical assessment.",
+      "examples": [
+        "How do I schedule the loss assessor's inspection?",
+        "I would like to arrange or follow up an inspection, assessor visit, or medical assessment."
+      ],
+      "exclusions": [
+        "Arrange repairs or check repair progress associated with a claim."
+      ],
+      "confusable_with": [
+        "insurance.claim.repair"
+      ],
+      "workflow_id": "workflow.insurance.claim.assessment",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Arrange or follow up an inspection, assessor visit, or medical assessment. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.claim.repair",
+      "name": "Approved repair process",
+      "domain": "Claims",
+      "description": "Arrange repairs or check repair progress associated with a claim.",
+      "examples": [
+        "The claim was accepted; how do I book the approved repairer?",
+        "I would like to arrange repairs or check repair progress associated with a claim."
+      ],
+      "exclusions": [
+        "Find a hospital, doctor, garage, or contractor in the insurer's network."
+      ],
+      "confusable_with": [
+        "insurance.provider.network"
+      ],
+      "workflow_id": "workflow.insurance.claim.repair",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Arrange repairs or check repair progress associated with a claim. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.claim.settlement",
+      "name": "Claim settlement offer",
+      "domain": "Claims",
+      "description": "Review or explain a proposed claim settlement amount.",
+      "examples": [
+        "How was the settlement offer calculated?",
+        "I would like to review or explain a proposed claim settlement amount."
+      ],
+      "exclusions": [
+        "Track payment of an accepted claim settlement."
+      ],
+      "confusable_with": [
+        "insurance.claim.payment"
+      ],
+      "workflow_id": "workflow.insurance.claim.settlement",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Review or explain a proposed claim settlement amount. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.claim.payment",
+      "name": "Claim payout status",
+      "domain": "Claims",
+      "description": "Track payment of an accepted claim settlement.",
+      "examples": [
+        "My claim was approved; when will the payout arrive?",
+        "I would like to track payment of an accepted claim settlement."
+      ],
+      "exclusions": [
+        "Review or explain a proposed claim settlement amount."
+      ],
+      "confusable_with": [
+        "insurance.claim.settlement"
+      ],
+      "workflow_id": "workflow.insurance.claim.payment",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Track payment of an accepted claim settlement. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.claim.dispute",
+      "name": "Challenge claim decision",
+      "domain": "Claims",
+      "description": "Request review of a rejected claim or disputed settlement.",
+      "examples": [
+        "I disagree with the rejection and want the claim reviewed.",
+        "I would like to request review of a rejected claim or disputed settlement."
+      ],
+      "exclusions": [
+        "Submit a service complaint outside a specific claim decision appeal."
+      ],
+      "confusable_with": [
+        "insurance.support.complaint"
+      ],
+      "workflow_id": "workflow.insurance.claim.dispute",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request review of a rejected claim or disputed settlement. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.claim.withdraw",
+      "name": "Withdraw claim",
+      "domain": "Claims",
+      "description": "Request withdrawal of an open claim.",
+      "examples": [
+        "I no longer want to proceed with the claim I filed.",
+        "I would like to request withdrawal of an open claim."
+      ],
+      "exclusions": [
+        "Check the progress of an already reported claim."
+      ],
+      "confusable_with": [
+        "insurance.claim.status"
+      ],
+      "workflow_id": "workflow.insurance.claim.withdraw",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request withdrawal of an open claim. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.claim.history",
+      "name": "Claims history document",
+      "domain": "Claims",
+      "description": "Obtain past claim details or a no-claims certificate.",
+      "examples": [
+        "I need a certificate of my no-claims history.",
+        "I would like to obtain past claim details or a no-claims certificate."
+      ],
+      "exclusions": [
+        "Request a certificate or proof of insurance for a third party."
+      ],
+      "confusable_with": [
+        "insurance.policy.certificate"
+      ],
+      "workflow_id": "workflow.insurance.claim.history",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Obtain past claim details or a no-claims certificate. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.beneficiary.details",
+      "name": "View beneficiaries",
+      "domain": "Beneficiaries",
+      "description": "Check who is recorded to receive policy benefits.",
+      "examples": [
+        "Who is listed as the beneficiary of my life policy?",
+        "I would like to check who is recorded to receive policy benefits."
+      ],
+      "exclusions": [
+        "Update beneficiary nominations or benefit allocations."
+      ],
+      "confusable_with": [
+        "insurance.beneficiary.change"
+      ],
+      "workflow_id": "workflow.insurance.beneficiary.details",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check who is recorded to receive policy benefits. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.beneficiary.change",
+      "name": "Change beneficiaries",
+      "domain": "Beneficiaries",
+      "description": "Update beneficiary nominations or benefit allocations.",
+      "examples": [
+        "I want to change the beneficiary on my policy.",
+        "I would like to update beneficiary nominations or benefit allocations."
+      ],
+      "exclusions": [
+        "Request addition of a person to an existing eligible policy."
+      ],
+      "confusable_with": [
+        "insurance.policy.add_person"
+      ],
+      "workflow_id": "workflow.insurance.beneficiary.change",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Update beneficiary nominations or benefit allocations. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.provider.network",
+      "name": "Find approved provider",
+      "domain": "Provider services",
+      "description": "Find a hospital, doctor, garage, or contractor in the insurer's network.",
+      "examples": [
+        "Which hospitals near me are in the approved network?",
+        "I would like to find a hospital, doctor, garage, or contractor in the insurer's network."
+      ],
+      "exclusions": [
+        "Request insurer authorization before planned treatment."
+      ],
+      "confusable_with": [
+        "insurance.provider.preauthorization"
+      ],
+      "workflow_id": "workflow.insurance.provider.network",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Find a hospital, doctor, garage, or contractor in the insurer's network. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.provider.preauthorization",
+      "name": "Request treatment authorization",
+      "domain": "Provider services",
+      "description": "Request insurer authorization before planned treatment.",
+      "examples": [
+        "My surgery is booked; I need pre-authorization from the insurer.",
+        "I would like to request insurer authorization before planned treatment."
+      ],
+      "exclusions": [
+        "Submit a claim for eligible medical expenses already paid."
+      ],
+      "confusable_with": [
+        "insurance.claim.health"
+      ],
+      "workflow_id": "workflow.insurance.provider.preauthorization",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request insurer authorization before planned treatment. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.provider.direct_billing",
+      "name": "Direct billing issue",
+      "domain": "Provider services",
+      "description": "Resolve a provider's cashless or direct-billing problem.",
+      "examples": [
+        "The hospital says the insurer's direct billing was rejected.",
+        "I would like to resolve a provider's cashless or direct-billing problem."
+      ],
+      "exclusions": [
+        "Submit a claim for eligible medical expenses already paid."
+      ],
+      "confusable_with": [
+        "insurance.claim.health"
+      ],
+      "workflow_id": "workflow.insurance.provider.direct_billing",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Resolve a provider's cashless or direct-billing problem. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.assistance.roadside",
+      "name": "Roadside assistance",
+      "domain": "Assistance",
+      "description": "Request dispatch under an eligible motor assistance benefit.",
+      "examples": [
+        "My car has broken down and I need roadside help.",
+        "I would like to request dispatch under an eligible motor assistance benefit."
+      ],
+      "exclusions": [
+        "Report a new motor accident, theft, or vehicle damage claim."
+      ],
+      "confusable_with": [
+        "insurance.claim.motor"
+      ],
+      "workflow_id": "workflow.insurance.assistance.roadside",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request dispatch under an eligible motor assistance benefit. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.assistance.home",
+      "name": "Home emergency assistance",
+      "domain": "Assistance",
+      "description": "Request urgent home assistance under an eligible policy benefit.",
+      "examples": [
+        "I need the emergency plumber service included with my policy.",
+        "I would like to request urgent home assistance under an eligible policy benefit."
+      ],
+      "exclusions": [
+        "Report a new home building or contents loss claim."
+      ],
+      "confusable_with": [
+        "insurance.claim.home"
+      ],
+      "workflow_id": "workflow.insurance.assistance.home",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request urgent home assistance under an eligible policy benefit. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.assistance.travel",
+      "name": "Travel assistance",
+      "domain": "Assistance",
+      "description": "Request the insurer's travel assistance service while away.",
+      "examples": [
+        "I am abroad and need to contact the travel assistance team.",
+        "I would like to request the insurer's travel assistance service while away."
+      ],
+      "exclusions": [
+        "Report an insured loss related to travel."
+      ],
+      "confusable_with": [
+        "insurance.claim.travel"
+      ],
+      "workflow_id": "workflow.insurance.assistance.travel",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request the insurer's travel assistance service while away. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.account.access",
+      "name": "Insurance account access",
+      "domain": "Account management",
+      "description": "Recover access to the insurer's online account.",
+      "examples": [
+        "I cannot sign in to the insurance portal.",
+        "I would like to recover access to the insurer's online account."
+      ],
+      "exclusions": [
+        "Download or resend an issued policy document."
+      ],
+      "confusable_with": [
+        "insurance.policy.copy"
+      ],
+      "workflow_id": "workflow.insurance.account.access",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Recover access to the insurer's online account. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.privacy.request",
+      "name": "Insurance privacy request",
+      "domain": "Privacy",
+      "description": "Request access, correction, or deletion of personal data under the insurer's process.",
+      "examples": [
+        "How can I request a copy of my personal data held by the insurer?",
+        "I would like to request access, correction, or deletion of personal data under the insurer's process."
+      ],
+      "exclusions": [
+        "Update the policyholder's address, email, or telephone details."
+      ],
+      "confusable_with": [
+        "insurance.policy.contact"
+      ],
+      "workflow_id": "workflow.insurance.privacy.request",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request access, correction, or deletion of personal data under the insurer's process. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "insurance.support.complaint",
+      "name": "Insurance service complaint",
+      "domain": "Customer support",
+      "description": "Submit a service complaint outside a specific claim decision appeal.",
+      "examples": [
+        "I want to complain about the way my policy service request was handled.",
+        "I would like to submit a service complaint outside a specific claim decision appeal."
+      ],
+      "exclusions": [
+        "Request review of a rejected claim or disputed settlement."
+      ],
+      "confusable_with": [
+        "insurance.claim.dispute"
+      ],
+      "workflow_id": "workflow.insurance.support.complaint",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Submit a service complaint outside a specific claim decision appeal. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "service.human",
+      "name": "Speak to a representative",
+      "domain": "Customer support",
+      "description": "Request a conversation with a human service representative.",
+      "examples": [
+        "Please connect me to a human agent.",
+        "I want to speak with a customer service representative."
+      ],
+      "exclusions": [
+        "A service complaint without an explicit request to speak with a human."
+      ],
+      "confusable_with": [
+        "insurance.support.complaint"
+      ],
+      "workflow_id": "workflow.service.human",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Choose handoff when the user explicitly requests a human representative; do not require a particular service issue."
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "insurance-test-v1-001",
+      "conversation_id": "insurance-test-v1-001",
+      "question": "I am shopping for insurance for a new car and need a price quote.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.quote.motor",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-002",
+      "conversation_id": "insurance-test-v1-002",
+      "question": "Please check the assessment stage of the policy application I sent yesterday.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.application.status",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-003",
+      "conversation_id": "insurance-test-v1-003",
+      "question": "Explain the risks that my current policy explicitly excludes.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.coverage.exclusions",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-004",
+      "conversation_id": "insurance-test-v1-004",
+      "question": "What portion of an eligible claim must I pay myself?",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.coverage.deductible",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-005",
+      "conversation_id": "insurance-test-v1-005",
+      "question": "Email me the wording and schedule for my issued policy.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.policy.copy",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-006",
+      "conversation_id": "insurance-test-v1-006",
+      "question": "Keep my current cover until expiry, but disable next year's automatic renewal.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.policy.autorenew",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-007",
+      "conversation_id": "insurance-test-v1-007",
+      "question": "Terminate my current policy as soon as possible.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.policy.cancel",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-008",
+      "conversation_id": "insurance-test-v1-008",
+      "question": "I would like to pay the outstanding premium installment now.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.premium.pay",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-009",
+      "conversation_id": "insurance-test-v1-009",
+      "question": "The attempted premium collection was rejected by my bank.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.premium.failed",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-010",
+      "conversation_id": "insurance-test-v1-010",
+      "question": "I cancelled the policy and want to apply for a refund of the unused premium.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.refund.request",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-011",
+      "conversation_id": "insurance-test-v1-011",
+      "question": "Has my previously approved premium refund been sent?",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.refund.status",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-012",
+      "conversation_id": "insurance-test-v1-012",
+      "question": "My vehicle was hit yesterday; open a motor accident claim.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.claim.motor",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-013",
+      "conversation_id": "insurance-test-v1-013",
+      "question": "I paid a medical bill myself and want to submit it for reimbursement.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.claim.health",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-014",
+      "conversation_id": "insurance-test-v1-014",
+      "question": "I have an existing claim number; check the progress of that claim.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.claim.status",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-015",
+      "conversation_id": "insurance-test-v1-015",
+      "question": "I disagree with the decision rejecting my claim and request a review.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.claim.dispute",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-016",
+      "conversation_id": "insurance-test-v1-016",
+      "question": "Please seek insurer authorization before my scheduled procedure.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.provider.preauthorization",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-017",
+      "conversation_id": "insurance-test-v1-017",
+      "question": "Replace the nominated beneficiary on my life insurance policy.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.beneficiary.change",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-018",
+      "conversation_id": "insurance-test-v1-018",
+      "question": "My insured car broke down; dispatch roadside assistance.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.assistance.roadside",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-019",
+      "conversation_id": "insurance-test-v1-019",
+      "question": "I need to change it, but I do not know which one.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-020",
+      "conversation_id": "insurance-test-v1-020",
+      "question": "Transfer me to a human insurance service adviser.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-021",
+      "conversation_id": "insurance-test-v1-021",
+      "question": "Change my assigned airline seat to the aisle.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-022",
+      "conversation_id": "insurance-test-v1-022",
+      "question": "The online shop sent the wrong shoes; arrange an exchange.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-023",
+      "conversation_id": "insurance-test-v1-023",
+      "question": "What is the current balance of my bank account?",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-test-v1-024",
+      "conversation_id": "insurance-test-v1-024",
+      "question": "Write a rhyming song about the ocean.",
+      "source": "seed",
+      "dataset_version": "insurance-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-001",
+      "conversation_id": "insurance-calibration-v1-001",
+      "question": "Please prepare a home contents insurance quotation for my apartment.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.quote.home",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-002",
+      "conversation_id": "insurance-calibration-v1-002",
+      "question": "What is the maximum benefit payable under my existing insurance contract?",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.coverage.limit",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-003",
+      "conversation_id": "insurance-calibration-v1-003",
+      "question": "How long after enrollment do I need to wait before the policy benefit is available?",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.coverage.waiting",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-004",
+      "conversation_id": "insurance-calibration-v1-004",
+      "question": "Update the mailing address used for my policy correspondence.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.policy.contact",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-005",
+      "conversation_id": "insurance-calibration-v1-005",
+      "question": "Continue my expiring insurance for a new annual term.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.policy.renew",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-006",
+      "conversation_id": "insurance-calibration-v1-006",
+      "question": "Use my replacement debit card for future insurance premium collections.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.premium.method",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-007",
+      "conversation_id": "insurance-calibration-v1-007",
+      "question": "Provide a receipt showing the insurance installment I paid last month.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.premium.receipt",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-008",
+      "conversation_id": "insurance-calibration-v1-008",
+      "question": "Water has damaged the insured building; start a property loss report.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.claim.home",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-009",
+      "conversation_id": "insurance-calibration-v1-009",
+      "question": "Add these incident photographs as evidence to my open claim.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.claim.upload",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-010",
+      "conversation_id": "insurance-calibration-v1-010",
+      "question": "The settlement was accepted; tell me when the insurer will send the money.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.claim.payment",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-011",
+      "conversation_id": "insurance-calibration-v1-011",
+      "question": "Show the people currently nominated to receive my life policy benefits.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.beneficiary.details",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-012",
+      "conversation_id": "insurance-calibration-v1-012",
+      "question": "Find an approved repair garage within the insurer's service network.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "insurance.provider.network",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-013",
+      "conversation_id": "insurance-calibration-v1-013",
+      "question": "Book two seats on tomorrow morning's flight.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-014",
+      "conversation_id": "insurance-calibration-v1-014",
+      "question": "My parcel from the online store is overdue.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-015",
+      "conversation_id": "insurance-calibration-v1-015",
+      "question": "Pay the minimum balance on my credit card.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-016",
+      "conversation_id": "insurance-calibration-v1-016",
+      "question": "Find the password for my social media account.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-017",
+      "conversation_id": "insurance-calibration-v1-017",
+      "question": "What is the capital city of Peru?",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-018",
+      "conversation_id": "insurance-calibration-v1-018",
+      "question": "Recommend a recipe for vegetable soup.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-019",
+      "conversation_id": "insurance-calibration-v1-019",
+      "question": "Explain the history of the Roman Empire.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-020",
+      "conversation_id": "insurance-calibration-v1-020",
+      "question": "Translate this poem into French.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-021",
+      "conversation_id": "insurance-calibration-v1-021",
+      "question": "Debug a syntax error in my JavaScript loop.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-022",
+      "conversation_id": "insurance-calibration-v1-022",
+      "question": "Create a weekly marathon training schedule.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-023",
+      "conversation_id": "insurance-calibration-v1-023",
+      "question": "Tell me the score of yesterday's football match.",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "insurance-calibration-v1-024",
+      "conversation_id": "insurance-calibration-v1-024",
+      "question": "How do I grow basil on my balcony?",
+      "source": "seed",
+      "dataset_version": "insurance-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    }
+  ]
+}

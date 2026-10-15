@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     embedding_mode: Literal["disabled", "local", "http"] = "disabled"
     embedding_model: str = "intfloat/multilingual-e5-base"
     embedding_profile: Literal["auto", "e5", "qwen3", "plain"] = "auto"
-    embedding_query_instruction: str = Field(default="Given a Turkish banking customer request, retrieve the banking intent descriptions and examples that match the customer's intended operation or question.", min_length=1, max_length=1000)
+    embedding_query_instruction: str = Field(default="Given a user request, retrieve the intent descriptions and examples in the active catalog that match the intended operation or question.", min_length=1, max_length=1000)
     embedding_batch_size: int = Field(default=32, ge=1, le=256)
     embedding_timeout_seconds: float = Field(default=30, ge=1, le=120)
     embedding_cpu_threads: int = Field(default=4, ge=1, le=32)

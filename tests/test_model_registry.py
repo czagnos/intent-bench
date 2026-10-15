@@ -45,7 +45,7 @@ def test_registry_persists_and_resolves_workspace_owned_models_without_default_c
     assert "openrouter-secret" not in json.dumps(variant.metadata)
     assert client.get("/v1/model-registry?workspace=other").json() == {"items": []}
     assert not next(m for m in client.get("/v1/methods?workspace=other").json() if m["id"] == "e5")["available"]
-    with pytest.raises(ValueError, match="Bilinmeyen"):
+    with pytest.raises(ValueError, match="Unknown"):
         studio.model_catalog.variant("e5", embedding["id"], workspace="other")
     assert client.patch("/v1/model-registry/" + llm["id"] + "?workspace=other", json=record()).status_code == 404
     with TestClient(create_app(studio.settings)) as restarted:
@@ -87,7 +87,7 @@ def test_cloud_connections_do_not_reuse_private_endpoint_keys(client):
     studio.settings.llm_api_key = "private-secret"
     cloud = add(client, record(connection="openrouter", base_url="", auth="shared_openrouter"))
     assert not cloud["available"]
-    with pytest.raises(ValueError, match="API anahtarı"):
+    with pytest.raises(ValueError, match="API key"):
         studio.model_catalog.resolve("llm", cloud["id"])
     studio.settings.openrouter_api_key = "cloud-secret"
     resolved = studio.model_catalog.resolve("llm", cloud["id"])
@@ -123,7 +123,7 @@ def test_edit_disable_and_model_type_protection_keep_queued_settings_frozen(clie
     assert new.metadata["model_labels"]["llm"] == "New name" and new.id != old.id
     assert client.patch("/v1/model-registry/" + llm["id"], json=record("embedding")).status_code == 422
     assert client.patch("/v1/model-registry/" + llm["id"], json=record(enabled=False)).status_code == 200
-    with pytest.raises(ValueError, match="devre dışı"):
+    with pytest.raises(ValueError, match="disabled"):
         registry.variant("hybrid_llm", embedding["id"], llm["id"])
     assert not next(m for m in client.get("/v1/models").json()["llm"] if m["id"] == llm["id"])["available"]
 

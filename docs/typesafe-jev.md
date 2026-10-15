@@ -1,61 +1,56 @@
-# TypeSafe Jev ile intent seçimi
+# TypeSafe Jev for intent selection
 
-Jev, intent adayları arasında seçim yapan doğrudan bir TypeSafe bağlantısı olarak eklenir. Embedding modeli ve arama stratejisi mevcut akışta çalışmaya devam eder. Canlı demo ve deneylerde Jev'i diğer LLM bağlantılarıyla aynı veri üzerinde karşılaştırabilirsiniz.
+Jev is a direct TypeSafe connection for choosing among intent candidates. Existing embedding and retrieval stages remain in place, so you can compare it with other decision models using the same sector catalog and reviewed cases.
 
-TypeSafe, eğitim yaklaşımını **RLCD — Reinforcement Learning for Calibrated Decisions** olarak tanımlıyor: amaç serbest metin üretmek yerine karar ve olasılık döndürmek. Bu, sağlayıcının teknik açıklamasıdır; Türkçe bankacılık verimizde kalibrasyon, hız veya doğruluk ölçümü değildir. [TypeSafe AI primer](https://docs.typesafe.ai/introduction/machine-learning-primer).
+TypeSafe describes its approach as Reinforcement Learning for Calibrated Decisions (RLCD). That is a provider description, not an IntentBench measurement of calibration, speed, or accuracy. See the [provider primer](https://docs.typesafe.ai/introduction/machine-learning-primer).
 
-## Kurulum
+## Setup
 
-1. Repo kökündeki sunucu `.env` dosyasına anahtarınızı ekleyin:
+1. Add the key to the server `.env`:
 
    ```dotenv
    INTENT_TYPESAFE_API_KEY=your_typesafe_key
    ```
 
-2. **Model kataloğu → TypeSafe Jev ekle** seçin. Hazır formda bağlantı **TypeSafe**, model türü **LLM**, model `jev-1.13.0`, API kökü `https://api.typesafe.ai/v1` ve anahtar değişkeni `INTENT_TYPESAFE_API_KEY` bulunur. Anahtarın kendisini forma yazmayın.
-3. **Modeli kaydet** ve **Bağlantıyı test et** düğmelerini kullanın. Test sabit demo metniyle API erişimini ve karar sözleşmesini kontrol eder; API kullanımına neden olur. Anahtarı kayıt sonrasında eklerseniz **Bağlantıları yenile** seçin.
-4. **Canlı demo → Hibrit arama + LLM → Karar modeli (LLM)** alanında Jev'i seçin. Seçilen embedding bağlantısı da kullanılabilir olmalıdır.
+2. In the selected sector, open **Model catalog → Add TypeSafe Jev**. Defaults are connection **TypeSafe**, kind **LLM**, model `jev-1.13.0`, base URL `https://api.typesafe.ai/v1`, and key-variable name `INTENT_TYPESAFE_API_KEY`. Do not paste the key into the variable-name field.
+3. Use **Save model** and **Test connection**. The synthetic probe checks access and the decision protocol and can incur charges. If you add the key after saving, use **Refresh connections**.
+4. In **Live demo → Hybrid retrieval + LLM → Decision model (LLM)**, select Jev and an available embedding connection.
 
-Anahtar kaydın kendisinde saklanmaz; kayıt yalnız değişken adını tutar. `INTENT_MODEL_KEY_TYPESAFE_TRIAL` gibi özel bir anahtar değişkeni de kullanılabilir. Anahtarlar OpenRouter'dan devralınmaz ve tarayıcıya/deney çıktısına eklenmez. `.env` içindeki değer her yeni model işlemi için okunur; çalışan süreçte OS ortamından verilen değer dosyadan önceliklidir. Docker `env_file` veya process environment değerini değiştirdiyseniz süreci/container'ı yeniden başlatın. Ayrı anahtar dosyası için `INTENT_MODEL_CREDENTIALS_FILE` kullanılabilir.
-
-Kayıt kimliğini model tablosundan alarak aynı sabit demo kontrolünü CLI ile de yapabilirsiniz:
+The registration stores the variable name, not its value. Custom names such as `INTENT_MODEL_KEY_TYPESAFE_TRIAL` are supported. OpenRouter keys are not inherited. File-based credentials are read for new operations; process environment variables take precedence. Restart after changing a process/Docker `env_file` value. `INTENT_MODEL_CREDENTIALS_FILE` selects another credential file.
 
 ```bash
-.venv/bin/python scripts/check_models.py --llm-only --llm-id model_REPLACE_WITH_ID --workspace demo
+.venv/bin/python scripts/check_models.py --llm-only --llm-id model_REPLACE_WITH_ID --workspace airline
 ```
 
-## API ve karar davranışı
+## API and decisions
 
-TypeSafe'in API sözleşmesi `POST https://api.typesafe.ai/v1/systemone`, Bearer kimlik doğrulaması ve `model`, `state`, `questions` alanlarını kullanır. `Choice` soruları tanımlanan seçeneklerden birini, seçenek olasılıklarını ve confidence değerini döndürür. [API referansı](https://docs.typesafe.ai/api), [Choice](https://docs.typesafe.ai/primitives/choice).
+The native request uses `POST /systemone`, bearer authentication, and `model`, `state`, and `questions`. Choice responses contain an allowed option, probabilities, and confidence metadata. See the [API](https://docs.typesafe.ai/api) and [Choice reference](https://docs.typesafe.ai/primitives/choice).
 
-IntentBench tek HTTP çağrısında intent kararını ve gerektiğinde kullanılacak netleştirme adaylarını sorar. Girdi, mevcut mesajı, yakın konuşma bağlamını, aktif intent'i ve retrieval adaylarının tanım/seçim kurallarını içerir. Testin beklenen intent etiketi modele gönderilmez. Yönlendirme, netleştirme, kapsam dışı, temsilci isteği ve aktif akışı sürdürme/iptal kararları mevcut sunucu politikalarına aktarılır.
+IntentBench asks for the main decision and potential clarification candidates in one HTTP request. Inputs include the current utterance, recent conversation, active intent, and candidate definitions/rules. Expected test labels are excluded. TypeSafe questions in one request are independent; additional clarification answers are used only when the main decision needs them.
 
-Jev sohbet yanıtı veya slot toplama metni üretmez. Netleştirme sorusu sunucuda aday adlarından belirli kurallarla hazırlanır; workflow ve slot toplama mevcut politika katmanında kalır. Bozuk yanıt, tanınmayan aday veya geçersiz olasılık verisi teknik hata olur. Confidence için otomatik bir yönlendirme eşiği eklenmez. Bu değer, mevcut embedding OOS kalibrasyonundan ayrıdır.
+Jev does not generate conversation or slot-collection text. The server constructs clarification text from candidate names and applies the normal workflow policy. Unknown candidates, invalid probability distributions, or malformed responses become technical errors. No automatic confidence threshold is added; TypeSafe confidence is separate from embedding OOS calibration.
 
-Bu bağlantıda OpenAI `messages`, `response_format`, `temperature`, reasoning ve çıktı token bütçesi gönderilmez. Arayüz bu ayarları gizler; timeout düzenlenebilir. Otomatik yeniden deneme eklenmez; limit/servis hataları deneyde görünür kalır. Sağlayıcının `input_tokens` ve `output_tokens` kullanımı mevcut `prompt_tokens`, `completion_tokens` ve `total_tokens` alanlarına dönüştürülür. Sonuçlarda TypeSafe sağlayıcısı ve bu adaptörün prompt sürümü yer alır.
+The adapter sends no OpenAI `messages`, `response_format`, temperature, reasoning, or output-token parameter. The form hides those options but exposes timeout. There is no automatic retry or model fallback. Provider input/output token usage maps to the shared prompt/completion/total fields. Results record provider and prompt version; the current selector protocol is `router-en-typesafe-v2-multisector-choice`.
 
-## Model sürümü ve fiyat
+## Model versions and cost
 
-17 Eylül 2026 tarihinde belgelenen kararlı model **`jev-1.13.0`**; duyurulan ücret **1 milyon input token için $0.042**, output tokenları ücretsiz. Fiyat ve limitler sağlayıcı tarafından değiştirilebilir. Deney formu sürümü sabitler; `jev-latest` gibi alias'lar ileride başka sürüme geçebilir. [TypeSafe model ve fiyat sayfası](https://docs.typesafe.ai/models).
+The form pins `jev-1.13.0`. Aliases such as `jev-latest` can change over time. Consult the [provider's model/pricing page](https://docs.typesafe.ai/models) for current access, prices, and limits.
 
-Çağrı maliyetini sağlayıcının döndürdüğü input token kullanımından hesaplayın; birden fazla soru içeren istek için yalnız kullanıcı mesajının uzunluğu yeterli değildir. Bu entegrasyon faturalama veya otomatik fiyat güncelleme özelliği eklemez.
+The original guide recorded a **17 September 2026** price of $0.042 per million input tokens and no output-token charge. This is a historical record, not a current quote. Calculate observed usage from the provider's input-token report, including state and all questions, rather than from the user's utterance alone. IntentBench does not provide billing or automatic price updates.
 
-## Kontrollü karşılaştırma
+## Controlled comparison
 
-1. **Deneyler** ekranında yalnız **Hibrit arama + LLM** yöntemini açın. Tek embedding modeli, tek retrieval stratejisi, aynı aday bütçesi ve aynı katalog büyüklüğünü koruyun.
-2. LLM listesinde Jev ile karşılaştırma modelini birlikte seçin. Aynı veri kaynağı ve vaka sınırını kullanın; böylece seçilen vakalar her iki modele de uygulanır.
-3. İlk incelemeyi demo vakalarıyla yapın. Ana doğruluk, gereksiz netleştirme, kapsam dışı yanlış kabul, teknik hata, seçim süresi ve toplam p95 sonuçlarını birlikte okuyun. Aday Recall@K düşükse seçim modelini değiştirmek retrieval kaybını tek başına çözmez.
-4. Gerçek kalite değerlendirmesini ayrı, gözden geçirilmiş müşteri test setinde tekrarlayın. Farklı katalog büyüklükleri veya retrieval stratejilerini sonraki deney olarak ekleyin.
+Choose only **Hybrid retrieval + LLM** in **Experiments**. Hold one embedding, retrieval strategy, candidate budget, catalog size, source, and case cohort fixed. Select Jev and the comparison model together. Inspect routing and decision accuracy, unnecessary clarification, OOS false acceptance, technical errors, selection time, and total p95.
 
-Entegrasyon ve UI testleri kontrollü HTTP/API yanıtlarıyla çalışır. Bu testler gerçek Jev hızını, Türkçe doğruluğunu veya maliyet üstünlüğünü ölçmez. Tek başarılı bağlantı kontrolü de benchmark değildir; model, embedding, katalog, aday bütçesi ve ölçülen vaka kümesiyle birlikte canlı deney sonuçlarına bakılmalıdır.
+Use starter cases to check behavior, then evaluate on independent reviewed data. Changing a selector cannot recover a correct intent that retrieval never supplies. Controlled HTTP/UI tests prove integration behavior, not real Jev speed, accuracy, or cost superiority.
 
-## 800 intent ile embedding kullanmadan iki aşamalı deney
+## Two-stage experiment without embeddings
 
-`scripts/evaluate_direct_jev.py`, kaynak deneyin 800-intent snapshot'ını, sıralı ve incelenmiş seed/test vakalarını, kayıtlı `jev-1.13.0` bağlantısını ve seçim prompt sürümünü çağrıdan önce doğrular. Katalog veya vaka fingerprint'i farklıysa çalışmaz; beklenen etiketler yalnız çağrılardan sonra puanlamada kullanılır.
+`scripts/evaluate_direct_jev.py` implements a fixed banking 800-intent experiment separate from the ordinary retrieval pipeline. Before inference it validates a source evaluation's catalog snapshot, ordered reviewed seed/test cohort, fingerprints, registered `jev-1.13.0` settings, and current selector prompt version. It rejects changed data/configuration. Historical pre-English evaluations need a matching new source run; they are not silently upgraded.
 
-İlk aşama intent kimliklerini alfabetik sırayla 200'erli dört gruba ayırır. Tek istekte dört bağımsız Choice sorulur; her biri 200 intent ve `@none` içerir. Rubric yalnız intent adı ve açıklamasıdır. Her grubun kendi olasılık sırasından beş intent alınır; gruplar arasında olasılık karşılaştırılmaz. Tam eşitliklerde intent kimliği sırası kullanılır, sıfır olasılıklar da sabit bütçeyi doldurabilir. Çıktı sıfır olasılıkla seçilen adayları ve beşinci sıra sınırındaki eşitlikleri ayrıca kaydeder.
+The first stage sorts IDs alphabetically into four groups of 200. One request contains four independent Choice questions, each with 200 intents plus `@none`. The rubric contains only names and descriptions. Five intents are selected from each group's own probability order; probabilities are not compared across groups. ID order breaks ties. Zero-probability entries can fill the fixed budget, and their presence and fifth-place ties are recorded.
 
-İkinci çağrı, bu 20 adayı mevcut TypeSafe Selector'a tam tanım, ilk sabit katalog örneği, dışlamalar ve seçim kuralıyla verir; mevcut seçim prompt'u değiştirilmez. Embedding, sözcüksel arama veya konuşma kuralıyla erken karar verme kullanılmaz. Model kararı sonrasında mevcut sunucu politikası uygulanır. İlk aşama daha dar katalog alanları kullandığından sonuç bu iki aşamalı protokolün başarısı olarak yorumlanmalıdır.
+The second call passes those 20 candidates to the normal TypeSafe selector with complete descriptions, one fixed catalog example, exclusions, and rules. No embedding, lexical retrieval, or contextual early decision is used. Server policy runs after selection. Interpret outcomes as results of this specific two-stage protocol.
 
 ```bash
 .venv/bin/python scripts/evaluate_direct_jev.py \
@@ -63,19 +58,19 @@ Entegrasyon ve UI testleri kontrollü HTTP/API yanıtlarıyla çalışır. Bu te
   --output artifacts/runs/jev-direct-800-two-stage.json
 ```
 
-Ön kontrol için `--limit 1` eklenebilir; çıktı alt kümeyi ve kaynak vaka sayısını açıkça belirtir. Çıktı yolu yeni olmalı ve `artifacts/runs` altında bulunmalıdır. Her vaka sonrasında checkpoint yazılır. İki çağrının token kullanımları toplanır, aşama süreleri ayrı tutulur. İkinci çağrı başarısızsa ilk aşamanın bilinen maliyeti ve adayları korunur. İlk teknik hatada çalışma durur; yeniden deneme, otomatik kesme veya fallback yoktur.
+Use `--limit 1` for a subset probe. Output must be a new path under `artifacts/runs`; each case creates a checkpoint. Both calls' usage is summed and stage timings stay separate. If stage two fails, known stage-one usage/candidates remain. The first technical failure stops the run without retry, silent truncation, or fallback.
 
-`jev-1.13` için state + tüm soruların toplam sınırı 64k token, state + en uzun tek sorunun sınırı 32k tokendır. 800 intentin tüm örnek/dışlama/seçim kurallarını ilk isteğe koyan sözleşme kontrolü `400 / max_tokens_exceeded` döndürdü. Ad ve açıklama biçimi tam deneyden önce bu API sınırına göre sabitlendi (`jev-partition-shortlist-v2-name-description`); daha uzun girdiler hâlâ limit hatası verebilir. [Jev 1.13 sınırları](https://docs.typesafe.ai/model-jaggedness/jev-1.13.md).
+The historical `jev-1.13` limits documented 64k tokens for state plus all questions, and 32k for state plus the longest question. A full-text first-stage request returned `400 / max_tokens_exceeded`; name/description-only shortlisting was fixed before the full experiment. The current English shortlist protocol is `jev-partition-shortlist-v3-english-multisector`. Longer inputs can still exceed limits. Check [the provider's version-specific limits](https://docs.typesafe.ai/model-jaggedness/jev-1.13.md).
 
-## İlk canlı kontrol — 17 Eylül 2026
+## Historical live probe: 17 September 2026
 
-`jev-1.13.0`, dört sabit sentetik ifadeyle canlı olarak kontrol edildi; müşteri verisi kullanılmadı. 48 çekirdek demo intent'inden sözcüksel aramayla ilk 20 aday alındı, embedding çağrısı yapılmadı. Her model çağrısı aynı istekte üç `Choice` sorusu içerdi. Bu kontrol semantik/hibrit doğruluk benchmark'ı değildir.
+The original Turkish banking probe used four synthetic utterances, the 48-core catalog, lexical top-20 candidates, no embeddings, and three Choice questions per request. It was not a semantic/hybrid benchmark or customer-data evaluation.
 
-| Senaryo | Gözlenen sonuç |
+| Scenario | Observed result |
 |---|---|
-| Açık yönlendirme isteği | Beklendiği gibi `route` → `card.limit.change` |
-| Belirsiz kart kapatma isteği | `clarify` beklenirken hatalı biçimde `route` → `card.cancel` |
-| Birden fazla amaç | Beklendiği gibi `clarify` / `multiple_intents`; adaylar `card.limit.change` ve `account.balance` |
-| Kapsam dışı istek | Beklendiği gibi `out_of_scope` |
+| Clear routing request | Correct `route → card.limit.change` |
+| Ambiguous card-closure request | Incorrect `route → card.cancel` instead of clarification |
+| Multiple goals | Correct `clarify / multiple_intents`, with `card.limit.change` and `account.balance` |
+| Out-of-scope request | Correct `out_of_scope` |
 
-Dört yanıtın tamamı teknik sözleşme kontrollerinden geçti. Tekil çağrı süreleri yaklaşık **0,85–1,20 saniye**, sağlayıcının bildirdiği kullanım çağrı başına **12.984–15.521 input** ve **632–647 output token** oldu. Bunlar her senaryo için tek gözlemdir; p95, genel doğruluk veya başka modellere üstünlük göstermez. Kart kapatma belirsizliğindeki ilk hata korunmuştur; prompt bu örneği düzeltmek için ayarlanmamıştır.
+All four responses passed technical validation. Individual calls took approximately 0.85–1.20 seconds and reported 12,984–15,521 input and 632–647 output tokens. Each scenario had one observation; these are not p95 estimates, general accuracy, or evidence of superiority. The ambiguity error was retained rather than tuned away. Current English catalogs and prompts must be evaluated separately.

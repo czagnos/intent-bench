@@ -34,11 +34,11 @@ def public_calibration(artifact):
 def fit_threshold(records, max_false_accept_rate):
     """Maximise in-scope retention subject to the requested empirical OOS FAR."""
     if not 0 <= max_false_accept_rate <= .5 or any(not math.isfinite(r["score"]) for r in records):
-        raise ValueError("Kalibrasyon skorları veya hedef oran geçersiz.")
+        raise ValueError("Invalid calibration scores or target rate.")
     inside = [r for r in records if r["in_scope"]]
     outside = [r for r in records if not r["in_scope"]]
     if min(len(inside), len(outside)) < MIN_PER_CLASS:
-        raise ValueError("Kalibrasyon için en az 10 kapsam içi ve 10 kapsam dışı etiketli vaka gerekli.")
+        raise ValueError("Calibration requires at least 10 labelled in-scope and 10 OOS cases.")
     scores = sorted({r["score"] for r in records})
     thresholds = [math.nextafter(scores[0], -math.inf)] + [(a+b)/2 for a, b in zip(scores, scores[1:])] + [math.nextafter(scores[-1], math.inf)]
     operating_points = []
@@ -73,7 +73,7 @@ class Calibrator:
         for case in cases:
             candidates = retriever.search(case["question"], "e5", candidate_k)
             if not candidates:
-                raise ModelUnavailable("Kalibrasyon için intent adayı bulunamadı.")
+                raise ModelUnavailable("No intent candidate was found for calibration.")
             records.append({"case_id": case["case_id"], "question": case["question"], "score": candidates[0].score,
                             "in_scope": case["expected_decision"] != "out_of_scope", "nearest_intent_id": candidates[0].intent_id})
         fit = fit_threshold(records, max_false_accept_rate)
@@ -87,19 +87,19 @@ class Calibrator:
 
     def validate_cases(self, workspace, cases, catalog):
         if any(c.get("context") or c["expected_decision"] not in ("route", "handoff", "out_of_scope") for c in cases):
-            raise ValueError("Kalibrasyonda bağlamsız, kapsam içi veya kapsam dışı vakalar kullanın.")
+            raise ValueError("Use context-free in-scope or OOS cases for calibration.")
         hashes = [question_hash(c["question"]) for c in cases]
         if len(set(hashes)) != len(hashes):
-            raise ValueError("Kalibrasyon kümesinde tekrarlanan ifadeler var.")
+            raise ValueError("The calibration set contains duplicate utterances.")
         test_hashes = {question_hash(c["question"]) for c in self.store.cases(workspace, split="test")}
         example_hashes = {question_hash(text) for i in catalog["intents"] for text in i["examples"]}
         if set(hashes) & (test_hashes | example_hashes):
-            raise ValueError("Kalibrasyon ifadeleri test vakaları veya katalog örnekleriyle aynı olamaz.")
+            raise ValueError("Calibration utterances cannot duplicate test cases or catalog examples.")
         ids = {i["intent_id"] for i in catalog["intents"]}
         if any(c["expected_decision"] == "route" and c["expected_intent_id"] not in ids for c in cases):
-            raise ValueError("Kalibrasyon etiketlerinden biri aktif katalogda yok.")
+            raise ValueError("A calibration label is missing from the active catalog.")
         if min(sum(c["expected_decision"] != "out_of_scope" for c in cases), sum(c["expected_decision"] == "out_of_scope" for c in cases)) < MIN_PER_CLASS:
-            raise ValueError("Kalibrasyon için en az 10 kapsam içi ve 10 kapsam dışı etiketli vaka gerekli.")
+            raise ValueError("Calibration requires at least 10 labelled in-scope and 10 OOS cases.")
 
     def resolve(self, workspace, variant, version, mode, evaluation_cases=None):
         if variant.method != "e5":
@@ -108,12 +108,12 @@ class Calibrator:
             return {"mode": "off", "calibrated": False}
         artifact = self.store.latest_calibration(workspace, calibration_identity(variant.settings, version))
         if not artifact:
-            raise ValueError("Bu model ve katalog için kalibrasyon yok. Kalibrasyon ekranında eşiği hesaplayın.")
+            raise ValueError("No calibration exists for this model and catalog. Fit a threshold on the Calibration page.")
         current = self.cases(workspace, artifact["source"])
         if data_fingerprint(current) != artifact["dataset_fingerprint"]:
-            raise ValueError("Kalibrasyon verisi değişti. Eşiği yeniden hesaplayın.")
+            raise ValueError("Calibration data has changed. Refit the threshold.")
         if evaluation_cases and set(artifact["question_hashes"]) & {question_hash(c["question"]) for c in evaluation_cases}:
-            raise ValueError("Kalibrasyonda kullanılan vakalar aynı eşikle test edilemez. Ayrı test bölümü seçin.")
+            raise ValueError("Cases used for calibration cannot be tested with that threshold. Choose a separate test split.")
         return public_calibration(artifact)
 
     def status(self, workspace):
@@ -164,7 +164,7 @@ class Calibrator:
                     # Only the question enters retrieval. Labels are used after scoring.
                     candidates = retriever.search(case["question"], "e5", variant.settings.candidate_k)
                     if not candidates:
-                        raise ModelUnavailable("Kalibrasyon için intent adayı bulunamadı.")
+                        raise ModelUnavailable("No intent candidate was found for calibration.")
                     records.append({"case_id": case["case_id"], "question": case["question"], "score": candidates[0].score,
                                     "in_scope": case["expected_decision"] != "out_of_scope", "nearest_intent_id": candidates[0].intent_id})
                     progress += 1
@@ -173,7 +173,7 @@ class Calibrator:
                 fit = fit_threshold(records, options.max_oos_false_accept_rate)
                 # Never publish a fit if its labels or catalog changed while it was running.
                 if self.store.catalog(workspace)["version"] != job["catalog_version"] or data_fingerprint(self.cases(workspace, options.source)) != job["dataset_fingerprint"]:
-                    raise ValueError("Kalibrasyon sırasında veri veya katalog değişti. Eşiği yeniden hesaplayın.")
+                    raise ValueError("Data or catalog changed during calibration. Refit the threshold.")
                 self.validate_cases(workspace, cases, self.store.catalog(workspace))
                 artifact = {"id": str(uuid4()), "created": time.time(), "identity": calibration_identity(variant.settings, job["catalog_version"]),
                             "mode": "calibrated", "calibrated": True, "algorithm": ALGORITHM,
@@ -186,7 +186,7 @@ class Calibrator:
             except Exception as exc:
                 # One failed model must not publish a partial fit or prevent other models from fitting.
                 progress += len(cases)-completed
-                message = str(exc) if isinstance(exc, (ModelUnavailable, ValueError)) else "Kalibrasyon tamamlanamadı. Model bağlantısını kontrol edin."
+                message = str(exc) if isinstance(exc, (ModelUnavailable, ValueError)) else "Calibration could not be completed. Check the model connection."
                 results[variant.embedding_id] = {"status": "failed", "model": variant.settings.embedding_model, "error": message, "diagnostics": getattr(exc, "diagnostics", {})}
             results[variant.embedding_id]["elapsed_ms"] = round((time.perf_counter()-started)*1000, 2)
             self.store.patch_job(workspace, job_id, {"results": results, "progress": progress})

@@ -116,7 +116,7 @@ def test_fit_rejects_insufficient_or_invalid_data(data, target):
 def test_seed_calibration_is_disjoint_and_does_not_inflate_test_counts(client, settings):
     studio = client.app.state.studio
     counts = client.get("/v1/status").json()
-    assert counts["seed_case_count"] == 29
+    assert counts["seed_case_count"] == 153
     assert client.get("/v1/cases?split=calibration").json()["total"] == 72
     cases = studio.calibrator.cases("demo", "seed")
     studio.calibrator.validate_cases("demo", cases, studio.store.catalog("demo"))
@@ -126,7 +126,7 @@ def test_seed_calibration_is_disjoint_and_does_not_inflate_test_counts(client, s
     first = cases[0]
     studio.store.review_case("demo", first["case_id"], {"expected_decision": "out_of_scope", "expected_intent_id": None, "split": "calibration"})
     with TestClient(create_app(settings)) as restarted:
-        assert restarted.get("/v1/status").json()["seed_case_count"] == 29
+        assert restarted.get("/v1/status").json()["seed_case_count"] == 153
         saved = restarted.app.state.studio.store.cases("demo", split="calibration")
         assert len(saved) == 72 and saved[0]["expected_decision"] == "out_of_scope"
 
@@ -195,7 +195,7 @@ def test_changed_calibration_identity_or_labels_cannot_reuse_threshold(client, c
     else:
         workspace = "another-bank"
         studio.ensure_workspace(workspace)
-    with pytest.raises(ValueError, match="Kalibrasyon|kalibrasyon"):
+    with pytest.raises(ValueError, match="Calibration|calibration"):
         studio.calibrator.resolve(workspace, variant, version, "calibrated")
 
 
@@ -215,8 +215,8 @@ def test_calibration_split_cannot_be_reported_as_test_accuracy(client):
     install_embeddings(client)
     calibrate(client)
     response = client.post("/v1/evaluations", json={"methods": ["e5"], "split": "calibration"})
-    assert response.status_code == 422 and "aynı eşikle test edilemez" in response.json()["detail"]
-    response = client.post("/v1/evaluations", json={"methods": ["e5"]})
+    assert response.status_code == 422 and "cannot be tested with that threshold" in response.json()["detail"]
+    response = client.post("/v1/evaluations", json={"methods": ["e5"], "limit": 29})
     assert response.status_code == 202
     job = wait_job(client, response.json()["id"])
     result = job["results"]["e5"]
@@ -292,7 +292,7 @@ def test_data_changes_while_fitting_prevent_publication(client, monkeypatch, cha
     identity = calibration_identity(studio.settings, studio.store.catalog("demo")["version"])
     job = calibrate(client)
     assert job["status"] == "failed"
-    assert "veri veya katalog değişti" in job["results"]["default"]["error"]
+    assert "Data or catalog changed" in job["results"]["default"]["error"]
     assert studio.store.latest_calibration("demo", identity) is None
 
 

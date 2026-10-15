@@ -13,7 +13,7 @@ from .choice_routing import (CandidateContext, ChoiceQuestion, Conversation, Pri
 from .contracts import Candidate, Intent, RoutingSelection
 from .providers import ModelUnavailable, TYPESAFE_BASE_URL, response_json
 
-PROMPT_VERSION = "router-tr-typesafe-v1-choice"
+PROMPT_VERSION = "router-en-typesafe-v2-multisector-choice"
 
 
 class SystemOneRequest(BaseModel):
@@ -82,9 +82,9 @@ def select(settings: Settings, transport: httpx.BaseTransport | None, text: str,
         validate_answers(data, request)
         selection = routing_selection(data, request, catalog)
     except httpx.TimeoutException as exc:
-        raise ModelUnavailable("TypeSafe süre sınırını aştı. İstek yönlendirilmedi.") from exc
+        raise ModelUnavailable("TypeSafe timed out. The request was not routed.") from exc
     except (httpx.HTTPError, ValidationError, ValueError, KeyError, TypeError) as exc:
-        raise ModelUnavailable("TypeSafe bağlantısı veya seçim yanıtı geçersiz.",
+        raise ModelUnavailable("TypeSafe connection or selection response is invalid.",
                                diagnostics={"service": "llm", "category": "typesafe_contract"}) from exc
     return selection, {"prompt_tokens": data.usage.input_tokens, "completion_tokens": data.usage.output_tokens,
                        "total_tokens": data.usage.input_tokens + data.usage.output_tokens}

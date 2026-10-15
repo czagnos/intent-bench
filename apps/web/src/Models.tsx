@@ -1,3 +1,4 @@
+import { useWorkspaceApi } from "./workspace";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Check,
@@ -10,7 +11,7 @@ import {
   Server,
   X,
 } from "lucide-react";
-import { api, type Status } from "./api";
+import { type ConnectionProbe, type Status } from "./api";
 import { useI18n } from "./i18n";
 
 type Kind = "llm" | "embedding" | "reranker";
@@ -58,13 +59,6 @@ type Discovery = {
   fetched_at: number;
   cached: boolean;
 };
-type Probe = {
-  ok: boolean;
-  error?: string;
-  elapsed_ms: number;
-  dimensions?: number;
-};
-
 const blank = (connection: Form["connection"], kind: Kind = "llm"): Form => ({
   kind,
   name: connection === "typesafe" ? "TypeSafe Jev" : "",
@@ -106,6 +100,7 @@ export default function Models({
   status: Status;
   refresh: () => Promise<void>;
 }) {
+  const { api } = useWorkspaceApi();
   const { t, tag, ms } = useI18n();
   const [records, setRecords] = useState<RecordModel[]>([]);
   const [tab, setTab] = useState<"saved" | "discovery">("saved");
@@ -122,11 +117,18 @@ export default function Models({
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [probes, setProbes] = useState<Record<string, Probe>>({});
+  const [probes, setProbes] = useState<Record<string, ConnectionProbe>>({});
+  const probeGeneration = useRef(0);
+  useEffect(() => {
+    probeGeneration.current++;
+    setProbes({});
+    setBusy("");
+    return () => { probeGeneration.current++; };
+  }, [status.models]);
   const loadRecords = useCallback(async () => {
     const data = await api<{ items: RecordModel[] }>("/model-registry");
     setRecords(data.items);
-  }, []);
+  }, [api]);
   useEffect(() => {
     void loadRecords().catch((e) => setError(e.message));
   }, [loadRecords]);
@@ -198,7 +200,7 @@ export default function Models({
       await loadRecords();
       await refresh();
       setNotice(
-        "Model kaydedildi. Canlı demo, deney ve kalibrasyon seçimleri güncellendi.",
+        "Model saved. Live demo, experiment and calibration selections are updated.",
       );
     } catch (e) {
       setError((e as Error).message);
@@ -207,29 +209,30 @@ export default function Models({
     }
   }
   async function check(record: RecordModel) {
+    const generation = probeGeneration.current;
     setBusy(record.id);
     setError("");
     try {
-      const result = await api<Probe>(
+      const result = await api<ConnectionProbe>(
         "/model-registry/" + record.id + "/check",
         { method: "POST" },
       );
-      setProbes((current) => ({ ...current, [record.id]: result }));
+      if (generation === probeGeneration.current) setProbes((current) => ({ ...current, [record.id]: result }));
     } catch (e) {
-      setError((e as Error).message);
+      if (generation === probeGeneration.current) setError((e as Error).message);
     } finally {
-      setBusy("");
+      if (generation === probeGeneration.current) setBusy("");
     }
   }
   return (
     <div className="page-pad model-registry-page">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">{t("MODEL KATALOĞU")}</p>
-          <h1>{t("Modelleri ekle, bağlantıları karşılaştır.")}</h1>
+          <p className="eyebrow">{t("MODEL CATALOG")}</p>
+          <h1>{t("Add models. Compare connections.")}</h1>
           <p>
             {t(
-              "OpenRouter, TypeSafe Jev ve kendi sunucundaki modelleri aynı deneyde karşılaştır.",
+              "Compare OpenRouter, TypeSafe Jev and models on your own server in the same experiment.",
             )}
           </p>
         </div>
@@ -240,16 +243,18 @@ export default function Models({
             onClick={() => open(blank("typesafe"))}
           >
             <Plus size={17} />
-            {t("TypeSafe Jev ekle")}
+            {t("Add TypeSafe Jev")}
           </button>
           <button className="button subtle" disabled={!!busy} onClick={() => open({ ...blank("onprem", "reranker"),
             name: "BGE reranker v2 M3", model: "BAAI/bge-reranker-v2-m3", weights_url: "https://huggingface.co/BAAI/bge-reranker-v2-m3" })}>
-            <Plus size={17} />{t("Reranker ekle")}
+            <Plus size={17} />{t("Add reranker")}
           </button>
           <button
             className="button subtle"
             disabled={!!busy}
             onClick={async () => {
+              probeGeneration.current++;
+              setProbes({});
               setBusy("refresh");
               setError("");
               try {
@@ -263,7 +268,7 @@ export default function Models({
             }}
           >
             <RefreshCw size={17} />
-            {t("Bağlantıları yenile")}
+            {t("Refresh connections")}
           </button>
           <button
             className="button primary"
@@ -271,7 +276,7 @@ export default function Models({
             onClick={() => open(blank("onprem"))}
           >
             <Plus size={17} />
-            {t("On-prem model ekle")}
+            {t("Add on-prem model")}
           </button>
         </div>
       </div>
@@ -289,13 +294,13 @@ export default function Models({
       {form && (
         <section
           className="panel registry-form"
-          aria-label={t("Model bağlantısı formu")}
+          aria-label={t("Model connection form")}
         >
           <div className="panel-heading">
-            <h2>{t(editing ? "Modeli düzenle" : "Yeni model bağlantısı")}</h2>
+            <h2>{t(editing ? "Edit model" : "New model connection")}</h2>
             <button
               className="icon-button"
-              aria-label={t("Kapat")}
+              aria-label={t("Close")}
               disabled={!!busy}
               onClick={() => setForm(undefined)}
             >
@@ -310,17 +315,17 @@ export default function Models({
           >
             <fieldset disabled={!!busy} className="registry-fields">
               <label>
-                {t("Görünen ad")}
+                {t("Display name")}
                 <input
                   required
                   maxLength={120}
                   value={form.name}
                   onChange={(e) => patch("name", e.target.value)}
-                  placeholder="Bank Qwen / OpenRouter GPT-OSS"
+                  placeholder="Qwen decision model / OpenRouter GPT-OSS"
                 />
               </label>
               <label>
-                {t("Model türü")}
+                {t("Model type")}
                 <select
                   value={form.kind}
                   disabled={!!editing}
@@ -335,7 +340,7 @@ export default function Models({
                 </select>
               </label>
               <label>
-                {t("Bağlantı türü")}
+                {t("Connection type")}
                 <select
                   value={form.connection}
                   onChange={(e) => {
@@ -352,11 +357,11 @@ export default function Models({
                 >
                   <option value="openrouter" disabled={form.kind === "reranker"}>OpenRouter</option>
                   <option value="typesafe" disabled={form.kind !== "llm"}>TypeSafe</option>
-                  <option value="onprem">{t("On-prem / özel endpoint")}</option>
+                  <option value="onprem">{t("On-prem / custom endpoint")}</option>
                 </select>
               </label>
               <label>
-                {t("Model kimliği")}
+                {t("Model ID")}
                 <input
                   required
                   maxLength={200}
@@ -370,7 +375,7 @@ export default function Models({
                 />
               </label>
               <label className="registry-wide">
-                {t("API kök adresi")}
+                {t("API base URL")}
                 <input
                   required
                   type="url"
@@ -382,13 +387,13 @@ export default function Models({
                 />
                 <small>
                   {t(
-                    form.connection === "typesafe" ? "TypeSafe'e doğrudan bağlanır. Jev, intent adayları arasından seçim yapar." : form.kind === "reranker" ? "Reranker API kök adresini girin. /rerank yolu uygulama tarafından eklenir." : "API sunucusundan erişilebilen OpenAI uyumlu adres. /chat/completions veya /embeddings eklemeyin.",
+                    form.connection === "typesafe" ? "Connects directly to TypeSafe. Jev selects from the candidate intents." : form.kind === "reranker" ? "Enter the reranker API base URL. The application appends /rerank." : "OpenAI-compatible URL reachable from the API server. Do not append /chat/completions or /embeddings.",
                   )}
                 </small>
               </label>
-              {form.kind === "reranker" && <label>{t("Reranker protokolü")}<select value={form.reranker_protocol} onChange={e => patch("reranker_protocol", e.target.value as Form["reranker_protocol"])}><option value="cohere">Cohere / vLLM</option><option value="tei">Hugging Face TEI</option></select></label>}
+              {form.kind === "reranker" && <label>{t("Reranker protocol")}<select value={form.reranker_protocol} onChange={e => patch("reranker_protocol", e.target.value as Form["reranker_protocol"])}><option value="cohere">Cohere / vLLM</option><option value="tei">Hugging Face TEI</option></select></label>}
               <label>
-                {t("Kimlik doğrulama")}
+                {t("Authentication")}
                 <select
                   value={form.auth}
                   onChange={(e) =>
@@ -397,20 +402,20 @@ export default function Models({
                 >
                   {form.connection === "openrouter" && (
                     <option value="shared_openrouter">
-                      {t("Mevcut OpenRouter anahtarı")}
+                      {t("Existing OpenRouter key")}
                     </option>
                   )}
                   {form.connection === "onprem" && (
-                    <option value="none">{t("Anahtar gerekmiyor")}</option>
+                    <option value="none">{t("No key required")}</option>
                   )}
                   <option value="env">
-                    {t("Sunucudaki anahtar değişkeni")}
+                    {t("Server key variable")}
                   </option>
                 </select>
               </label>
               {form.auth === "env" && (
                 <label>
-                  {t("Anahtar değişkeninin adı")}
+                  {t("Key variable name")}
                   <input
                     required
                     pattern={form.connection === "typesafe" ? "(INTENT_TYPESAFE_API_KEY|INTENT_MODEL_KEY_[A-Z0-9_]+)" : "INTENT_MODEL_KEY_[A-Z0-9_]+"}
@@ -424,21 +429,21 @@ export default function Models({
               <p className="field-hint registry-wide">
                 {t(
                   form.connection === "typesafe"
-                    ? "Anahtarı bu alana yapıştırmayın. Sunucunun .env dosyasına INTENT_TYPESAFE_API_KEY=anahtar ekleyin; burada yalnızca değişken adı bulunur. Bağlantıları yenile ile kullanılabilirliği güncelleyin."
+                    ? "Do not paste the key here. Add INTENT_TYPESAFE_API_KEY=your_key to the server .env file; enter only the variable name here. Use Refresh connections to update availability."
                     : form.auth === "env"
-                      ? "Anahtarı bu alana yapıştırmayın. Sunucunun .env dosyasına INTENT_MODEL_KEY_BANK_LLM=anahtar ekleyip burada yalnızca değişken adını kullanın. Bu değişkenler yeniden başlatmadan okunur."
+                      ? "Do not paste the key here. Enter only the server variable name. File-based keys are reread on Refresh connections; process environment changes require an API restart, and Docker env-file changes require container recreation."
                       : form.auth === "shared_openrouter"
-                        ? "INTENT_OPENROUTER_API_KEY kullanılır; yeniden anahtar girmeniz gerekmez."
-                        : "Bu bağlantıya Authorization başlığı gönderilmez.",
+                        ? "Uses INTENT_OPENROUTER_API_KEY from the server. Restart the API after changing this shared key; recreate Docker containers after env-file changes."
+                        : "No Authorization header is sent to this connection.",
                 )}
               </p>
             </fieldset>
             <details className="registry-advanced">
-              <summary>{t("Gelişmiş model ayarları")}</summary>
+              <summary>{t("Advanced model settings")}</summary>
               <fieldset className="registry-fields" disabled={!!busy}>
                 {form.kind === "embedding" ? (
                   <label>
-                    {t("Embedding metin profili")}
+                    {t("Embedding text profile")}
                     <select
                       value={form.profile}
                       onChange={(e) =>
@@ -455,7 +460,7 @@ export default function Models({
                 ) : form.kind === "llm" && form.connection !== "typesafe" ? (
                   <>
                     <label>
-                      {t("JSON yanıt modu")}
+                      {t("JSON response mode")}
                       <select
                         value={form.response_format}
                         onChange={(e) =>
@@ -467,16 +472,16 @@ export default function Models({
                       >
                         <option value="json_schema">JSON Schema</option>
                         <option value="json_object">JSON Object</option>
-                        <option value="prompt">{t("Prompt ile JSON")}</option>
+                        <option value="prompt">{t("JSON via prompt")}</option>
                       </select>
                       <small>
                         {t(
-                          "Tüm modlarda yanıt şeması ve aday intent kimlikleri sunucuda doğrulanır.",
+                          "Response schema and candidate intent IDs are validated on the server in every mode.",
                         )}
                       </small>
                     </label>
                     <label>
-                      {t("Reasoning parametresi")}
+                      {t("Reasoning parameter")}
                       <select
                         value={form.reasoning}
                         onChange={(e) =>
@@ -494,7 +499,7 @@ export default function Models({
                       </select>
                     </label>
                     <label>
-                      {t("En fazla çıktı tokenı")}
+                      {t("Maximum output tokens")}
                       <input
                         type="number"
                         required
@@ -507,13 +512,13 @@ export default function Models({
                       />
                       <small>
                         {t(
-                          "Reasoning low seçildiğinde en az 4096 token ayrılır.",
+                          "Reasoning low reserves at least 4096 tokens.",
                         )}
                       </small>
                     </label>
                     {form.connection === "onprem" && (
                       <label>
-                        {t("Sunucu thinking parametresi")}
+                        {t("Server thinking parameter")}
                         <select
                           value={form.thinking_parameter}
                           onChange={(e) =>
@@ -539,13 +544,13 @@ export default function Models({
                           patch("send_temperature", e.target.checked)
                         }
                       />
-                      {t("temperature: 0 gönder")}
+                      {t("Send temperature: 0")}
                     </label>
                   </>
                 ) : null}
                 {form.connection === "openrouter" && (
                   <label>
-                    {t("Sağlayıcı filtresi (isteğe bağlı)")}
+                    {t("Provider filter (optional)")}
                     <input
                       value={form.provider_only.join(",")}
                       onChange={(e) =>
@@ -555,13 +560,13 @@ export default function Models({
                     />
                     <small>
                       {t(
-                        "Virgülle ayırın. Boş bırakılırsa OpenRouter sağlayıcı seçer.",
+                        "Separate with commas. Leave empty for OpenRouter to select providers.",
                       )}
                     </small>
                   </label>
                 )}
                 <label>
-                  {t("İstek zaman aşımı (sn)")}
+                  {t("Request timeout (seconds)")}
                   <input
                     type="number"
                     required
@@ -574,7 +579,7 @@ export default function Models({
                   />
                 </label>
                 <label>
-                  {t("Model kartı adresi (isteğe bağlı)")}
+                  {t("Model card URL (optional)")}
                   <input
                     type="url"
                     value={form.weights_url}
@@ -583,7 +588,7 @@ export default function Models({
                   />
                 </label>
                 <label>
-                  {t("Lisans notu (isteğe bağlı)")}
+                  {t("License note (optional)")}
                   <input
                     maxLength={80}
                     value={form.license}
@@ -591,7 +596,7 @@ export default function Models({
                   />
                 </label>
                 <label className="registry-wide">
-                  {t("Açıklama")}
+                  {t("Description")}
                   <textarea
                     maxLength={500}
                     value={form.description}
@@ -611,7 +616,7 @@ export default function Models({
                 ) : (
                   <Check size={17} />
                 )}{" "}
-                {t("Modeli kaydet")}
+                {t("Save model")}
               </button>
               <button
                 type="button"
@@ -619,7 +624,7 @@ export default function Models({
                 disabled={!!busy}
                 onClick={() => setForm(undefined)}
               >
-                {t("Vazgeç")}
+                {t("Cancel")}
               </button>
             </div>
           </form>
@@ -628,7 +633,7 @@ export default function Models({
       <div
         className="registry-tabs"
         role="tablist"
-        aria-label={t("Model kaynakları")}
+        aria-label={t("Model sources")}
       >
         <button
           role="tab"
@@ -636,7 +641,7 @@ export default function Models({
           className={"button " + (tab === "saved" ? "primary" : "subtle")}
           onClick={() => setTab("saved")}
         >
-          {t("Modellerim")} ({records.length})
+          {t("My models")} ({records.length})
         </button>
         <button
           role="tab"
@@ -644,7 +649,7 @@ export default function Models({
           className={"button " + (tab === "discovery" ? "primary" : "subtle")}
           onClick={() => setTab("discovery")}
         >
-          {t("OpenRouter’dan keşfet")}
+          {t("Discover on OpenRouter")}
         </button>
         <button
           className="button subtle"
@@ -652,14 +657,14 @@ export default function Models({
           onClick={() => open(blank("openrouter", kind))}
         >
           <Plus size={16} />
-          {t("Model kimliğiyle ekle")}
+          {t("Add by model ID")}
         </button>
       </div>
       {tab === "discovery" ? (
         <section className="panel registry-discovery">
           <div className="registry-toolbar">
             <label>
-              {t("Model türü")}
+              {t("Model type")}
               <select
                 value={kind}
                 onChange={(e) => {
@@ -672,7 +677,7 @@ export default function Models({
               </select>
             </label>
             <label className="registry-search">
-              {t("Model ara")}
+              {t("Search models")}
               <input
                 value={q}
                 onChange={(e) => {
@@ -691,7 +696,7 @@ export default function Models({
                   setOffset(0);
                 }}
               />
-              {t("Model kartı bulunanlar")}
+              {t("Has a model card")}
             </label>
             <button
               className="button subtle"
@@ -699,18 +704,18 @@ export default function Models({
               onClick={() => setReload((v) => v + 1)}
             >
               <RefreshCw size={16} />
-              {t("Listeyi yenile")}
+              {t("Refresh list")}
             </button>
           </div>
           <p className="field-hint">
             {t(
-              "Model kartı bağlantısı on-prem lisans veya donanım uygunluğunu doğrulamaz. Modeli eklemeden kartını inceleyebilirsin.",
+              "A model card link does not confirm on-prem licensing or hardware suitability. You can inspect the card before adding the model.",
             )}
           </p>
           {loading ? (
             <div className="empty" role="status">
               <LoaderCircle className="spin" />
-              {t("OpenRouter modelleri yükleniyor…")}
+              {t("Loading OpenRouter models…")}
             </div>
           ) : (
             discovery && (
@@ -726,7 +731,7 @@ export default function Models({
                       <p>{item.description}</p>
                       {item.context_length && (
                         <small>
-                          {t("Bağlam: {count} token", {
+                          {t("Context: {count} tokens", {
                             count: item.context_length.toLocaleString(tag),
                           })}
                         </small>
@@ -738,7 +743,7 @@ export default function Models({
                             target="_blank"
                             rel="noreferrer"
                           >
-                            {t("Model kartı ↗")}
+                            {t("Model card ↗")}
                           </a>
                         )}
                         <button
@@ -758,7 +763,7 @@ export default function Models({
                           }}
                         >
                           <Plus size={15} />
-                          {t("Kataloğa ekle")}
+                          {t("Add to catalog")}
                         </button>
                       </div>
                     </article>
@@ -767,12 +772,12 @@ export default function Models({
                 {!discovery.items.length && (
                   <div className="empty">
                     <Search size={24} />
-                    {t("Bu filtreyle model bulunamadı.")}
+                    {t("No models match these filters.")}
                   </div>
                 )}
                 <div className="registry-pagination">
                   <small>
-                    {t("{count} model · liste güncellemesi: {time}", {
+                    {t("{count} models · list updated: {time}", {
                       count: discovery.total,
                       time: new Date(
                         discovery.fetched_at * 1000,
@@ -782,7 +787,7 @@ export default function Models({
                   <div>
                     <button
                       className="icon-button"
-                      aria-label={t("Önceki sayfa")}
+                      aria-label={t("Previous page")}
                       disabled={!offset}
                       onClick={() => {
                         setOffset((v) => Math.max(0, v - 20));
@@ -792,7 +797,7 @@ export default function Models({
                     </button>
                     <button
                       className="icon-button"
-                      aria-label={t("Sonraki sayfa")}
+                      aria-label={t("Next page")}
                       disabled={offset + 20 >= discovery.total}
                       onClick={() => {
                         setOffset((v) => v + 20);
@@ -810,10 +815,10 @@ export default function Models({
         <section className="panel registry-saved">
           <div className="panel-heading">
             <div>
-              <h2>{t("Eklediğin modeller")}</h2>
+              <h2>{t("Your registered models")}</h2>
               <p className="field-hint">
                 {t(
-                  "Bağlantı testi sabit demo metni gönderir; API kullanımı ücretli olabilir. Bu test doğruluk ölçmez.",
+                  "Connection tests send fixed demo text and may incur API charges. They do not measure accuracy.",
                 )}
               </p>
             </div>
@@ -821,10 +826,10 @@ export default function Models({
           {!records.length ? (
             <div className="empty">
               <Server size={28} />
-              <h3>{t("İlk model bağlantını ekle.")}</h3>
+              <h3>{t("Add your first model connection.")}</h3>
               <p>
                 {t(
-                  "TypeSafe Jev ekle, OpenRouter’dan bir model seç veya kendi sunucunun endpoint’ini tanımla.",
+                  "Add TypeSafe Jev, choose a model from OpenRouter or register your own server endpoint.",
                 )}
               </p>
             </div>
@@ -834,9 +839,9 @@ export default function Models({
                 <thead>
                   <tr>
                     <th>{t("Model")}</th>
-                    <th>{t("Bağlantı")}</th>
-                    <th>{t("Durum")}</th>
-                    <th>{t("İşlemler")}</th>
+                    <th>{t("Connection")}</th>
+                    <th>{t("Status")}</th>
+                    <th>{t("Actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -856,7 +861,7 @@ export default function Models({
                             ? "OpenRouter"
                             : record.connection === "typesafe"
                               ? "TypeSafe"
-                              : t("On-prem / özel endpoint")}
+                              : t("On-prem / custom endpoint")}
                         </span>
                         <small>{record.base_url}</small>
                       </td>
@@ -868,8 +873,8 @@ export default function Models({
                         >
                           {t(
                             record.available
-                              ? "Bağlantı ayarlı"
-                              : record.unavailable_reason || "Bağlantı gerekli",
+                              ? "Connection configured"
+                              : record.unavailable_reason || "Connection required",
                           )}
                         </span>
                         {probes[record.id] && (
@@ -880,10 +885,10 @@ export default function Models({
                             }
                           >
                             {probes[record.id].ok
-                              ? t("Test başarılı · {duration}", {
+                              ? t("Test passed · {duration}", {
                                   duration: ms(probes[record.id].elapsed_ms),
                                 })
-                              : t(probes[record.id].error || "Bağlantı hatası")}
+                              : t(probes[record.id].error || "Connection error")}
                           </small>
                         )}
                       </td>
@@ -897,14 +902,14 @@ export default function Models({
                             {busy === record.id ? (
                               <LoaderCircle className="spin" size={15} />
                             ) : null}
-                            {t("Bağlantıyı test et")}
+                            {t("Test connection")}
                           </button>
                           <button
                             className="button subtle"
                             disabled={!!busy}
                             onClick={() => open(editable(record), record.id)}
                           >
-                            {t("Düzenle")}
+                            {t("Edit")}
                           </button>
                           <button
                             className="button subtle"
@@ -921,8 +926,8 @@ export default function Models({
                           >
                             {t(
                               record.enabled
-                                ? "Devre dışı bırak"
-                                : "Etkinleştir",
+                                ? "Disable"
+                                : "Enable",
                             )}
                           </button>
                         </div>
@@ -936,10 +941,10 @@ export default function Models({
         </section>
       )}
       <details className="panel registry-builtins">
-        <summary>{t("Başlangıç modelleri ve .env varsayılanları")}</summary>
+        <summary>{t("Starter models and .env defaults")}</summary>
         <p className="field-hint">
           {t(
-            "Bu hazır seçenekler mevcut deneylerle uyumluluk için korunur. Yeni modeller yukarıdan eklenir.",
+            "These starter options remain available for existing experiments. Add new models above.",
           )}
         </p>
         <div className="registry-builtin-list">
@@ -953,7 +958,7 @@ export default function Models({
                     {kind === "llm" ? "LLM" : "Embedding"} · {m.model}
                   </small>
                   <span>
-                    {t(m.available ? "Bağlantı ayarlı" : "Bağlantı gerekli")}
+                    {t(m.available ? "Connection configured" : "Connection required")}
                   </span>
                 </div>
               )),

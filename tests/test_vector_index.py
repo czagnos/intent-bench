@@ -184,7 +184,7 @@ def test_failed_atomic_publication_preserves_previous_generation(tmp_path, monke
         def fail_replace(source, destination):
             raise OSError("sensitive filesystem details")
         monkeypatch.setattr(os, "replace", fail_replace)
-        with pytest.raises(ModelUnavailable, match="yazılamadı") as error:
+        with pytest.raises(ModelUnavailable, match="could not be written") as error:
             retriever.vector_index.rebuild(lambda: retriever.embeddings.encode([d.text for d in retriever.documents]))
         assert "sensitive" not in str(error.value)
         assert artifact.read_bytes() == previous

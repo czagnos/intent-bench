@@ -1,83 +1,69 @@
-# Dinamik model seçimi ve karşılaştırma
+# Comparing decision and embedding models
 
-Canlı demo ve deneyler [Model kataloğu ekranından eklenen bağlantıları](model-registry.md) ve sunucudaki [başlangıç modellerini](../data/model-presets.json) kullanır. OpenRouter'ın güncel listesi veya kendi on-prem endpoint'inizden LLM/embedding ekleyebilirsiniz. Mevcut `.env` modeli ve sağlayıcı tercihi **varsayılan** seçenek olarak korunur. Arayüzden model seçimi için API'yi yeniden başlatmak gerekmez.
+**Live demo** and **Experiments** use connections from [Model catalog](model-registry.md), the server's `.env` defaults, and the [bundled profiles](../data/model-presets.json). Registered connections belong to the selected sector workspace. Model choices can change without restarting the API; changing a live-demo model starts a fresh conversation.
 
-## Güncelleme
+## First comparison
 
-Repo kökünde, çalışan API'yi durdurup:
+1. Select a sector and freeze its catalog and reviewed test cohort. For semantic search, fit each embedding model on **Calibration**, or choose **Semantic OOS rejection → Off** to study the uncalibrated baseline. Hybrid selection does not use that semantic rejection threshold.
+2. In **Experiments**, choose semantic and/or hybrid methods, embedding models, and decision models. Inspect the matrix preview before running.
+3. Two embeddings × two LLMs produce four hybrid combinations. Adding the semantic method adds two combinations. Set **Maximum cases** to 153 for the complete banking cohort: six combinations produce 918 decisions at one catalog size. Each complete nonbank cohort has 430 cases; use that limit in its sector workspace.
+4. Inspect metrics and case-level errors for each row. **Compare two combinations case by case** shows disagreements; **Only different decisions** filters them.
+5. Download JSON to retain settings, catalog/data identities, and individual outcomes. Historical single-model runs remain readable.
+
+Change one component at a time: hold the embedding/retrieval strategy fixed when comparing decision models, then hold the decision model fixed when comparing embeddings. Connectivity checks and synthetic starter cases are preparation for evaluation on independent reviewed data.
+
+## Bundled LLM profiles
+
+The following are shipped configuration identifiers, not a current model ranking or guarantee of provider availability. Confirm licensing, hardware requirements, and endpoint support before deployment.
+
+| Profile ID | OpenRouter model | Generation settings | Model card / recorded license |
+|---|---|---|---|
+| `qwen35-35b` | `qwen/qwen3.5-35b-a3b` | Thinking disabled, 600 output tokens | [Qwen3.5](https://huggingface.co/Qwen/Qwen3.5-35B-A3B), Apache-2.0 |
+| `gpt-oss-20b` | `openai/gpt-oss-20b` | Low reasoning, 4096 output tokens | [GPT-OSS 20B](https://huggingface.co/openai/gpt-oss-20b), Apache-2.0 |
+| `gpt-oss-120b` | `openai/gpt-oss-120b` | Low reasoning, 4096 output tokens | [GPT-OSS 120B](https://huggingface.co/openai/gpt-oss-120b), Apache-2.0 |
+| `qwen3-30b-instruct` | `qwen/qwen3-30b-a3b-instruct-2507` | No reasoning parameter, 600 output tokens | [Qwen3 Instruct](https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507), Apache-2.0 |
+| `deepseek-v32` | `deepseek/deepseek-v3.2` | Thinking disabled, 600 output tokens | [DeepSeek V3.2](https://huggingface.co/deepseek-ai/DeepSeek-V3.2), MIT |
+| `glm47-flash` | `z-ai/glm-4.7-flash` | Thinking disabled, 600 output tokens | [GLM 4.7 Flash](https://huggingface.co/zai-org/GLM-4.7-Flash), MIT |
+
+Reasoning tokens can consume time and output budget even when they are omitted from the visible answer. Truncated JSON is a technical error. See the model's [reasoning guidance](https://huggingface.co/openai/gpt-oss-20b#reasoning-levels) and [OpenRouter reasoning settings](https://openrouter.ai/docs/guides/best-practices/reasoning-tokens).
+
+## Bundled embedding profiles
+
+| Profile ID | OpenRouter model | Input formatting | Model card / recorded license |
+|---|---|---|---|
+| `qwen3-8b` | `qwen/qwen3-embedding-8b` | Qwen query instruction; Nebius preference | [Qwen3 8B](https://huggingface.co/Qwen/Qwen3-Embedding-8B), Apache-2.0 |
+| `qwen3-4b` | `qwen/qwen3-embedding-4b` | Qwen query instruction; automatic provider | [Qwen3 4B](https://huggingface.co/Qwen/Qwen3-Embedding-4B), Apache-2.0 |
+| `bge-m3` | `baai/bge-m3` | No prefix; dense vectors | [BGE-M3](https://huggingface.co/BAAI/bge-m3), MIT |
+| `multilingual-e5-large` | `intfloat/multilingual-e5-large` | `query` / `passage` prefixes | [E5 Large](https://huggingface.co/intfloat/multilingual-e5-large), MIT |
+
+The 8B/Nebius restriction is not copied to other model profiles. Equivalent defaults are hidden in the menu and deduplicated in experiments. The original profile selection targeted multilingual Turkish banking tests; it does not imply those models are best for every English sector dataset.
+
+The original OpenRouter catalog inspection was on **8 September 2026**. Model access and advertised structured-output support can change; use current discovery and connection tests. Qwen3 Embedding 0.6B was absent from that historical cloud catalog, though local configuration was supported.
+
+## Measurement and failure behavior
+
+- Every combination uses the same frozen reviewed cases and catalog version. Expected labels, source answers, and historical traces are excluded from model inputs.
+- Settings are copied when queued. Requests contain model profile IDs; endpoints and credentials stay server-side.
+- Index identity separates workspace, catalog, model, input formatting/instruction, endpoint, representation, and provider restriction. Equal vector dimensions do not make different models interchangeable.
+- Different LLMs with the same embedding configuration can share catalog vectors. Query embeddings are still computed per case/combination.
+- `index_build_ms` records preparation separately. Query p50/p95/p99 describe sequential case processing after preparation. A first live request's cold start is a different timing condition; the first LLM call can still be cold at the provider.
+- Runs are sequential, not concurrent load tests. Network, provider load, reasoning, and execution order affect latency.
+- An index failure produces error records for every affected case without rebuilding for each one. Other models continue. Query/model errors remain failures in the full denominator; there is no silent model fallback.
+- Completed combinations become visible while remaining ones run. The limit is 32 combinations, including retrieval strategies and catalog sizes.
+
+Read routing accuracy alongside overall decisions, OOS false acceptance, false rejection, clarification, and technical errors. A small starter dataset cannot demonstrate broad production accuracy.
+
+## CLI and API
 
 ```bash
-npm --prefix apps/web ci
-npm --prefix apps/web run build
-PYTHONPATH=apps/api .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8002
+.venv/bin/python scripts/check_models.py --workspace airline --list-models
+.venv/bin/python scripts/check_models.py --workspace airline --llm-only --llm-id gpt-oss-20b
+.venv/bin/python scripts/check_models.py --workspace airline --embedding-only --embedding-id bge-m3
 ```
 
-Tarayıcıyı yenileyin. Mevcut `.env` dosyasını değiştirmeyin. Vite geliştirme sunucusu kullanıyorsanız kod değişiklikleri orada da görünür; API güncellemesi için yeniden başlatma gerekir.
+Listing makes no inference request; probes can incur charges. `GET /v1/models?workspace=airline` returns options and non-secret settings. `POST /v1/route?workspace=airline` accepts `embedding_id` and `llm_id`; omitted IDs use `default`.
 
-## İlk karşılaştırma
-
-Semantik arama varsayılan olarak kalibre edilmiş OOS reddini kullanır. Önce **Kalibrasyon** ekranında seçili embedding modelleri için eşik hesaplayın; önceki referansla karşılaştırmak için **Semantik OOS reddetme → Kapalı** seçin. Hibrit yöntemin karar süreci değişmez. [Kalibrasyon ve İngilizce arayüz rehberi](calibration-and-language.md).
-
-1. **Canlı demo:** yöntemi, embedding modelini ve hibrit yöntem için LLM'yi seçin. Seçim değişince yeni konuşma başlar. Sonuç paneli gerçekten kullanılan modelleri gösterir.
-2. **Deneyler:** semantik ve/veya hibrit yöntemi işaretleyin. Embedding ve LLM listesinden birden fazla model seçin. Önizleme, tüm kombinasyonları ve toplam karar sayısını gösterir.
-3. Örneğin çalışan Qwen3 Embedding 8B + BGE-M3 ile mevcut Qwen3.5 + GPT-OSS 20B seçimi **4 hibrit kombinasyon** oluşturur. Semantik yöntemi de işaretlerseniz **2 semantik kombinasyon** eklenir. Aynı 29 demo vakası için toplam **174 karar** değerlendirilir.
-4. Karşılaştırma satırına tıklayarak metrikleri ve hata ayrıntılarını inceleyin. **İki kombinasyonu vaka bazında karşılaştır** alanında iki embedding'i veya aynı embedding üzerindeki iki LLM'yi yan yana görebilirsiniz. **Yalnız farklı kararlar** filtresi ayrışan vakaları gösterir.
-5. JSON indirme; tüm kombinasyonları, model ayarlarını, sabit veri/katalog kimliklerini ve vaka kararlarını içerir. Önceki tek model deneyleri açılmaya devam eder.
-
-İlk koşuda embedding'i sabit tutup LLM'leri karşılaştırmak, sonraki koşuda LLM'yi sabit tutup embedding'leri değiştirmek hangi bileşenin sonucu etkilediğini anlamayı kolaylaştırır. PoC bağlantılarını doğruladıktan sonra müşteri etiketleriyle aynı karşılaştırmayı yapın.
-
-## Hazır LLM profilleri
-
-| Profil kimliği | OpenRouter modeli | Yanıt ayarı | Model kartı / lisans |
-|---|---|---|---|
-| qwen35-35b | qwen/qwen3.5-35b-a3b | Düşünme kapalı, 600 token | [Qwen3.5](https://huggingface.co/Qwen/Qwen3.5-35B-A3B), Apache-2.0 |
-| gpt-oss-20b | openai/gpt-oss-20b | Low reasoning, 4096 token | [GPT-OSS 20B](https://huggingface.co/openai/gpt-oss-20b), Apache-2.0 |
-| gpt-oss-120b | openai/gpt-oss-120b | Low reasoning, 4096 token | [GPT-OSS 120B](https://huggingface.co/openai/gpt-oss-120b), Apache-2.0 |
-| qwen3-30b-instruct | qwen/qwen3-30b-a3b-instruct-2507 | Reasoning parametresi yok, 600 token | [Qwen3 Instruct](https://huggingface.co/Qwen/Qwen3-30B-A3B-Instruct-2507), Apache-2.0 |
-| deepseek-v32 | deepseek/deepseek-v3.2 | Düşünme kapalı, 600 token | [DeepSeek V3.2](https://huggingface.co/deepseek-ai/DeepSeek-V3.2), MIT |
-| glm47-flash | z-ai/glm-4.7-flash | Düşünme kapalı, 600 token | [GLM 4.7 Flash](https://huggingface.co/zai-org/GLM-4.7-Flash), MIT |
-
-Bu seçenekler farklı model ailelerini ve boyutlarını karşılaştırmak içindir; Türkçe bankacılık doğruluğu henüz ölçülmedi. Ağırlıkların indirilebilir olması aynı donanıma sığacakları anlamına gelmez. DeepSeek V3.2 büyük bir model karşılaştırmasıdır. GPT-OSS reasoning token'ları dönen metinden çıkarılsa da süre ve token bütçesi kullanır; bu yüzden Qwen'in 600 token sınırı uygulanmaz. Kesilmiş JSON yanıtı teknik hata sayılır. [GPT-OSS reasoning düzeyleri](https://huggingface.co/openai/gpt-oss-20b#reasoning-levels), [OpenRouter reasoning](https://openrouter.ai/docs/guides/best-practices/reasoning-tokens).
-
-## Hazır embedding profilleri
-
-| Profil kimliği | OpenRouter modeli | Girdi profili | Model kartı / lisans |
-|---|---|---|---|
-| qwen3-8b | qwen/qwen3-embedding-8b | Qwen sorgu talimatı; Nebius tercihi | [Qwen3 8B](https://huggingface.co/Qwen/Qwen3-Embedding-8B), Apache-2.0 |
-| qwen3-4b | qwen/qwen3-embedding-4b | Qwen sorgu talimatı; otomatik sağlayıcı | [Qwen3 4B](https://huggingface.co/Qwen/Qwen3-Embedding-4B), Apache-2.0 |
-| bge-m3 | baai/bge-m3 | Öneksiz; dense vektör | [BGE-M3](https://huggingface.co/BAAI/bge-m3), MIT |
-| multilingual-e5-large | intfloat/multilingual-e5-large | query / passage önekleri | [Multilingual E5 Large](https://huggingface.co/intfloat/multilingual-e5-large), MIT |
-
-Varsayılan 8B/Nebius seçimi BGE-M3, E5 veya 4B isteklerine taşınmaz. Aynı model/ayarlar zaten varsayılansa menüde yinelenen seçenek gizlenir; API'de eşdeğer profiller tek deney olarak çalışır. İngilizce odaklı E5-v2 ve GTE seçenekleri bu Türkçe başlangıç listesine eklenmedi.
-
-OpenRouter'ın [LLM kataloğu](https://openrouter.ai/api/v1/models) ve [embedding kataloğu](https://openrouter.ai/api/v1/embeddings/models) 8 Eylül 2026'da kontrol edildi. LLM kataloğunda tüm hazır seçenekler için response_format/structured_outputs alanları mevcut. Sağlayıcıya ve hesaba özel erişim, bu katalog kontrolünden ayrı olarak canlı çağrıyla doğrulanır. Qwen3 Embedding 0.6B o tarihte OpenRouter embedding kataloğunda bulunmadığı için hazır cloud listesine eklenmedi; yerel model ayarıyla kullanılabilir.
-
-## Ölçüm ve hata davranışı
-
-- Her deney aynı doğrulanmış vaka kopyasını ve katalog sürümünü kullanır; etiket, kaynak yanıt ve eski çalışma izi modele gönderilmez.
-- Her kombinasyonun ayarları kuyruğa alınırken kopyalanır. Canlı demo ve başka deneyler ortak ayarları değiştirmez. İstekler yalnızca model profil kimliği taşır; endpoint ve anahtarlar sunucuda kalır.
-- İndeks önbelleği çalışma alanı, katalog, embedding modeli, giriş profili, talimat, bağlantı ve sağlayıcı tercihini ayırır. Vektör boyutu aynı olsa da farklı modeller aynı indeksi paylaşmaz.
-- Aynı embedding ile farklı LLM'ler aynı indeksi kullanır. Sorgu embedding çağrısı her vaka/kombinasyonda gerçekten çalışır; sorgu süreleri önbellekle gizlenmez.
-- Yeni deneyler indeks hazırlığını `index_build_ms` olarak ayrı kaydeder. p50/p95/p99, indeks hazırlandıktan sonraki sıralı vaka süreleridir. API'ye ilk canlı isteğin soğuk başlangıcı bu ölçümle aynı değildir. Eski deneylerin protokolü değişmez; eski ve yeni gecikmeleri doğrudan kıyaslamayın.
-- Çalışmalar sıra ile yürür; eşzamanlı yük testi yapılmaz. Sağlayıcı yükü, ağ ve reasoning farkları gecikmeyi etkiler. İndeks hazırlığı sonrasında ilk LLM çağrısı hâlâ sağlayıcıda soğuk olabilir.
-- Bir embedding indeks hazırlığında hata verirse o modele bağlı kombinasyonlar tüm vaka paydasını koruyan hata kayıtları üretir. Aynı indeks hatası her vakada yeniden çağrı oluşturmaz; diğer modeller devam eder. Vaka sorgusu veya LLM hataları ilgili vakanın başarısızlığı sayılır. Otomatik model değiştirme yoktur.
-- Tamamlanan kombinasyonlar deney sürerken görünür ve kaydedilir. En fazla 32 kombinasyon seçilebilir. Her ek kombinasyon API kullanımını artırır.
-
-Seçilen doğruluk hedefini değerlendirmek için ilk karar doğruluğuyla birlikte kapsam dışı yanlış kabulü, tüm karar doğruluğunu ve teknik hataları inceleyin. 29 demo vakası bağımsız bir veri kümesindeki doğruluğu kanıtlamaz.
-
-## CLI ve API
-
-```bash
-.venv/bin/python scripts/check_models.py --list-models
-.venv/bin/python scripts/check_models.py --llm-only --llm-id gpt-oss-20b
-.venv/bin/python scripts/check_models.py --embedding-only --embedding-id bge-m3
-```
-
-Liste komutu inference çağrısı yapmaz. Kontrol komutları sabit demo metni kullanır ve API kullanımına yol açar; accuracy ölçmez.
-
-`GET /v1/models` kullanılabilir seçenekleri ve gizli bilgi içermeyen ayarları döndürür. `POST /v1/route` gövdesine `embedding_id` ve `llm_id` eklenir. Gönderilmeyen kimlikler `default` seçimini kullanır.
-
-`POST /v1/evaluations` örneği:
+Example body for `POST /v1/evaluations?workspace=airline`:
 
 ```json
 {
@@ -87,14 +73,14 @@ Liste komutu inference çağrısı yapmaz. Kontrol komutları sabit demo metni k
   "semantic_rejection": "calibrated",
   "source": "seed",
   "split": "test",
-  "limit": 29
+  "limit": 100
 }
 ```
 
-`e5` mevcut semantik yöntemin geriye uyumlu API kimliğidir. Yeni sonuç anahtarı kombinasyon kimliğidir; her sonuçta ayrıca `method`, `embedding`, `llm` ve `model` bulunur. Eski varsayılan seçimler `lexical`, `e5`, `hybrid_llm` sonuç anahtarlarını korur.
+With `catalog_sizes` omitted, calibrated semantic evaluation needs a current saved fit. `e5` is the backward-compatible API name for semantic retrieval regardless of the embedding model. New result keys identify combinations; each result also records `method`, `embedding`, `llm`, and `model`. Original default combinations retain their legacy keys.
 
-## Yeni model eklemek
+## Adding profiles
 
-[data/model-presets.json](../data/model-presets.json) dosyasına ilgili grupta bir kayıt ekleyip API'yi yeniden başlatın. Ayrı dosya için `INTENT_MODEL_CATALOG_PATH` mutlak dosya yolu verilebilir. Modelin lisansını, Türkçe kullanımını, OpenRouter model kimliğini, yapılandırılmış çıktı desteğini ve gereken embedding önekini doğrulayın. Bu dosyada API anahtarı veya endpoint bulunmaz.
+For interactive use, register a connection in **Model catalog**. To distribute a server profile, add it to the appropriate group in [data/model-presets.json](../data/model-presets.json) and restart the API, or use `INTENT_MODEL_CATALOG_PATH` for another absolute file path. Verify the model ID, license, language suitability, structured-output support, and embedding input format. Do not include keys or endpoints in the shared preset file.
 
-On-prem/özel endpoint kullanıldığında hazır OpenRouter profilleri bağlantı gerekli durumunda görünür; mevcut sunucu modeli `default` ile kullanılabilir. Aynı on-prem endpoint'in sunduğu ek modeller için sunucu kataloğuna `connection: "configured"` ile kayıt ekleyin ve endpoint'in kabul ettiği model kimliğini kullanın. Reasoning parametresinin on-prem karşılığı `INTENT_LLM_THINKING_PARAMETER` ayarıyla belirlenir; OpenRouter profillerini on-prem servise aynen göndermeyin.
+For a configured private endpoint, additional server profiles can use `connection: "configured"` and the server's accepted model ID. `INTENT_LLM_THINKING_PARAMETER` controls its supported thinking convention. Do not send OpenRouter-specific parameters blindly to a private server.

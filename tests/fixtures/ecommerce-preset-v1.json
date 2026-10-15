@@ -1,0 +1,2782 @@
+{
+  "intents": [
+    {
+      "intent_id": "ecommerce.product.search",
+      "name": "Search products",
+      "domain": "Product discovery",
+      "description": "Find products matching a category or customer need.",
+      "examples": [
+        "Show me waterproof walking boots.",
+        "I would like to find products matching a category or customer need."
+      ],
+      "exclusions": [
+        "Compare the features of identified products."
+      ],
+      "confusable_with": [
+        "ecommerce.product.compare"
+      ],
+      "workflow_id": "workflow.ecommerce.product.search",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Find products matching a category or customer need. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.product.compare",
+      "name": "Compare products",
+      "domain": "Product discovery",
+      "description": "Compare the features of identified products.",
+      "examples": [
+        "What is the difference between these two headphones?",
+        "I would like to compare the features of identified products."
+      ],
+      "exclusions": [
+        "Ask for product dimensions, materials, compatibility, or other specifications."
+      ],
+      "confusable_with": [
+        "ecommerce.product.details"
+      ],
+      "workflow_id": "workflow.ecommerce.product.compare",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Compare the features of identified products. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.product.details",
+      "name": "Product specifications",
+      "domain": "Product discovery",
+      "description": "Ask for product dimensions, materials, compatibility, or other specifications.",
+      "examples": [
+        "What are the dimensions of this desk?",
+        "I would like to ask for product dimensions, materials, compatibility, or other specifications."
+      ],
+      "exclusions": [
+        "Compare the features of identified products."
+      ],
+      "confusable_with": [
+        "ecommerce.product.compare"
+      ],
+      "workflow_id": "workflow.ecommerce.product.details",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask for product dimensions, materials, compatibility, or other specifications. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.product.availability",
+      "name": "Product availability",
+      "domain": "Product discovery",
+      "description": "Check stock for a product or variant before ordering.",
+      "examples": [
+        "Is the blue version in stock?",
+        "I would like to check stock for a product or variant before ordering."
+      ],
+      "exclusions": [
+        "Request an alert when an unavailable product becomes available."
+      ],
+      "confusable_with": [
+        "ecommerce.product.restock"
+      ],
+      "workflow_id": "workflow.ecommerce.product.availability",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check stock for a product or variant before ordering. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.product.restock",
+      "name": "Restock notification",
+      "domain": "Product discovery",
+      "description": "Request an alert when an unavailable product becomes available.",
+      "examples": [
+        "Let me know when this size is back in stock.",
+        "I would like to request an alert when an unavailable product becomes available."
+      ],
+      "exclusions": [
+        "Check stock for a product or variant before ordering."
+      ],
+      "confusable_with": [
+        "ecommerce.product.availability"
+      ],
+      "workflow_id": "workflow.ecommerce.product.restock",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request an alert when an unavailable product becomes available. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.product.sizing",
+      "name": "Size and fit guidance",
+      "domain": "Product discovery",
+      "description": "Find a size chart or product fit information.",
+      "examples": [
+        "Which size should I choose using your shoe size chart?",
+        "I would like to find a size chart or product fit information."
+      ],
+      "exclusions": [
+        "Request replacement with a different size, color, or equivalent item after receipt."
+      ],
+      "confusable_with": [
+        "ecommerce.exchange.request"
+      ],
+      "workflow_id": "workflow.ecommerce.product.sizing",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Find a size chart or product fit information. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.product.authenticity",
+      "name": "Product authenticity",
+      "domain": "Product discovery",
+      "description": "Ask about product authenticity, certification, or authorized sourcing.",
+      "examples": [
+        "Is this branded item supplied by an authorized seller?",
+        "I would like to ask about product authenticity, certification, or authorized sourcing."
+      ],
+      "exclusions": [
+        "Ask for product dimensions, materials, compatibility, or other specifications."
+      ],
+      "confusable_with": [
+        "ecommerce.product.details"
+      ],
+      "workflow_id": "workflow.ecommerce.product.authenticity",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about product authenticity, certification, or authorized sourcing. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.product.reviews",
+      "name": "Product reviews",
+      "domain": "Product discovery",
+      "description": "Find or interpret available customer reviews for a product.",
+      "examples": [
+        "Where can I read reviews of this vacuum cleaner?",
+        "I would like to find or interpret available customer reviews for a product."
+      ],
+      "exclusions": [
+        "Write or manage a review of a completed purchase."
+      ],
+      "confusable_with": [
+        "ecommerce.review.submit"
+      ],
+      "workflow_id": "workflow.ecommerce.product.reviews",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Find or interpret available customer reviews for a product. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.product.price",
+      "name": "Product price information",
+      "domain": "Product discovery",
+      "description": "Ask about a displayed price, price history policy, or price-match conditions.",
+      "examples": [
+        "Why does the price change when I select a different color?",
+        "I would like to ask about a displayed price, price history policy, or price-match conditions."
+      ],
+      "exclusions": [
+        "Ask about offer conditions, qualifying items, or expiration."
+      ],
+      "confusable_with": [
+        "ecommerce.promotion.eligibility"
+      ],
+      "workflow_id": "workflow.ecommerce.product.price",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about a displayed price, price history policy, or price-match conditions. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.cart.add",
+      "name": "Add item to cart",
+      "domain": "Shopping cart",
+      "description": "Place a selected item and quantity in the shopping cart.",
+      "examples": [
+        "Add two of these mugs to my basket.",
+        "I would like to place a selected item and quantity in the shopping cart."
+      ],
+      "exclusions": [
+        "Change the quantity of an item already in the cart."
+      ],
+      "confusable_with": [
+        "ecommerce.cart.quantity"
+      ],
+      "workflow_id": "workflow.ecommerce.cart.add",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Place a selected item and quantity in the shopping cart. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.cart.quantity",
+      "name": "Change cart quantity",
+      "domain": "Shopping cart",
+      "description": "Change the quantity of an item already in the cart.",
+      "examples": [
+        "Reduce the number of towels in my basket to one.",
+        "I would like to change the quantity of an item already in the cart."
+      ],
+      "exclusions": [
+        "Request changes to products or quantities after order placement."
+      ],
+      "confusable_with": [
+        "ecommerce.order.change"
+      ],
+      "workflow_id": "workflow.ecommerce.cart.quantity",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Change the quantity of an item already in the cart. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.cart.remove",
+      "name": "Remove cart item",
+      "domain": "Shopping cart",
+      "description": "Remove a product from the cart before placing the order.",
+      "examples": [
+        "Take the shoes out of my shopping cart.",
+        "I would like to remove a product from the cart before placing the order."
+      ],
+      "exclusions": [
+        "Request cancellation of a placed order before completion."
+      ],
+      "confusable_with": [
+        "ecommerce.order.cancel"
+      ],
+      "workflow_id": "workflow.ecommerce.cart.remove",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Remove a product from the cart before placing the order. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.cart.saved",
+      "name": "Saved cart and wishlist",
+      "domain": "Shopping cart",
+      "description": "Manage or retrieve saved shopping lists and wishlists.",
+      "examples": [
+        "Where are the products I saved for later?",
+        "I would like to manage or retrieve saved shopping lists and wishlists."
+      ],
+      "exclusions": [
+        "Place a selected item and quantity in the shopping cart."
+      ],
+      "confusable_with": [
+        "ecommerce.cart.add"
+      ],
+      "workflow_id": "workflow.ecommerce.cart.saved",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Manage or retrieve saved shopping lists and wishlists. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.checkout.help",
+      "name": "Checkout problem",
+      "domain": "Checkout",
+      "description": "Resolve a checkout error before an order is completed.",
+      "examples": [
+        "The checkout page will not let me continue.",
+        "I would like to resolve a checkout error before an order is completed."
+      ],
+      "exclusions": [
+        "Resolve a rejected or incomplete payment at purchase."
+      ],
+      "confusable_with": [
+        "ecommerce.payment.failed"
+      ],
+      "workflow_id": "workflow.ecommerce.checkout.help",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Resolve a checkout error before an order is completed. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.checkout.guest",
+      "name": "Guest checkout",
+      "domain": "Checkout",
+      "description": "Ask about placing an order without creating an account.",
+      "examples": [
+        "Can I buy this without registering an account?",
+        "I would like to ask about placing an order without creating an account."
+      ],
+      "exclusions": [
+        "Register a store customer account."
+      ],
+      "confusable_with": [
+        "ecommerce.account.create"
+      ],
+      "workflow_id": "workflow.ecommerce.checkout.guest",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about placing an order without creating an account. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.checkout.address",
+      "name": "Set checkout address",
+      "domain": "Checkout",
+      "description": "Enter or change delivery details before placing an order.",
+      "examples": [
+        "I need a different address for the order I am checking out.",
+        "I would like to enter or change delivery details before placing an order."
+      ],
+      "exclusions": [
+        "Request an address change after the order has been placed."
+      ],
+      "confusable_with": [
+        "ecommerce.order.address"
+      ],
+      "workflow_id": "workflow.ecommerce.checkout.address",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Enter or change delivery details before placing an order. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.checkout.place",
+      "name": "Place order",
+      "domain": "Checkout",
+      "description": "Submit the cart as a new purchase.",
+      "examples": [
+        "I have reviewed my basket and want to place the order.",
+        "I would like to submit the cart as a new purchase."
+      ],
+      "exclusions": [
+        "Obtain or resend confirmation for a submitted purchase."
+      ],
+      "confusable_with": [
+        "ecommerce.order.confirmation"
+      ],
+      "workflow_id": "workflow.ecommerce.checkout.place",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Submit the cart as a new purchase. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.payment.methods",
+      "name": "Payment options",
+      "domain": "Payments",
+      "description": "Ask which payment methods or installment options are supported.",
+      "examples": [
+        "Do you accept installment payments for this purchase?",
+        "I would like to ask which payment methods or installment options are supported."
+      ],
+      "exclusions": [
+        "Resolve a rejected or incomplete payment at purchase."
+      ],
+      "confusable_with": [
+        "ecommerce.payment.failed"
+      ],
+      "workflow_id": "workflow.ecommerce.payment.methods",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask which payment methods or installment options are supported. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.payment.failed",
+      "name": "Failed purchase payment",
+      "domain": "Payments",
+      "description": "Resolve a rejected or incomplete payment at purchase.",
+      "examples": [
+        "My payment was declined when I submitted the order.",
+        "I would like to resolve a rejected or incomplete payment at purchase."
+      ],
+      "exclusions": [
+        "Resolve a checkout error before an order is completed."
+      ],
+      "confusable_with": [
+        "ecommerce.checkout.help"
+      ],
+      "workflow_id": "workflow.ecommerce.payment.failed",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Resolve a rejected or incomplete payment at purchase. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.payment.pending",
+      "name": "Pending payment authorization",
+      "domain": "Payments",
+      "description": "Ask about a temporary hold or pending authorization without a completed charge.",
+      "examples": [
+        "The bank shows a pending hold but no order was created.",
+        "I would like to ask about a temporary hold or pending authorization without a completed charge."
+      ],
+      "exclusions": [
+        "Report multiple settled charges for the same purchase."
+      ],
+      "confusable_with": [
+        "ecommerce.payment.duplicate"
+      ],
+      "workflow_id": "workflow.ecommerce.payment.pending",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about a temporary hold or pending authorization without a completed charge. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.payment.duplicate",
+      "name": "Duplicate purchase charge",
+      "domain": "Payments",
+      "description": "Report multiple settled charges for the same purchase.",
+      "examples": [
+        "I was billed twice for a single order.",
+        "I would like to report multiple settled charges for the same purchase."
+      ],
+      "exclusions": [
+        "Ask about a temporary hold or pending authorization without a completed charge."
+      ],
+      "confusable_with": [
+        "ecommerce.payment.pending"
+      ],
+      "workflow_id": "workflow.ecommerce.payment.duplicate",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Report multiple settled charges for the same purchase. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.payment.invoice",
+      "name": "Order invoice or receipt",
+      "domain": "Payments",
+      "description": "Obtain or correct a purchase invoice or receipt.",
+      "examples": [
+        "Please send the invoice for my order.",
+        "I would like to obtain or correct a purchase invoice or receipt."
+      ],
+      "exclusions": [
+        "Obtain or resend confirmation for a submitted purchase."
+      ],
+      "confusable_with": [
+        "ecommerce.order.confirmation"
+      ],
+      "workflow_id": "workflow.ecommerce.payment.invoice",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Obtain or correct a purchase invoice or receipt. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.payment.giftcard",
+      "name": "Gift card balance or redemption",
+      "domain": "Payments",
+      "description": "Check or use a store gift card.",
+      "examples": [
+        "How much credit remains on my gift card?",
+        "I would like to check or use a store gift card."
+      ],
+      "exclusions": [
+        "Apply or troubleshoot a coupon code at checkout."
+      ],
+      "confusable_with": [
+        "ecommerce.promotion.apply"
+      ],
+      "workflow_id": "workflow.ecommerce.payment.giftcard",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check or use a store gift card. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.promotion.eligibility",
+      "name": "Promotion eligibility",
+      "domain": "Promotions",
+      "description": "Ask about offer conditions, qualifying items, or expiration.",
+      "examples": [
+        "Does this promotion apply to sale items?",
+        "I would like to ask about offer conditions, qualifying items, or expiration."
+      ],
+      "exclusions": [
+        "Apply or troubleshoot a coupon code at checkout."
+      ],
+      "confusable_with": [
+        "ecommerce.promotion.apply"
+      ],
+      "workflow_id": "workflow.ecommerce.promotion.eligibility",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about offer conditions, qualifying items, or expiration. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.promotion.apply",
+      "name": "Apply promotion code",
+      "domain": "Promotions",
+      "description": "Apply or troubleshoot a coupon code at checkout.",
+      "examples": [
+        "My discount code is being rejected.",
+        "I would like to apply or troubleshoot a coupon code at checkout."
+      ],
+      "exclusions": [
+        "Ask about offer conditions, qualifying items, or expiration."
+      ],
+      "confusable_with": [
+        "ecommerce.promotion.eligibility"
+      ],
+      "workflow_id": "workflow.ecommerce.promotion.apply",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Apply or troubleshoot a coupon code at checkout. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.order.confirmation",
+      "name": "Missing order confirmation",
+      "domain": "Order management",
+      "description": "Obtain or resend confirmation for a submitted purchase.",
+      "examples": [
+        "I placed an order but never received the confirmation email.",
+        "I would like to obtain or resend confirmation for a submitted purchase."
+      ],
+      "exclusions": [
+        "Check a placed order's processing stage before or during fulfillment."
+      ],
+      "confusable_with": [
+        "ecommerce.order.status"
+      ],
+      "workflow_id": "workflow.ecommerce.order.confirmation",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Obtain or resend confirmation for a submitted purchase. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.order.status",
+      "name": "Order processing status",
+      "domain": "Order management",
+      "description": "Check a placed order's processing stage before or during fulfillment.",
+      "examples": [
+        "Has my order been packed yet?",
+        "I would like to check a placed order's processing stage before or during fulfillment."
+      ],
+      "exclusions": [
+        "Get courier tracking information for a dispatched parcel."
+      ],
+      "confusable_with": [
+        "ecommerce.delivery.track"
+      ],
+      "workflow_id": "workflow.ecommerce.order.status",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check a placed order's processing stage before or during fulfillment. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.order.change",
+      "name": "Change ordered items",
+      "domain": "Order management",
+      "description": "Request changes to products or quantities after order placement.",
+      "examples": [
+        "I ordered the wrong size and want to change it before shipping.",
+        "I would like to request changes to products or quantities after order placement."
+      ],
+      "exclusions": [
+        "Request replacement with a different size, color, or equivalent item after receipt."
+      ],
+      "confusable_with": [
+        "ecommerce.exchange.request"
+      ],
+      "workflow_id": "workflow.ecommerce.order.change",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request changes to products or quantities after order placement. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.order.address",
+      "name": "Change order delivery address",
+      "domain": "Order management",
+      "description": "Request an address change after the order has been placed.",
+      "examples": [
+        "My order is already placed; can you change its delivery address?",
+        "I would like to request an address change after the order has been placed."
+      ],
+      "exclusions": [
+        "Enter or change delivery details before placing an order."
+      ],
+      "confusable_with": [
+        "ecommerce.checkout.address"
+      ],
+      "workflow_id": "workflow.ecommerce.order.address",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request an address change after the order has been placed. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.order.cancel",
+      "name": "Cancel entire order",
+      "domain": "Order management",
+      "description": "Request cancellation of a placed order before completion.",
+      "examples": [
+        "I want to cancel my whole order.",
+        "I would like to request cancellation of a placed order before completion."
+      ],
+      "exclusions": [
+        "Request cancellation of only selected items in an order."
+      ],
+      "confusable_with": [
+        "ecommerce.order.cancel_item"
+      ],
+      "workflow_id": "workflow.ecommerce.order.cancel",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request cancellation of a placed order before completion. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.order.cancel_item",
+      "name": "Cancel order item",
+      "domain": "Order management",
+      "description": "Request cancellation of only selected items in an order.",
+      "examples": [
+        "Cancel the lamp but keep the rest of my order.",
+        "I would like to request cancellation of only selected items in an order."
+      ],
+      "exclusions": [
+        "Request cancellation of a placed order before completion."
+      ],
+      "confusable_with": [
+        "ecommerce.order.cancel"
+      ],
+      "workflow_id": "workflow.ecommerce.order.cancel_item",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request cancellation of only selected items in an order. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.order.preorder",
+      "name": "Preorder status and terms",
+      "domain": "Order management",
+      "description": "Ask about a preorder release date, availability, or fulfillment.",
+      "examples": [
+        "When will my preordered console be dispatched?",
+        "I would like to ask about a preorder release date, availability, or fulfillment."
+      ],
+      "exclusions": [
+        "Check a placed order's processing stage before or during fulfillment."
+      ],
+      "confusable_with": [
+        "ecommerce.order.status"
+      ],
+      "workflow_id": "workflow.ecommerce.order.preorder",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about a preorder release date, availability, or fulfillment. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.order.backorder",
+      "name": "Backordered item",
+      "domain": "Order management",
+      "description": "Check an existing order delayed by stock replenishment.",
+      "examples": [
+        "Why is one of my ordered items on backorder?",
+        "I would like to check an existing order delayed by stock replenishment."
+      ],
+      "exclusions": [
+        "Check stock for a product or variant before ordering."
+      ],
+      "confusable_with": [
+        "ecommerce.product.availability"
+      ],
+      "workflow_id": "workflow.ecommerce.order.backorder",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check an existing order delayed by stock replenishment. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.order.repeat",
+      "name": "Reorder previous purchase",
+      "domain": "Order management",
+      "description": "Create a new purchase based on a previous order.",
+      "examples": [
+        "I want to buy the same coffee I ordered last month again.",
+        "I would like to create a new purchase based on a previous order."
+      ],
+      "exclusions": [
+        "Subscribe to recurring product deliveries."
+      ],
+      "confusable_with": [
+        "ecommerce.subscription.create"
+      ],
+      "workflow_id": "workflow.ecommerce.order.repeat",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Create a new purchase based on a previous order. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.delivery.options",
+      "name": "Delivery methods and cost",
+      "domain": "Delivery and collection",
+      "description": "Compare shipping services, delivery regions, or shipping charges before purchase.",
+      "examples": [
+        "What does next-day delivery cost?",
+        "I would like to compare shipping services, delivery regions, or shipping charges before purchase."
+      ],
+      "exclusions": [
+        "Check the promised or estimated arrival date for an order."
+      ],
+      "confusable_with": [
+        "ecommerce.delivery.date"
+      ],
+      "workflow_id": "workflow.ecommerce.delivery.options",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Compare shipping services, delivery regions, or shipping charges before purchase. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.delivery.date",
+      "name": "Expected delivery date",
+      "domain": "Delivery and collection",
+      "description": "Check the promised or estimated arrival date for an order.",
+      "examples": [
+        "On which day should my order arrive?",
+        "I would like to check the promised or estimated arrival date for an order."
+      ],
+      "exclusions": [
+        "Get courier tracking information for a dispatched parcel."
+      ],
+      "confusable_with": [
+        "ecommerce.delivery.track"
+      ],
+      "workflow_id": "workflow.ecommerce.delivery.date",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check the promised or estimated arrival date for an order. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.delivery.track",
+      "name": "Track shipment",
+      "domain": "Delivery and collection",
+      "description": "Get courier tracking information for a dispatched parcel.",
+      "examples": [
+        "Show me the tracking details for my shipped parcel.",
+        "I would like to get courier tracking information for a dispatched parcel."
+      ],
+      "exclusions": [
+        "Check a placed order's processing stage before or during fulfillment."
+      ],
+      "confusable_with": [
+        "ecommerce.order.status"
+      ],
+      "workflow_id": "workflow.ecommerce.delivery.track",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Get courier tracking information for a dispatched parcel. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.delivery.delay",
+      "name": "Late delivery",
+      "domain": "Delivery and collection",
+      "description": "Report an order that has not arrived by its expected delivery date.",
+      "examples": [
+        "My delivery date passed and the parcel is still not here.",
+        "I would like to report an order that has not arrived by its expected delivery date."
+      ],
+      "exclusions": [
+        "Request investigation when a dispatched parcel appears lost in transit."
+      ],
+      "confusable_with": [
+        "ecommerce.delivery.lost"
+      ],
+      "workflow_id": "workflow.ecommerce.delivery.delay",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Report an order that has not arrived by its expected delivery date. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.delivery.failed",
+      "name": "Failed delivery attempt",
+      "domain": "Delivery and collection",
+      "description": "Resolve an unsuccessful delivery attempt or arrange redelivery.",
+      "examples": [
+        "The courier says they could not deliver; can I arrange another attempt?",
+        "I would like to resolve an unsuccessful delivery attempt or arrange redelivery."
+      ],
+      "exclusions": [
+        "Add instructions for the courier or permitted delivery location."
+      ],
+      "confusable_with": [
+        "ecommerce.delivery.instructions"
+      ],
+      "workflow_id": "workflow.ecommerce.delivery.failed",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Resolve an unsuccessful delivery attempt or arrange redelivery. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.delivery.instructions",
+      "name": "Delivery instructions",
+      "domain": "Delivery and collection",
+      "description": "Add instructions for the courier or permitted delivery location.",
+      "examples": [
+        "Please ask the driver to use the side entrance.",
+        "I would like to add instructions for the courier or permitted delivery location."
+      ],
+      "exclusions": [
+        "Request an address change after the order has been placed."
+      ],
+      "confusable_with": [
+        "ecommerce.order.address"
+      ],
+      "workflow_id": "workflow.ecommerce.delivery.instructions",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Add instructions for the courier or permitted delivery location. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.delivery.delivered_missing",
+      "name": "Marked delivered but missing",
+      "domain": "Delivery and collection",
+      "description": "Report a parcel marked delivered that the customer has not received.",
+      "examples": [
+        "Tracking says delivered but I have no parcel.",
+        "I would like to report a parcel marked delivered that the customer has not received."
+      ],
+      "exclusions": [
+        "Request investigation when a dispatched parcel appears lost in transit."
+      ],
+      "confusable_with": [
+        "ecommerce.delivery.lost"
+      ],
+      "workflow_id": "workflow.ecommerce.delivery.delivered_missing",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Report a parcel marked delivered that the customer has not received. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.delivery.lost",
+      "name": "Lost shipment investigation",
+      "domain": "Delivery and collection",
+      "description": "Request investigation when a dispatched parcel appears lost in transit.",
+      "examples": [
+        "The courier lost track of my parcel in transit.",
+        "I would like to request investigation when a dispatched parcel appears lost in transit."
+      ],
+      "exclusions": [
+        "Report a parcel marked delivered that the customer has not received."
+      ],
+      "confusable_with": [
+        "ecommerce.delivery.delivered_missing"
+      ],
+      "workflow_id": "workflow.ecommerce.delivery.lost",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request investigation when a dispatched parcel appears lost in transit. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.delivery.partial",
+      "name": "Partial or split shipment",
+      "domain": "Delivery and collection",
+      "description": "Ask about items shipped in separate parcels or arriving at different times.",
+      "examples": [
+        "Only one parcel arrived; is the rest coming separately?",
+        "I would like to ask about items shipped in separate parcels or arriving at different times."
+      ],
+      "exclusions": [
+        "Report an ordered item missing inside a delivered package."
+      ],
+      "confusable_with": [
+        "ecommerce.issue.missing_item"
+      ],
+      "workflow_id": "workflow.ecommerce.delivery.partial",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about items shipped in separate parcels or arriving at different times. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.delivery.pickup",
+      "name": "Collection or locker pickup",
+      "domain": "Delivery and collection",
+      "description": "Get collection instructions, pickup codes, or pickup-point information.",
+      "examples": [
+        "Where can I collect my click-and-collect order?",
+        "I would like to get collection instructions, pickup codes, or pickup-point information."
+      ],
+      "exclusions": [
+        "Request more time to collect an order from a pickup location."
+      ],
+      "confusable_with": [
+        "ecommerce.delivery.pickup_extend"
+      ],
+      "workflow_id": "workflow.ecommerce.delivery.pickup",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Get collection instructions, pickup codes, or pickup-point information. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.delivery.pickup_extend",
+      "name": "Extend collection deadline",
+      "domain": "Delivery and collection",
+      "description": "Request more time to collect an order from a pickup location.",
+      "examples": [
+        "Can you extend the deadline for collecting my parcel?",
+        "I would like to request more time to collect an order from a pickup location."
+      ],
+      "exclusions": [
+        "Get collection instructions, pickup codes, or pickup-point information."
+      ],
+      "confusable_with": [
+        "ecommerce.delivery.pickup"
+      ],
+      "workflow_id": "workflow.ecommerce.delivery.pickup_extend",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request more time to collect an order from a pickup location. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.delivery.international",
+      "name": "International delivery and customs",
+      "domain": "Delivery and collection",
+      "description": "Ask about cross-border shipping, customs handling, or import charges.",
+      "examples": [
+        "Will I need to pay customs charges for this shipment?",
+        "I would like to ask about cross-border shipping, customs handling, or import charges."
+      ],
+      "exclusions": [
+        "Compare shipping services, delivery regions, or shipping charges before purchase."
+      ],
+      "confusable_with": [
+        "ecommerce.delivery.options"
+      ],
+      "workflow_id": "workflow.ecommerce.delivery.international",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about cross-border shipping, customs handling, or import charges. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.return.policy",
+      "name": "Return eligibility and policy",
+      "domain": "Returns",
+      "description": "Check whether an item can be returned and the applicable return window.",
+      "examples": [
+        "Can an opened product be returned under your policy?",
+        "I would like to check whether an item can be returned and the applicable return window."
+      ],
+      "exclusions": [
+        "Request a return for a received item."
+      ],
+      "confusable_with": [
+        "ecommerce.return.request"
+      ],
+      "workflow_id": "workflow.ecommerce.return.policy",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check whether an item can be returned and the applicable return window. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.return.request",
+      "name": "Start return",
+      "domain": "Returns",
+      "description": "Request a return for a received item.",
+      "examples": [
+        "I want to send back the item I received.",
+        "I would like to request a return for a received item."
+      ],
+      "exclusions": [
+        "Request replacement with a different size, color, or equivalent item after receipt.",
+        "Check progress of a refund already requested or approved."
+      ],
+      "confusable_with": [
+        "ecommerce.exchange.request",
+        "ecommerce.refund.status"
+      ],
+      "workflow_id": "workflow.ecommerce.return.request",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request a return for a received item. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.return.label",
+      "name": "Return shipping label",
+      "domain": "Returns",
+      "description": "Obtain or replace the shipping label or QR code for an approved return.",
+      "examples": [
+        "I cannot find the label for my return.",
+        "I would like to obtain or replace the shipping label or QR code for an approved return."
+      ],
+      "exclusions": [
+        "Book or change a courier collection for an approved return."
+      ],
+      "confusable_with": [
+        "ecommerce.return.pickup"
+      ],
+      "workflow_id": "workflow.ecommerce.return.label",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Obtain or replace the shipping label or QR code for an approved return. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.return.pickup",
+      "name": "Arrange return collection",
+      "domain": "Returns",
+      "description": "Book or change a courier collection for an approved return.",
+      "examples": [
+        "Can a courier collect my return tomorrow?",
+        "I would like to book or change a courier collection for an approved return."
+      ],
+      "exclusions": [
+        "Obtain or replace the shipping label or QR code for an approved return."
+      ],
+      "confusable_with": [
+        "ecommerce.return.label"
+      ],
+      "workflow_id": "workflow.ecommerce.return.pickup",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Book or change a courier collection for an approved return. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.return.status",
+      "name": "Track returned item",
+      "domain": "Returns",
+      "description": "Check transit or processing of an item already sent back.",
+      "examples": [
+        "Has your warehouse received the item I returned?",
+        "I would like to check transit or processing of an item already sent back."
+      ],
+      "exclusions": [
+        "Check progress of a refund already requested or approved."
+      ],
+      "confusable_with": [
+        "ecommerce.refund.status"
+      ],
+      "workflow_id": "workflow.ecommerce.return.status",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check transit or processing of an item already sent back. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.return.cancel",
+      "name": "Cancel return request",
+      "domain": "Returns",
+      "description": "Withdraw a return request before its completion.",
+      "examples": [
+        "I decided to keep the item; cancel my return.",
+        "I would like to withdraw a return request before its completion."
+      ],
+      "exclusions": [
+        "Request cancellation of a placed order before completion."
+      ],
+      "confusable_with": [
+        "ecommerce.order.cancel"
+      ],
+      "workflow_id": "workflow.ecommerce.return.cancel",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Withdraw a return request before its completion. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.exchange.request",
+      "name": "Request product exchange",
+      "domain": "Exchanges",
+      "description": "Request replacement with a different size, color, or equivalent item after receipt.",
+      "examples": [
+        "The delivered shoes are too small; can I exchange them?",
+        "I would like to request replacement with a different size, color, or equivalent item after receipt."
+      ],
+      "exclusions": [
+        "Request a return for a received item."
+      ],
+      "confusable_with": [
+        "ecommerce.return.request"
+      ],
+      "workflow_id": "workflow.ecommerce.exchange.request",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request replacement with a different size, color, or equivalent item after receipt. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.exchange.status",
+      "name": "Track exchange",
+      "domain": "Exchanges",
+      "description": "Check the progress of an approved exchange or its replacement shipment.",
+      "examples": [
+        "When will the replacement from my exchange arrive?",
+        "I would like to check the progress of an approved exchange or its replacement shipment."
+      ],
+      "exclusions": [
+        "Check transit or processing of an item already sent back."
+      ],
+      "confusable_with": [
+        "ecommerce.return.status"
+      ],
+      "workflow_id": "workflow.ecommerce.exchange.status",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check the progress of an approved exchange or its replacement shipment. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.refund.status",
+      "name": "Track purchase refund",
+      "domain": "Refunds",
+      "description": "Check progress of a refund already requested or approved.",
+      "examples": [
+        "My return was accepted; where is my refund?",
+        "I would like to check progress of a refund already requested or approved."
+      ],
+      "exclusions": [
+        "Query a refund calculation, deduction, or payment destination.",
+        "Investigate a refund reported completed that did not reach the payment account."
+      ],
+      "confusable_with": [
+        "ecommerce.refund.amount",
+        "ecommerce.refund.missing"
+      ],
+      "workflow_id": "workflow.ecommerce.refund.status",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check progress of a refund already requested or approved. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction. If the merchant says the refund was already sent but the account has not received it, choose ecommerce.refund.missing."
+    },
+    {
+      "intent_id": "ecommerce.refund.amount",
+      "name": "Refund amount or method",
+      "domain": "Refunds",
+      "description": "Query a refund calculation, deduction, or payment destination.",
+      "examples": [
+        "Why is my refund less than the original order amount?",
+        "I would like to query a refund calculation, deduction, or payment destination."
+      ],
+      "exclusions": [
+        "Check progress of a refund already requested or approved."
+      ],
+      "confusable_with": [
+        "ecommerce.refund.status"
+      ],
+      "workflow_id": "workflow.ecommerce.refund.amount",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Query a refund calculation, deduction, or payment destination. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.refund.missing",
+      "name": "Refund not received",
+      "domain": "Refunds",
+      "description": "Investigate a refund reported completed that did not reach the payment account.",
+      "examples": [
+        "You say the refund was sent but it is not in my account.",
+        "I would like to investigate a refund reported completed that did not reach the payment account."
+      ],
+      "exclusions": [
+        "Check progress of a refund already requested or approved."
+      ],
+      "confusable_with": [
+        "ecommerce.refund.status"
+      ],
+      "workflow_id": "workflow.ecommerce.refund.missing",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Investigate a refund reported completed that did not reach the payment account. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.issue.damaged",
+      "name": "Item arrived damaged",
+      "domain": "Product issues",
+      "description": "Report physical shipping damage to a received product.",
+      "examples": [
+        "The glass arrived shattered inside the box.",
+        "I would like to report physical shipping damage to a received product."
+      ],
+      "exclusions": [
+        "Report a product that does not function as intended."
+      ],
+      "confusable_with": [
+        "ecommerce.issue.defective"
+      ],
+      "workflow_id": "workflow.ecommerce.issue.damaged",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Report physical shipping damage to a received product. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.issue.defective",
+      "name": "Faulty product",
+      "domain": "Product issues",
+      "description": "Report a product that does not function as intended.",
+      "examples": [
+        "The new kettle will not switch on.",
+        "I would like to report a product that does not function as intended."
+      ],
+      "exclusions": [
+        "Request service under an applicable product warranty."
+      ],
+      "confusable_with": [
+        "ecommerce.warranty.claim"
+      ],
+      "workflow_id": "workflow.ecommerce.issue.defective",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Report a product that does not function as intended. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.issue.wrong_item",
+      "name": "Wrong item received",
+      "domain": "Product issues",
+      "description": "Report receipt of a different product or variant from the order.",
+      "examples": [
+        "You sent a red jacket but I ordered a black one.",
+        "I would like to report receipt of a different product or variant from the order."
+      ],
+      "exclusions": [
+        "Request changes to products or quantities after order placement."
+      ],
+      "confusable_with": [
+        "ecommerce.order.change"
+      ],
+      "workflow_id": "workflow.ecommerce.issue.wrong_item",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Report receipt of a different product or variant from the order. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.issue.missing_item",
+      "name": "Item missing from package",
+      "domain": "Product issues",
+      "description": "Report an ordered item missing inside a delivered package.",
+      "examples": [
+        "The sealed box is missing one of the items on its packing list.",
+        "I would like to report an ordered item missing inside a delivered package."
+      ],
+      "exclusions": [
+        "Ask about items shipped in separate parcels or arriving at different times."
+      ],
+      "confusable_with": [
+        "ecommerce.delivery.partial"
+      ],
+      "workflow_id": "workflow.ecommerce.issue.missing_item",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Report an ordered item missing inside a delivered package. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.issue.empty_package",
+      "name": "Empty package",
+      "domain": "Product issues",
+      "description": "Report a parcel that arrived without its ordered contents.",
+      "examples": [
+        "The parcel arrived empty.",
+        "I would like to report a parcel that arrived without its ordered contents."
+      ],
+      "exclusions": [
+        "Report an ordered item missing inside a delivered package."
+      ],
+      "confusable_with": [
+        "ecommerce.issue.missing_item"
+      ],
+      "workflow_id": "workflow.ecommerce.issue.empty_package",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Report a parcel that arrived without its ordered contents. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.warranty.coverage",
+      "name": "Warranty terms",
+      "domain": "Warranty and repairs",
+      "description": "Ask about product warranty duration, scope, or proof requirements.",
+      "examples": [
+        "How long is the warranty on this appliance?",
+        "I would like to ask about product warranty duration, scope, or proof requirements."
+      ],
+      "exclusions": [
+        "Request service under an applicable product warranty."
+      ],
+      "confusable_with": [
+        "ecommerce.warranty.claim"
+      ],
+      "workflow_id": "workflow.ecommerce.warranty.coverage",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about product warranty duration, scope, or proof requirements. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.warranty.claim",
+      "name": "Start warranty claim",
+      "domain": "Warranty and repairs",
+      "description": "Request service under an applicable product warranty.",
+      "examples": [
+        "My device failed after six months and I want warranty service.",
+        "I would like to request service under an applicable product warranty."
+      ],
+      "exclusions": [
+        "Report a product that does not function as intended."
+      ],
+      "confusable_with": [
+        "ecommerce.issue.defective"
+      ],
+      "workflow_id": "workflow.ecommerce.warranty.claim",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request service under an applicable product warranty. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.warranty.repair",
+      "name": "Repair status",
+      "domain": "Warranty and repairs",
+      "description": "Track a product already submitted for repair.",
+      "examples": [
+        "What is happening with the laptop I sent for repair?",
+        "I would like to track a product already submitted for repair."
+      ],
+      "exclusions": [
+        "Request service under an applicable product warranty."
+      ],
+      "confusable_with": [
+        "ecommerce.warranty.claim"
+      ],
+      "workflow_id": "workflow.ecommerce.warranty.repair",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Track a product already submitted for repair. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.warranty.parts",
+      "name": "Spare parts and manuals",
+      "domain": "Warranty and repairs",
+      "description": "Find manuals, replacement components, or approved accessories.",
+      "examples": [
+        "Can I get a replacement shelf for this refrigerator?",
+        "I would like to find manuals, replacement components, or approved accessories."
+      ],
+      "exclusions": [
+        "Ask for product dimensions, materials, compatibility, or other specifications."
+      ],
+      "confusable_with": [
+        "ecommerce.product.details"
+      ],
+      "workflow_id": "workflow.ecommerce.warranty.parts",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Find manuals, replacement components, or approved accessories. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.account.create",
+      "name": "Create customer account",
+      "domain": "Account management",
+      "description": "Register a store customer account.",
+      "examples": [
+        "I want to create an account with your store.",
+        "I would like to register a store customer account."
+      ],
+      "exclusions": [
+        "Ask about placing an order without creating an account."
+      ],
+      "confusable_with": [
+        "ecommerce.checkout.guest"
+      ],
+      "workflow_id": "workflow.ecommerce.account.create",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Register a store customer account. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.account.login",
+      "name": "Customer account access",
+      "domain": "Account management",
+      "description": "Recover account access or reset a forgotten password.",
+      "examples": [
+        "I forgot the password for my shopping account.",
+        "I would like to recover account access or reset a forgotten password."
+      ],
+      "exclusions": [
+        "Report suspicious account activity or unauthorized access."
+      ],
+      "confusable_with": [
+        "ecommerce.account.security"
+      ],
+      "workflow_id": "workflow.ecommerce.account.login",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Recover account access or reset a forgotten password. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.account.profile",
+      "name": "Update customer profile",
+      "domain": "Account management",
+      "description": "Change personal contact details in the customer account.",
+      "examples": [
+        "Please update the phone number on my account.",
+        "I would like to change personal contact details in the customer account."
+      ],
+      "exclusions": [
+        "Request an address change after the order has been placed."
+      ],
+      "confusable_with": [
+        "ecommerce.order.address"
+      ],
+      "workflow_id": "workflow.ecommerce.account.profile",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Change personal contact details in the customer account. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.account.security",
+      "name": "Report account compromise",
+      "domain": "Account management",
+      "description": "Report suspicious account activity or unauthorized access.",
+      "examples": [
+        "Someone else has accessed my shopping account.",
+        "I would like to report suspicious account activity or unauthorized access."
+      ],
+      "exclusions": [
+        "Report multiple settled charges for the same purchase."
+      ],
+      "confusable_with": [
+        "ecommerce.payment.duplicate"
+      ],
+      "workflow_id": "workflow.ecommerce.account.security",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Report suspicious account activity or unauthorized access. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.account.delete",
+      "name": "Delete customer account",
+      "domain": "Account management",
+      "description": "Request closure of the customer account.",
+      "examples": [
+        "I want to close my store account permanently.",
+        "I would like to request closure of the customer account."
+      ],
+      "exclusions": [
+        "Request access, correction, or deletion of customer data through the store's process."
+      ],
+      "confusable_with": [
+        "ecommerce.privacy.request"
+      ],
+      "workflow_id": "workflow.ecommerce.account.delete",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request closure of the customer account. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.privacy.request",
+      "name": "Customer privacy request",
+      "domain": "Privacy",
+      "description": "Request access, correction, or deletion of customer data through the store's process.",
+      "examples": [
+        "I want a copy of the personal information your store holds about me.",
+        "I would like to request access, correction, or deletion of customer data through the store's process."
+      ],
+      "exclusions": [
+        "Request closure of the customer account."
+      ],
+      "confusable_with": [
+        "ecommerce.account.delete"
+      ],
+      "workflow_id": "workflow.ecommerce.privacy.request",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request access, correction, or deletion of customer data through the store's process. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.subscription.create",
+      "name": "Start recurring delivery",
+      "domain": "Subscriptions",
+      "description": "Subscribe to recurring product deliveries.",
+      "examples": [
+        "I want this pet food delivered every month.",
+        "I would like to subscribe to recurring product deliveries."
+      ],
+      "exclusions": [
+        "Create a new purchase based on a previous order."
+      ],
+      "confusable_with": [
+        "ecommerce.order.repeat"
+      ],
+      "workflow_id": "workflow.ecommerce.subscription.create",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Subscribe to recurring product deliveries. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.subscription.change",
+      "name": "Change recurring delivery",
+      "domain": "Subscriptions",
+      "description": "Adjust products, frequency, or next shipment for a subscription.",
+      "examples": [
+        "Move my next subscription delivery back by two weeks.",
+        "I would like to adjust products, frequency, or next shipment for a subscription."
+      ],
+      "exclusions": [
+        "End a recurring product subscription."
+      ],
+      "confusable_with": [
+        "ecommerce.subscription.cancel"
+      ],
+      "workflow_id": "workflow.ecommerce.subscription.change",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Adjust products, frequency, or next shipment for a subscription. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.subscription.cancel",
+      "name": "Cancel recurring delivery",
+      "domain": "Subscriptions",
+      "description": "End a recurring product subscription.",
+      "examples": [
+        "Stop my monthly replenishment subscription.",
+        "I would like to end a recurring product subscription."
+      ],
+      "exclusions": [
+        "Request cancellation of a placed order before completion."
+      ],
+      "confusable_with": [
+        "ecommerce.order.cancel"
+      ],
+      "workflow_id": "workflow.ecommerce.subscription.cancel",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: End a recurring product subscription. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.loyalty.balance",
+      "name": "Store loyalty points",
+      "domain": "Loyalty",
+      "description": "Check reward points, tier progress, or expiration.",
+      "examples": [
+        "How many store reward points do I have?",
+        "I would like to check reward points, tier progress, or expiration."
+      ],
+      "exclusions": [
+        "Use store loyalty points or a reward benefit."
+      ],
+      "confusable_with": [
+        "ecommerce.loyalty.redeem"
+      ],
+      "workflow_id": "workflow.ecommerce.loyalty.balance",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check reward points, tier progress, or expiration. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.loyalty.redeem",
+      "name": "Redeem store rewards",
+      "domain": "Loyalty",
+      "description": "Use store loyalty points or a reward benefit.",
+      "examples": [
+        "I want to use my reward points on this purchase.",
+        "I would like to use store loyalty points or a reward benefit."
+      ],
+      "exclusions": [
+        "Check or use a store gift card."
+      ],
+      "confusable_with": [
+        "ecommerce.payment.giftcard"
+      ],
+      "workflow_id": "workflow.ecommerce.loyalty.redeem",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Use store loyalty points or a reward benefit. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.review.submit",
+      "name": "Submit product review",
+      "domain": "Reviews",
+      "description": "Write or manage a review of a completed purchase.",
+      "examples": [
+        "How do I leave a review for the item I bought?",
+        "I would like to write or manage a review of a completed purchase."
+      ],
+      "exclusions": [
+        "Find or interpret available customer reviews for a product."
+      ],
+      "confusable_with": [
+        "ecommerce.product.reviews"
+      ],
+      "workflow_id": "workflow.ecommerce.review.submit",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Write or manage a review of a completed purchase. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.seller.contact",
+      "name": "Contact marketplace seller",
+      "domain": "Marketplace services",
+      "description": "Contact the seller responsible for a marketplace listing or order.",
+      "examples": [
+        "I need to ask the marketplace seller about my order.",
+        "I would like to contact the seller responsible for a marketplace listing or order."
+      ],
+      "exclusions": [
+        "Escalate an unresolved problem with a marketplace seller."
+      ],
+      "confusable_with": [
+        "ecommerce.seller.dispute"
+      ],
+      "workflow_id": "workflow.ecommerce.seller.contact",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Contact the seller responsible for a marketplace listing or order. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.seller.dispute",
+      "name": "Marketplace seller dispute",
+      "domain": "Marketplace services",
+      "description": "Escalate an unresolved problem with a marketplace seller.",
+      "examples": [
+        "The seller will not respond to my return request; I want to escalate it.",
+        "I would like to escalate an unresolved problem with a marketplace seller."
+      ],
+      "exclusions": [
+        "Submit a general complaint about store service."
+      ],
+      "confusable_with": [
+        "ecommerce.support.complaint"
+      ],
+      "workflow_id": "workflow.ecommerce.seller.dispute",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Escalate an unresolved problem with a marketplace seller. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.seller.onboard",
+      "name": "Become marketplace seller",
+      "domain": "Marketplace services",
+      "description": "Ask about registering a business to sell on the marketplace.",
+      "examples": [
+        "How can my business start selling on this platform?",
+        "I would like to ask about registering a business to sell on the marketplace."
+      ],
+      "exclusions": [
+        "Ask about settlement of a marketplace seller's sales proceeds."
+      ],
+      "confusable_with": [
+        "ecommerce.seller.payout"
+      ],
+      "workflow_id": "workflow.ecommerce.seller.onboard",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about registering a business to sell on the marketplace. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.seller.payout",
+      "name": "Seller payout support",
+      "domain": "Marketplace services",
+      "description": "Ask about settlement of a marketplace seller's sales proceeds.",
+      "examples": [
+        "My seller payout has not arrived.",
+        "I would like to ask about settlement of a marketplace seller's sales proceeds."
+      ],
+      "exclusions": [
+        "Resolve a rejected or incomplete payment at purchase."
+      ],
+      "confusable_with": [
+        "ecommerce.payment.failed"
+      ],
+      "workflow_id": "workflow.ecommerce.seller.payout",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about settlement of a marketplace seller's sales proceeds. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "ecommerce.support.complaint",
+      "name": "Shopping service complaint",
+      "domain": "Customer support",
+      "description": "Submit a general complaint about store service.",
+      "examples": [
+        "I want to complain about the way customer service handled my order.",
+        "I would like to submit a general complaint about store service."
+      ],
+      "exclusions": [
+        "Escalate an unresolved problem with a marketplace seller."
+      ],
+      "confusable_with": [
+        "ecommerce.seller.dispute"
+      ],
+      "workflow_id": "workflow.ecommerce.support.complaint",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Submit a general complaint about store service. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "service.human",
+      "name": "Speak to a representative",
+      "domain": "Customer support",
+      "description": "Request a conversation with a human service representative.",
+      "examples": [
+        "Please connect me to a human agent.",
+        "I want to speak with a customer service representative."
+      ],
+      "exclusions": [
+        "A service complaint without an explicit request to speak with a human."
+      ],
+      "confusable_with": [
+        "ecommerce.support.complaint"
+      ],
+      "workflow_id": "workflow.service.human",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Choose handoff when the user explicitly requests a human representative; do not require a particular service issue."
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "ecommerce-test-v1-001",
+      "conversation_id": "ecommerce-test-v1-001",
+      "question": "Check whether the medium green jacket is available to buy.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.product.availability",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-002",
+      "conversation_id": "ecommerce-test-v1-002",
+      "question": "Remove the lamp from my basket; I have not placed the order yet.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.cart.remove",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-003",
+      "conversation_id": "ecommerce-test-v1-003",
+      "question": "Cancel the purchase I placed earlier today.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.order.cancel",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-004",
+      "conversation_id": "ecommerce-test-v1-004",
+      "question": "Cancel only the headphones in my order and keep the other items.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.order.cancel_item",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-005",
+      "conversation_id": "ecommerce-test-v1-005",
+      "question": "I already placed the order; send it to a different delivery address.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.order.address",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-006",
+      "conversation_id": "ecommerce-test-v1-006",
+      "question": "My card payment for the shopping order was rejected.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.payment.failed",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-007",
+      "conversation_id": "ecommerce-test-v1-007",
+      "question": "Give me the carrier tracking link for the parcel that has shipped.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.delivery.track",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-008",
+      "conversation_id": "ecommerce-test-v1-008",
+      "question": "The courier marked it delivered, but nothing was received at my address.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.delivery.delivered_missing",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-009",
+      "conversation_id": "ecommerce-test-v1-009",
+      "question": "Will the rest of my order arrive in another shipment?",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.delivery.partial",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-010",
+      "conversation_id": "ecommerce-test-v1-010",
+      "question": "The packing list lists two items but only one was inside the package.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.issue.missing_item",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-011",
+      "conversation_id": "ecommerce-test-v1-011",
+      "question": "The item has arrived and I want to start returning it.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.return.request",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-012",
+      "conversation_id": "ecommerce-test-v1-012",
+      "question": "Please regenerate the postage label for my approved return.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.return.label",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-013",
+      "conversation_id": "ecommerce-test-v1-013",
+      "question": "Exchange the delivered shirt for a larger size.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.exchange.request",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-014",
+      "conversation_id": "ecommerce-test-v1-014",
+      "question": "The return has been accepted; check how far along the refund is.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.refund.status",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-015",
+      "conversation_id": "ecommerce-test-v1-015",
+      "question": "I received a blender although I ordered a toaster.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.issue.wrong_item",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-016",
+      "conversation_id": "ecommerce-test-v1-016",
+      "question": "The appliance stopped working during the warranty period; open a service claim.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.warranty.claim",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-017",
+      "conversation_id": "ecommerce-test-v1-017",
+      "question": "Stop future recurring deliveries of the coffee subscription.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.subscription.cancel",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-018",
+      "conversation_id": "ecommerce-test-v1-018",
+      "question": "Escalate my case because the marketplace seller is refusing to respond.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.seller.dispute",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-019",
+      "conversation_id": "ecommerce-test-v1-019",
+      "question": "Can you sort out the thing I mentioned?",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-020",
+      "conversation_id": "ecommerce-test-v1-020",
+      "question": "Please pass me to a live shopping support representative.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-021",
+      "conversation_id": "ecommerce-test-v1-021",
+      "question": "I need to change the departure date on my airline ticket.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-022",
+      "conversation_id": "ecommerce-test-v1-022",
+      "question": "Start an application for a mortgage at my bank.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-023",
+      "conversation_id": "ecommerce-test-v1-023",
+      "question": "Update the beneficiary on my life insurance policy.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-test-v1-024",
+      "conversation_id": "ecommerce-test-v1-024",
+      "question": "Teach me to solve a quadratic equation.",
+      "source": "seed",
+      "dataset_version": "ecommerce-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-001",
+      "conversation_id": "ecommerce-calibration-v1-001",
+      "question": "Tell me the screen dimensions and connection ports on this monitor.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.product.details",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-002",
+      "conversation_id": "ecommerce-calibration-v1-002",
+      "question": "I need your clothing size guide before selecting a jacket.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.product.sizing",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-003",
+      "conversation_id": "ecommerce-calibration-v1-003",
+      "question": "There are four bowls in my cart; change that quantity to two.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.cart.quantity",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-004",
+      "conversation_id": "ecommerce-calibration-v1-004",
+      "question": "I would like to complete this purchase without creating a store profile.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.checkout.guest",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-005",
+      "conversation_id": "ecommerce-calibration-v1-005",
+      "question": "Download the tax invoice for my completed purchase.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.payment.invoice",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-006",
+      "conversation_id": "ecommerce-calibration-v1-006",
+      "question": "Help me apply the promotional code that checkout keeps rejecting.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.promotion.apply",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-007",
+      "conversation_id": "ecommerce-calibration-v1-007",
+      "question": "Resend the confirmation message for the purchase I submitted this morning.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.order.confirmation",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-008",
+      "conversation_id": "ecommerce-calibration-v1-008",
+      "question": "The driver could not reach me; schedule another parcel delivery attempt.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.delivery.failed",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-009",
+      "conversation_id": "ecommerce-calibration-v1-009",
+      "question": "Arrange collection of the product whose return has already been authorized.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.return.pickup",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-010",
+      "conversation_id": "ecommerce-calibration-v1-010",
+      "question": "Check the progress of the approved size exchange and its replacement shipment.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.exchange.status",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-011",
+      "conversation_id": "ecommerce-calibration-v1-011",
+      "question": "The ceramic vase arrived broken even though the packaging was sealed.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.issue.damaged",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-012",
+      "conversation_id": "ecommerce-calibration-v1-012",
+      "question": "Show how many store loyalty points remain available in my account.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "ecommerce.loyalty.balance",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-013",
+      "conversation_id": "ecommerce-calibration-v1-013",
+      "question": "Track a delayed suitcase checked in on my flight.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-014",
+      "conversation_id": "ecommerce-calibration-v1-014",
+      "question": "Quote me the premium for vehicle insurance.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-015",
+      "conversation_id": "ecommerce-calibration-v1-015",
+      "question": "Remove the SIM lock on my banking application.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-016",
+      "conversation_id": "ecommerce-calibration-v1-016",
+      "question": "Help me renew a government-issued passport.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-017",
+      "conversation_id": "ecommerce-calibration-v1-017",
+      "question": "What is the capital city of Peru?",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-018",
+      "conversation_id": "ecommerce-calibration-v1-018",
+      "question": "Recommend a recipe for vegetable soup.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-019",
+      "conversation_id": "ecommerce-calibration-v1-019",
+      "question": "Explain the history of the Roman Empire.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-020",
+      "conversation_id": "ecommerce-calibration-v1-020",
+      "question": "Translate this poem into French.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-021",
+      "conversation_id": "ecommerce-calibration-v1-021",
+      "question": "Debug a syntax error in my JavaScript loop.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-022",
+      "conversation_id": "ecommerce-calibration-v1-022",
+      "question": "Create a weekly marathon training schedule.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-023",
+      "conversation_id": "ecommerce-calibration-v1-023",
+      "question": "Tell me the score of yesterday's football match.",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "ecommerce-calibration-v1-024",
+      "conversation_id": "ecommerce-calibration-v1-024",
+      "question": "How do I grow basil on my balcony?",
+      "source": "seed",
+      "dataset_version": "ecommerce-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    }
+  ]
+}

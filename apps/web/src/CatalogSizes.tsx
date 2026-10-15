@@ -35,20 +35,20 @@ export function CatalogSizes({
   return (
     <div className="catalog-size-control">
       <label>
-        {t("Aranacak katalog büyüklükleri")}
+        {t("Catalog sizes to search")}
         <input
-          aria-label={t("Aranacak katalog büyüklükleri")}
+          aria-label={t("Catalog sizes to search")}
           value={value}
           disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="48, 100, 200, 400, 800"
+          placeholder={presets.join(", ")}
           aria-invalid={!sizes.length}
         />
       </label>
       <div
         className="catalog-size-presets"
         role="group"
-        aria-label={t("Hazır katalog büyüklükleri")}
+        aria-label={t("Catalog size presets")}
       >
         {presets.map((size) => (
           <button
@@ -77,23 +77,23 @@ export function CatalogSizes({
           disabled={disabled}
           onClick={() => onChange(presets.join(", "))}
         >
-          {t("Tüm büyüklükleri karşılaştır")}
+          {t("Compare all sizes")}
         </button>
       </div>
       <p className="field-hint">
         {t(
-          "Bu alan vaka sayısını değil, aramanın göreceği intent sayısını belirler. Aynı test vakaları korunur; büyük kataloglar küçük katalogları içerir.",
+          "Sets how many intents retrieval can search. The test cases stay fixed; larger catalogs contain the smaller catalogs.",
         )}
       </p>
       <p className="field-hint">
         {t(
-          "Mevcut katalog: {total} intent. {minimum}–{total} arasında en fazla 8 büyüklük seçin. Test veya kalibrasyon etiketleri daha yüksek bir alt sınır gerektirebilir.",
+          "Available catalog: {total} intents. Choose up to 8 sizes from {minimum} to {total}. Test or calibration labels may require a higher minimum.",
           { total: maximum, minimum },
         )}
       </p>
       {!sizes.length && (
         <p className="selection-warning" role="alert">
-          {t("Geçerli katalog büyüklüklerini virgülle ayırarak girin.")}
+          {t("Enter valid catalog sizes separated by commas.")}
         </p>
       )}
     </div>

@@ -10,14 +10,14 @@ csv.field_size_limit(64 * 1024 * 1024)
 
 def import_benchmark(content: bytes, filename: str = "benchmark.csv") -> tuple[list[dict], dict]:
     if len(content) > 100 * 1024 * 1024:
-        raise ValueError("Dosya 100 MB sınırını aşıyor.")
+        raise ValueError("The file exceeds the 100 MB limit.")
     text = content.decode("utf-8-sig")
     # Sniff only the header: multiline JSON and answer prose confuse csv.Sniffer.
     header = text.splitlines()[0] if text else ""
     delimiter = max([";", ",", "\t"], key=header.count)
     reader = csv.DictReader(io.StringIO(text, newline=""), delimiter=delimiter)
     if not reader.fieldnames or "Question" not in reader.fieldnames:
-        raise ValueError("CSV başlığında Question alanı bulunmalı. UTF-8 ve virgül/noktalı virgül desteklenir.")
+        raise ValueError("The CSV header must contain Question. UTF-8 and comma/semicolon delimiters are supported.")
     dataset = hashlib.sha256(content).hexdigest()[:16]
     cases, seen = [], set()
     report = {"dataset_version": dataset, "filename": filename, "source": "customer", "rows": 0, "imported": 0, "skipped_empty_question": 0, "duplicates": 0, "valid_traces": 0, "invalid_traces": 0, "source_flags": Counter(), "historical_actions": Counter(), "reviewed": 0}
@@ -28,7 +28,7 @@ def import_benchmark(content: bytes, filename: str = "benchmark.csv") -> tuple[l
             report["skipped_empty_question"] += 1
             continue
         if len(question) > 2000:
-            raise ValueError(f"{report['rows']}. kayıttaki soru 2000 karakter sınırını aşıyor.")
+            raise ValueError(f"The question in row {report['rows']} exceeds the 2000-character limit.")
         source_id = (row.get("BenchmarkSessionId") or str(report["rows"])).strip()
         message_id = (row.get("BenchmarkSessionMessageId") or "1").strip()
         key = (source_id, message_id, question)
@@ -58,5 +58,5 @@ def import_benchmark(content: bytes, filename: str = "benchmark.csv") -> tuple[l
         # Answers, old routing decisions and model reasoning are never retrieval exemplars or gold labels.
         cases.append({"case_id": f"{dataset}-{source_id}-{message_id}", "conversation_id": f"{dataset}-{source_id}", "question": question, "reference_answer": (row.get("Answer") or "")[:20000], "source": "customer", "source_flag": flag, "historical_trace": trace, "dataset_version": dataset, "reviewed": False, "split": "test", "expected_decision": None, "expected_intent_id": None, "context": {}})
     report["imported"] = len(cases)
-    report["notes"] = ["TRUE/FALSE kaynak verinin alanıdır; intent doğruluk etiketi olarak yorumlanmadı.", "Eski sistemin action alanı öneri ve altın etiket olarak kullanılmadı.", "Boş Question kayıtları vaka sayısına dahil edilmedi.", "Müşteri vakaları insan incelemesinden sonra accuracy hesabına girer."]
+    report["notes"] = ["TRUE/FALSE is a source field and was not interpreted as an intent accuracy label.", "The legacy action field was not used as a suggestion or gold label.", "Rows with an empty Question were excluded from the case count.", "Imported cases contribute to accuracy only after human review."]
     return cases, report

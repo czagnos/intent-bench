@@ -14,7 +14,7 @@ from .selector import prompt_version
 from .store import Store, fingerprint
 
 MAX_VARIANTS = 32
-METHOD_NAMES = {"lexical": "Sözcüksel referans", "e5": "Semantik arama", "hybrid_llm": "Hibrit arama + LLM"}
+METHOD_NAMES = {"lexical": "Lexical baseline", "e5": "Semantic search", "hybrid_llm": "Hybrid retrieval + LLM"}
 
 
 class Preset(BaseModel):
@@ -44,7 +44,7 @@ class CatalogFile(BaseModel):
         for presets in (self.llms, self.embeddings):
             ids = [p.id for p in presets]
             if "default" in ids or len(ids) != len(set(ids)):
-                raise ValueError("Model kimlikleri benzersiz olmalı; default ayrılmıştır.")
+                raise ValueError("Model IDs must be unique; default is reserved.")
         return self
 
 
@@ -121,15 +121,15 @@ class ModelCatalog:
         record = self.registry.get(workspace, model_id) if model_id.startswith("model_") else None
         if record:
             if record["kind"] != kind:
-                raise ValueError("Seçilen modelin türü bu yöntemle uyumlu değil.")
+                raise ValueError("The selected model type is incompatible with this method.")
             return self.registry.resolve(current, record)
         presets = self.catalog.embeddings if kind == "embedding" else self.catalog.llms if kind == "llm" else []
         preset = next((p for p in presets if p.id == model_id), None)
         if preset is None:
-            raise ValueError(f"Bilinmeyen {kind} model seçimi: {model_id}")
+            raise ValueError(f"Unknown {kind} model selection: {model_id}")
         base_url = current.embedding_base_url if kind == "embedding" else current.llm_base_url
         if preset.connection == "openrouter" and (not is_openrouter(base_url) or (kind == "embedding" and current.embedding_mode != "http")):
-            raise ValueError(f"{preset.name} için OpenRouter bağlantısı gerekli.")
+            raise ValueError(f"An OpenRouter connection is required for {preset.name}.")
         if kind == "embedding":
             current.embedding_model = preset.model
             current.embedding_profile = preset.profile
@@ -148,8 +148,8 @@ class ModelCatalog:
         for kind, presets in (("embedding", self.catalog.embeddings), ("llm", self.catalog.llms), ("reranker", [])):
             model = getattr(self.settings, kind + "_model")
             matching = next((p for p in presets if p.model == model), None)
-            entries = [{"id": "default", "name": (matching.name if matching else model) + " · varsayılan",
-                        "model": model, "description": "Sunucuda tanımlı mevcut model ve bağlantı ayarları.",
+            entries = [{"id": "default", "name": (matching.name if matching else model) + " · default",
+                        "model": model, "description": "Current model and connection settings configured on the server.",
                         "license": matching.license if matching else None,
                         "weights_url": matching.weights_url if matching else None}]
             seen = set()
@@ -158,7 +158,7 @@ class ModelCatalog:
                     settings = self.resolve(kind, item["id"])
                     details = model_details(kind, settings)
                     available = model_enabled(kind, settings)
-                    reason = None if available else "Sunucuda model bağlantısı ve API anahtarı gerekli."
+                    reason = None if available else "A model connection and API key must be configured on the server."
                     identity = fingerprint(details)
                     if identity in seen:
                         continue
@@ -177,20 +177,20 @@ class ModelCatalog:
 
     def variant(self, method, embedding_id=None, llm_id=None, workspace="demo", retrieval=None):
         if method not in METHOD_NAMES:
-            raise ValueError("Bilinmeyen yöntem.")
+            raise ValueError("Unknown method.")
         if retrieval is not None and method != "hybrid_llm":
-            raise ValueError("Arama stratejileri yalnızca Hibrit arama + LLM yönteminde kullanılır.")
+            raise ValueError("Retrieval profiles are available only for Hybrid retrieval + LLM.")
         embedding_id = (embedding_id or "default") if method != "lexical" else None
         llm_id = (llm_id or "default") if method == "hybrid_llm" else None
         settings = self.settings.model_copy(deep=True)
         if embedding_id:
             settings = self.resolve("embedding", embedding_id, settings, workspace)
             if not Embeddings(settings).enabled:
-                raise ValueError("Embedding bağlantısı yapılandırılmamış.")
+                raise ValueError("The embedding connection is not configured.")
         if llm_id:
             settings = self.resolve("llm", llm_id, settings, workspace)
             if not settings.llm_configured:
-                raise ValueError("LLM bağlantısı yapılandırılmamış.")
+                raise ValueError("The LLM connection is not configured.")
         if retrieval:
             retrieval = retrieval.model_copy(deep=True)
             settings.retrieval_representation = retrieval.representation
@@ -198,7 +198,7 @@ class ModelCatalog:
             if retrieval.reranker_id:
                 settings = self.resolve("reranker", retrieval.reranker_id, settings, workspace)
                 if not Reranker(settings).enabled:
-                    raise ValueError("Reranker bağlantısı yapılandırılmamış.")
+                    raise ValueError("Reranker connection is not configured.")
         labels = {}
         for kind, model_id in (("embedding", embedding_id), ("llm", llm_id), ("reranker", retrieval.reranker_id if retrieval else None)):
             record = self.registry.get(workspace, model_id) if model_id else None
@@ -228,5 +228,5 @@ class ModelCatalog:
                             variants.append(variant)
                             seen.add(identity)
         if len(variants) > MAX_VARIANTS:
-            raise ValueError(f"Tek deneyde en fazla {MAX_VARIANTS} model kombinasyonu seçilebilir.")
+            raise ValueError(f"An experiment can contain at most {MAX_VARIANTS} model combinations.")
         return variants

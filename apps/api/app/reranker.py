@@ -30,7 +30,7 @@ class Reranker:
 
     def prepare(self):
         if not self.enabled:
-            raise ModelUnavailable("Reranker bağlantısı yapılandırılmamış.")
+            raise ModelUnavailable("Reranker connection is not configured.")
         if self.settings.reranker_mode == "local":
             with self.lock:
                 if self.model is None:
@@ -40,7 +40,7 @@ class Reranker:
                                                   local_files_only=self.settings.reranker_local_files_only,
                                                   max_length=512)
                     except Exception as exc:
-                        raise ModelUnavailable("Reranker yüklenemedi. ML bağımlılıklarını ve yerel model dosyalarını kontrol edin.") from exc
+                        raise ModelUnavailable("Could not load the reranker. Check ML dependencies and local model files.") from exc
 
     def scores(self, query, documents):
         self.prepare()
@@ -53,7 +53,7 @@ class Reranker:
                     values = np.asarray(self.model.predict([[query, text] for text in documents],
                                         batch_size=s.reranker_batch_size, show_progress_bar=False)).reshape(-1).tolist()
             except Exception as exc:
-                raise ModelUnavailable("Yerel reranker isteği tamamlanamadı.") from exc
+                raise ModelUnavailable("The local reranker request failed.") from exc
         else:
             headers = {"Authorization": "Bearer " + s.reranker_api_key.strip()} if s.reranker_api_key.strip() else {}
             payload = ({"query": query, "texts": documents, "raw_scores": True}
@@ -74,22 +74,22 @@ class Reranker:
                     by_index[index] = row["score" if s.reranker_protocol == "tei" else "relevance_score"]
                 values = [by_index[i] for i in range(len(documents))]
             except httpx.TimeoutException as exc:
-                raise ModelUnavailable("Reranker süre sınırını aştı.") from exc
+                raise ModelUnavailable("The reranker request timed out.") from exc
             except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
-                raise ModelUnavailable("Reranker bağlantısı veya sıralama yanıtı geçersiz.") from exc
+                raise ModelUnavailable("Invalid reranker connection or ranking response.") from exc
         if len(values) != len(documents) or any(type(v) not in (int, float) or not math.isfinite(v) for v in values):
-            raise ModelUnavailable("Reranker sonlu sayısal skorlar döndürmeli.")
+            raise ModelUnavailable("The reranker must return finite numeric scores.")
         return values
 
     def rank(self, query, candidates, catalog, k):
         documents = []
         for c in candidates:
             intent = catalog[c.intent_id]
-            text = f"{intent.name}. {intent.description}\nÖrnek: {c.evidence}"
+            text = f"{intent.name}. {intent.description}\nExample: {c.evidence}"
             if intent.exclusions:
-                text += "\nKapsam dışı: " + " | ".join(intent.exclusions)
+                text += "\nExclusions: " + " | ".join(intent.exclusions)
             if intent.selection_rule:
-                text += "\nSeçim kuralı: " + intent.selection_rule
+                text += "\nSelection rule: " + intent.selection_rule
             documents.append(text)
         scores = self.scores(query, documents)
         order = sorted(range(len(scores)), key=lambda j: (-scores[j], j))

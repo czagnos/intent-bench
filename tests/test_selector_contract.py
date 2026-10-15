@@ -79,5 +79,5 @@ def test_selector_preserves_valid_clarification_candidates(tmp_path, reason_code
 
 def test_selector_rejects_routing_outside_the_candidate_list(tmp_path):
     content = '{"decision":"route","intent_id":"loan.apply","mentioned_intent_ids":[]}'
-    with pytest.raises(ModelUnavailable, match="aday listesinde olmayan"):
+    with pytest.raises(ModelUnavailable, match="outside the candidate list"):
         select_response(content, tmp_path)

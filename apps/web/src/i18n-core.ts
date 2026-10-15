@@ -4,6 +4,8 @@ export type Translate = (
   key: string | null | undefined,
   values?: Record<string, string | number>,
 ) => string;
+// Compatibility for labels stored by older releases. New interface copy is English.
+// Catalog definitions, user utterances and model conversation output bypass translation.
 const dictionary: Record<string, string> = english;
 export const languageTag = (locale: Locale) =>
   locale === "en" ? "en-US" : "tr-TR";

@@ -1,0 +1,26 @@
+[
+  {
+    "id": "banking",
+    "name": "Banking",
+    "description": "Accounts, cards, transfers, loans, deposits, investments, digital banking, merchant services, and bank-distributed insurance.",
+    "workspace": "demo"
+  },
+  {
+    "id": "airline",
+    "name": "Airline",
+    "description": "Booking and ticket servicing, payments and credits, check-in, seats, baggage and claims, disruptions, accessibility, family travel, airport and onboard services, and loyalty.",
+    "workspace": "airline"
+  },
+  {
+    "id": "insurance",
+    "name": "Insurance",
+    "description": "General and specialist quotes, applications, coverage and renewals, policy servicing, billing, claims and appeals, beneficiaries, health and provider services, and assistance.",
+    "workspace": "insurance"
+  },
+  {
+    "id": "ecommerce",
+    "name": "E-commerce",
+    "description": "Shopping and checkout, orders and delivery, returns and after-sales, digital goods, home services, gifts, recurring purchases, marketplace selling, business purchasing, rentals, and safety.",
+    "workspace": "ecommerce"
+  }
+]

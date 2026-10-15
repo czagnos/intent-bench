@@ -28,24 +28,24 @@ PARENTS = {
 }
 
 ALIASES = {
-    "bank.card.debit": "Banka kartı / bankamatik kartı; ATM'de kullanmak tek başına kart türünü belirtmez.",
-    "bank.digital.mobile": "Bireysel mobil bankacılık / cep şubesi / bankacılık uygulaması.",
-    "bank.digital.phone": "Telefon bankacılığı / çağrı merkezi. Telefon cihazı veya SIM sözcüğü tek başına bu kanalı belirtmez.",
-    "bank.transfer.internal": "Tek seferlik havale; düzenli havale talimatıyla karıştırma.",
-    "bank.transfer.eft": "Tek seferlik EFT; ileri tarihli EFT talimatıyla karıştırma.",
-    "bank.deposit.term_try": "TL cinsinden vadeli hesap; yalnız 'vadeli mevduat' denmesi para birimini belirtmez.",
-    "bank.account.current_try": "TL cinsinden vadesiz hesap; yalnız 'vadesiz hesap' denmesi para birimini belirtmez.",
+    "bank.card.debit": "Debit card / bank card; using a card at an ATM alone does not identify the card type.",
+    "bank.digital.mobile": "Personal mobile banking / banking application.",
+    "bank.digital.phone": "Telephone banking / call center. A phone device or SIM alone does not identify this channel.",
+    "bank.transfer.internal": "One-off internal bank transfer; distinct from a recurring internal transfer instruction.",
+    "bank.transfer.eft": "One-off EFT transfer; distinct from a scheduled EFT instruction.",
+    "bank.deposit.term_try": "TRY term deposit; saying only term deposit does not identify a currency.",
+    "bank.account.current_try": "TRY current account; saying only current account does not identify a currency.",
 }
 
 ACTION_RULES = {
-    ("card", "daily_limit"): "Günlük harcama üst sınırıdır; toplam kredi kartı limiti değişikliği değildir.",
-    ("card", "online"): "İnternet kullanım iznini açma/kapama; bilinmeyen ödeme reddi nedenini izin sorunu olarak varsayma.",
-    ("card", "declined"): "Başarısız ödemenin nedenini inceleme; internet kullanım izni değişikliği açıkça istenirse online kaydını seç.",
-    ("transfer", "status"): "Yapılmış transferin durumunu sorgulama; dekont veya olağan ulaşma süresi isteği değildir.",
-    ("transfer", "cancel"): "Transfer emrini iptal etme; yanlış alıcı açıkça belirtilirse wrong_recipient kaydını seç.",
-    ("transfer", "wrong_recipient"): "Yanlış alıcı veya yanlış hesap açıkça belirtilmiş olmalı.",
-    ("loan", "application_status"): "Başvuru değerlendirmesini takip etme; onaylı paranın hesaba yatması disbursement kapsamındadır.",
-    ("loan", "interest"): "Faiz oranını sorma; tutar/vadeye göre taksit hesabı installment_simulation kapsamındadır.",
+    ("card", "daily_limit"): "This changes the daily spending cap, not the total credit card limit.",
+    ("card", "online"): "Enable or disable online payment permission. Do not assume an unexplained payment failure is a permission issue.",
+    ("card", "declined"): "Investigate a failed payment. An explicit request to change online permission belongs to online.",
+    ("transfer", "status"): "Track an existing transfer, not a receipt request or normal delivery-time question.",
+    ("transfer", "cancel"): "Cancel a transfer instruction. Select wrong_recipient when the wrong recipient is explicitly mentioned.",
+    ("transfer", "wrong_recipient"): "The user must explicitly identify a wrong recipient or wrong account.",
+    ("loan", "application_status"): "Track application assessment. Release of approved money belongs to disbursement.",
+    ("loan", "interest"): "Ask about the interest rate. Repayment calculation for an amount and term belongs to installment_simulation.",
 }
 
 
@@ -59,10 +59,10 @@ def revise_catalog(intents):
             continue
         prefix = ".".join(parts[:3])
         product = intent["name"].split(" - ")[0]
-        rule = (f"Ürün/kanal: {ALIASES.get(prefix, product + '.') } "
-                "Bu ürün/kanal ve tanımdaki işlem birlikte belirtilmiş olmalı. "
-                "Belirtilmeyen ürün, para birimi veya kanalı tahmin etme. "
-                "Aynı işlemin genel kaydı da varsa bu açık ürün/kanal kaydını seç.")
+        rule = (f"Product/channel: {ALIASES.get(prefix, product + '.')} "
+                "Both this product/channel and the described operation must be explicit. "
+                "Do not infer an unstated product, currency, or channel. "
+                "Prefer this specific definition over a general definition when both match.")
         detail = ACTION_RULES.get((parts[1], parts[3]))
         if detail:
             rule += " " + detail
@@ -70,17 +70,17 @@ def revise_catalog(intents):
         parent = PARENTS.get((parts[1], parts[3]))
         if parent in by_id:
             products[parent].add(product)
-            # A more specific identifier must not bypass its operation's required information.
+            # More specific identifiers cannot bypass their operation's required information.
             intent["required_slots"] = list(by_id[parent]["required_slots"])
             intent["slot_questions"] = dict(by_id[parent]["slot_questions"])
     for iid, intent in by_id.items():
         if iid.startswith("bank."):
             continue
-        rule = "Tanımdaki işlem belirliyse bu akışa yönlendir. İşlem tutarı, kart numarası veya referans gibi bilgiler akışta tamamlanır."
+        rule = "Route when the described operation is clear. The workflow collects amounts, card details, references, and other execution fields."
         if iid in products:
-            rule += (" Aynı işlem için şu ürün/kanallardan biri açıkça belirtilirse ilgili özel kaydı seç: "
-                     + ", ".join(sorted(products[iid])) + ". Ürün/kanal belirtilmemişse bu genel kaydı seç; ürün seçtirmek için intenti belirsiz sayma.")
+            rule += (" If one of these products/channels is explicit, select its matching specific definition: "
+                     + ", ".join(sorted(products[iid])) + ". Otherwise use this general definition; an unspecified product alone does not make the intent ambiguous.")
         if iid == "card.limit.change":
-            rule += " Toplam kredi kartı limiti değişikliğidir; günlük harcama sınırı ayrı işlemdir."
+            rule += " This changes the total credit card limit; a daily spending cap is a different operation."
         intent["selection_rule"] = rule
     return result

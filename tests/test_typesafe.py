@@ -182,7 +182,7 @@ def test_native_connection_probe_live_route_and_experiment_use_selected_model_an
     live_job = wait_job(client, "/v1/requests/" + live.json()["request_id"])
     assert live_job["status"] == "completed", live_job
     assert live_job["result"]["intent_id"] == "card.limit.change"
-    assert live_job["result"]["prompt_version"].startswith("router-tr-typesafe-")
+    assert live_job["result"]["prompt_version"].startswith("router-en-typesafe-")
     run = client.post("/v1/evaluations", json={"methods": ["hybrid_llm"], "llm_ids": [jev["id"], comparator["id"]],
         "embedding_ids": [embedding["id"]], "semantic_rejection": "off", "limit": 1, "catalog_sizes": [48]})
     assert run.status_code == 202, run.text
@@ -240,7 +240,7 @@ def test_native_key_rotation_disable_and_provider_switch_preserve_connection_iso
     studio = client.app.state.studio
     record = add(client)
     assert not record["available"]
-    with pytest.raises(ValueError, match="API anahtarı"):
+    with pytest.raises(ValueError, match="API key"):
         studio.model_catalog.resolve("llm", record["id"])
     studio.settings.model_credentials_file.write_text("INTENT_TYPESAFE_API_KEY=first-private-key\nINTENT_MODEL_KEY_CUSTOM=custom-private-key\n")
     old = studio.model_catalog.resolve("llm", record["id"])
@@ -254,7 +254,7 @@ def test_native_key_rotation_disable_and_provider_switch_preserve_connection_iso
     assert studio.model_catalog.resolve("llm", custom["id"]).resolved_llm_api_key == "custom-private-key"
     response = client.patch("/v1/model-registry/" + record["id"], json=registration(enabled=False))
     assert response.status_code == 200 and not response.json()["available"]
-    with pytest.raises(ValueError, match="devre dışı"):
+    with pytest.raises(ValueError, match="disabled"):
         studio.model_catalog.resolve("llm", record["id"])
     for body in [{"kind": "llm", "name": "Other", "model": "other-model", "connection": "onprem",
                   "base_url": "http://onprem.test/v1", "auth": "none"},
@@ -329,7 +329,7 @@ def test_native_timeout_is_a_technical_error_without_retry(client):
     def respond(request):
         calls.append(request)
         raise httpx.ReadTimeout("private-provider-details", request=request)
-    with pytest.raises(ModelUnavailable, match="süre sınırını") as exc:
+    with pytest.raises(ModelUnavailable, match="timed out") as exc:
         Selector(settings, httpx.MockTransport(respond)).select("Kartımı kaybettim.", {}, *selection_input())
     assert "private-provider" not in str(exc.value) and len(calls) == 1
 

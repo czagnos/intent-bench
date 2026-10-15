@@ -76,7 +76,7 @@ def index_target(arguments: IndexArguments, settings: Settings | None = None,
         studio.embeddings.transport = transport
         catalog = studio.store.catalog(arguments.workspace, arguments.catalog_version)
         if catalog is None:
-            raise ValueError("Çalışma alanı veya katalog sürümü bulunamadı; mevcut bir katalog seçin.")
+            raise ValueError("Workspace or catalog version not found; select an existing catalog.")
         resolved = studio.model_catalog.resolve("embedding", arguments.embedding_id, workspace=arguments.workspace)
         if arguments.representation is not None:
             resolved.retrieval_representation = arguments.representation
@@ -93,13 +93,13 @@ def execute_index(arguments: IndexArguments, operation: Callable[[Retriever], In
         with index_target(arguments, settings, transport) as target:
             print(target.summary(operation(target.retriever)).model_dump_json(indent=2))
     except ValidationError:
-        print(IndexFailure(error="İndeks veya model ayarları geçersiz; yapılandırmayı kontrol edin.").model_dump_json(), file=sys.stderr)
+        print(IndexFailure(error="Invalid index or model settings; check the configuration.").model_dump_json(), file=sys.stderr)
         return 1
     except (ValueError, ModelUnavailable) as exc:
         print(IndexFailure(error=str(exc)).model_dump_json(), file=sys.stderr)
         return 1
     except (OSError, sqlite3.Error):
-        print(IndexFailure(error="Yerel katalog veya indeks dosyası kullanılamıyor; veri dizinini ve izinlerini kontrol edin.").model_dump_json(), file=sys.stderr)
+        print(IndexFailure(error="Local catalog or index file unavailable; check the data directory and permissions.").model_dump_json(), file=sys.stderr)
         return 1
     return 0
 

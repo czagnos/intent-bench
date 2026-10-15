@@ -108,7 +108,9 @@ def test_revision_failure_rolls_back_all_records(settings, monkeypatch):
 
 def test_case_history_and_migration_report_are_workspace_scoped(settings):
     with TestClient(create_app(settings)) as client:
-        report, = client.get("/v1/catalog/migrations").json()
+        reports = client.get("/v1/catalog/migrations").json()
+        assert {report["id"] for report in reports} == {"demo-taxonomy-v2", "demo-english-v3", "banking-case-depth-v1"}
+        report = next(report for report in reports if report["id"] == "demo-taxonomy-v2")
         assert report["id"] == "demo-taxonomy-v2" and report["applicable"]
         assert len(report["case_changes"]) == 17
         before = client.get("/v1/cases/seed-007/versions").json()["current"]
@@ -164,9 +166,9 @@ def test_router_routes_without_slots_and_workflow_collects_then_confirms(setting
     studio.selector = selector
     try:
         # Use lexical retrieval with a mocked selector call: no embedding/network dependency.
-        candidates = retriever.search("Kart limitimi artırmak istiyorum", k=3)
+        candidates = retriever.search("I want to increase my credit card limit", k=3)
         retriever.search_with_trace = lambda *a, **k: (candidates, {"executed": True, "completed": True})
-        result, state = studio.compute("Kart limitimi artırmak istiyorum", {}, "hybrid_llm", retriever, "chat", lambda *a, **k: None)
+        result, state = studio.compute("I want to increase my credit card limit", {}, "hybrid_llm", retriever, "chat", lambda *a, **k: None)
         assert result["decision"] == "route" and result["slots"] == {}
         assert result["missing_slots"] == ["new_limit"] and state["pending_slot"] == "new_limit"
         payload = calls[0]
@@ -191,7 +193,7 @@ def test_router_routes_without_slots_and_workflow_collects_then_confirms(setting
 def test_slot_clarification_is_a_contract_error_not_an_automatic_correct_route(settings, response):
     selector, retriever, _ = selector_fixture(settings, response)
     with pytest.raises(ModelUnavailable) as caught:
-        selector.select("Limitimi değiştir", {}, retriever.search("limit", k=3), retriever.intents)
+        selector.select("Change my limit", {}, retriever.search("limit", k=3), retriever.intents)
     assert caught.value.diagnostics["category"] == "routing_contract"
     assert "Yeni limit" not in json.dumps(caught.value.diagnostics)
 
@@ -200,11 +202,19 @@ def test_real_intent_ambiguity_still_clarifies(settings):
     response = {"decision": "clarify", "intent_id": None, "question": "Geçici kapatma mı kalıcı iptal mi?",
                 "reason_code": "ambiguous_intent", "mentioned_intent_ids": ["card.cancel", "card.temporary_block"]}
     selector, retriever, _ = selector_fixture(settings, response)
-    proposal, _ = selector.select("Kartımı kapat", {}, retriever.search("kart", k=3), retriever.intents)
+    proposal, _ = selector.select("Close my card", {}, retriever.search("kart", k=3), retriever.intents)
     assert proposal.decision == "clarify" and proposal.intent_id is None
 
 
 @pytest.mark.parametrize("text,expected", [
+    ("Set my card limit to $5,000 USD", "5000"),
+    ("Increase my card limit to 6000", "6000"),
+    ("My new limit is 7000", "7000"),
+    ("Increase my card limit by 500", None),
+    ("Change my card limit from 4000 to 5000", None),
+    ("Set my card limit to 5.50", None),
+    ("Do not set my card limit to 5000", None),
+    ("Don't increase my card limit to 5000", None),
     ("Kart limitim 50.000 TL olsun", "50000"),
     ("Kart limitimi 5000'e çıkar", "5000"),
     ("Yeni limitim 7000 TL", "7000"),
@@ -223,6 +233,8 @@ def test_workflow_requires_explicit_card_and_reference_fields():
     assert explicit_workflow_slots("Kaybolan kartın son dört hanesi 1234", intents["bank.card.debit.lost"]) == {"card_last4": "1234"}
     assert explicit_workflow_slots("1234 lira gönderdim", intents["bank.transfer.eft.status"]) == {}
     assert explicit_workflow_slots("EFT referans numarası AB12345", intents["bank.transfer.eft.status"]) == {"transfer_reference": "AB12345"}
+    assert explicit_workflow_slots("My lost card ends with the last four digits 1234", intents["card.lost"]) == {"card_last4": "1234"}
+    assert explicit_workflow_slots("Track transfer reference number AB12345", intents["transfer.status"]) == {"transfer_reference": "AB12345"}
 
 
 def test_controlled_reranker_profiles_differ_only_by_reranker():

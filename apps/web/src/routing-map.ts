@@ -1,11 +1,11 @@
 import type { Candidate, Decision, Intent, Stage } from "./api";
 
 export const demoViews = [
-  ["standard", "Standart"],
-  ["workflow", "Workflow haritası"],
-  ["radial", "Dairesel harita"],
-  ["galaxy", "Intent galaksisi"],
-  ["mosaic", "Intent mozaiği"],
+  ["standard", "Standard"],
+  ["workflow", "Workflow map"],
+  ["radial", "Radial map"],
+  ["galaxy", "Intent galaxy"],
+  ["mosaic", "Intent mosaic"],
 ] as const;
 export type DemoView = (typeof demoViews)[number][0];
 export type MapView = Exclude<DemoView, "standard">;

@@ -5,16 +5,31 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict
 
-from .config import ROOT
+from .config import ROOT, Settings
 from .contracts import Intent
 from .model_registry import Kind, Registration
+from .model_catalog import model_enabled
 from .providers import ModelUnavailable
 from .retrieval import Embeddings, Retriever
 from .reranker import Reranker
 from .selector import Selector
 
 Workspace = Annotated[str, Query(pattern=r"^[a-zA-Z0-9_-]{1,64}$")]
+
+
+class ProbeResult(BaseModel):
+    model_config = ConfigDict(extra="forbid", validate_assignment=True)
+    ok: bool
+    model: str
+    accuracy_benchmark: Literal[False] = False
+    elapsed_ms: float
+    error: str | None = None
+    dimensions: int | None = None
+    scores: list[float] | None = None
+    decision: str | None = None
+    usage: dict[str, int] | None = None
 
 
 def model_routes(studio):
@@ -37,7 +52,7 @@ def model_routes(studio):
         try:
             return registry.save(workspace, body, model_id)
         except KeyError as exc:
-            raise HTTPException(404, "Model kaydı bulunamadı.") from exc
+            raise HTTPException(404, "Model registration not found.") from exc
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
 
@@ -52,39 +67,57 @@ def model_routes(studio):
                  and q.casefold() in (m["model"] + " " + m["name"]).casefold()]
         return {**result, "items": items[offset:offset+limit], "total": len(items), "offset": offset, "limit": limit}
 
-    @router.post("/model-registry/{model_id}/check")
-    def check(model_id: str, workspace: Workspace = "demo"):
-        record = registry.get(workspace, model_id)
-        if not record:
-            raise HTTPException(404, "Model kaydı bulunamadı.")
+    def probe(kind: Kind, settings: Settings) -> ProbeResult:
         started = time.perf_counter()
+        model = getattr(settings, kind + "_model")
         try:
-            settings = studio.model_catalog.resolve(record["kind"], model_id, workspace=workspace)
+            if not model_enabled(kind, settings):
+                raise ModelUnavailable("Configure this model connection on the server before testing.")
             embeddings = Embeddings(settings, transport=studio.embeddings.transport)
-            if record["kind"] == "embedding":
-                passage = embeddings.encode(["Kredi kartı limiti değiştirme."])
-                query = embeddings.encode(["Kart limitimi artırmak istiyorum."], query=True)
+            result = ProbeResult(ok=True, model=model, elapsed_ms=0)
+            if kind == "embedding":
+                passage = embeddings.encode(["Change a credit card limit."])
+                query = embeddings.encode(["I want to increase my card limit."], query=True)
                 if query.shape != passage.shape:
-                    raise ModelUnavailable("Sorgu ve katalog embedding boyutları farklı.")
-                details = {"dimensions": query.shape[1]}
-            elif record["kind"] == "reranker":
-                values = Reranker(settings, transport=studio.reranker.transport).scores(
-                    "Kart limitimi artırmak istiyorum.", ["Kredi kartı limiti değiştirme.", "Hesap bakiyesi sorgulama."])
-                details = {"scores": values}
+                    raise ModelUnavailable("Query and catalog embedding dimensions differ.")
+                result.dimensions = query.shape[1]
+            elif kind == "reranker":
+                result.scores = Reranker(settings, transport=studio.reranker.transport).scores(
+                    "I want to increase my card limit.", ["Change a credit card limit.", "Check an account balance."])
             else:
-                # Fixed seed examples only; no customer records and no vector-index preparation.
+                # Fixed synthetic examples only; no customer data or vector preparation.
                 catalog = [Intent.model_validate(i) for i in json.loads((ROOT / "data/demo/catalog.json").read_text())
                            if i["intent_id"] in ("card.limit.change", "service.human")]
                 retriever = Retriever(catalog, "connection-check", embeddings)
-                text = "Kart limitimi artırmak istiyorum."
+                text = "I want to increase my card limit."
                 candidates = retriever.search(text, mode="lexical", k=2)
                 decision, usage = Selector(settings, transport=studio.selector.transport).select(text, {}, candidates, retriever.intents)
-                # Connectivity/contract validation, deliberately not an accuracy score.
-                details = {"decision": decision.decision, "usage": usage}
-            return {"ok": True, "model": record["model"], "accuracy_benchmark": False,
-                    "elapsed_ms": round((time.perf_counter() - started) * 1000, 2), **details}
+                result.decision, result.usage = decision.decision, usage
+            result.elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
+            return result
         except (ModelUnavailable, ValueError) as exc:
-            return {"ok": False, "model": record["model"], "accuracy_benchmark": False,
-                    "error": str(exc), "elapsed_ms": round((time.perf_counter() - started) * 1000, 2)}
+            return ProbeResult(ok=False, model=model, error=str(exc) if isinstance(exc, ModelUnavailable)
+                               else "The provider returned an invalid response. Check model settings.",
+                               elapsed_ms=round((time.perf_counter() - started) * 1000, 2))
+
+    @router.post("/models/{kind}/{model_id}/check", response_model=ProbeResult, response_model_exclude_none=True)
+    def check_selection(kind: Literal["embedding", "llm"], model_id: str, workspace: Workspace = "demo"):
+        try:
+            settings = studio.model_catalog.resolve(kind, model_id, workspace=workspace)
+        except ValueError as exc:
+            raise HTTPException(422, "The selected model is unavailable or invalid for this workspace.") from exc
+        return probe(kind, settings)
+
+    @router.post("/model-registry/{model_id}/check", response_model=ProbeResult, response_model_exclude_none=True)
+    def check(model_id: str, workspace: Workspace = "demo"):
+        record = registry.get(workspace, model_id)
+        if not record:
+            raise HTTPException(404, "Model registration not found.")
+        try:
+            settings = studio.model_catalog.resolve(record["kind"], model_id, workspace=workspace)
+        except ValueError:
+            return ProbeResult(ok=False, model=record["model"], elapsed_ms=0,
+                               error="The model connection is unavailable. Check its server configuration.")
+        return probe(record["kind"], settings)
 
     return router

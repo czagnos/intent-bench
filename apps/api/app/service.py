@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .config import ROOT, Settings
 from .calibration import Calibrator, data_fingerprint, public_calibration
 from .catalog_scope import core_ids, select_catalogs
+from .catalog_presets import workspace_preset
 from .contracts import Intent
 from .evaluation import summarize, diagnose
 from .model_catalog import MAX_VARIANTS, ModelCatalog, embedding_key, embedding_runtime_key, llm_metadata
@@ -43,24 +44,42 @@ class Studio:
         with self.lock:
             if workspace in self.seeded_workspaces:
                 return
-            intents = json.loads((ROOT / "data/demo/catalog.json").read_text())
-            expanded = [Intent.model_validate(i).model_dump() for i in intents]
-            if not self.store.catalog(workspace):
-                self.store.save_catalog(workspace, expanded)
-                self.store.save_cases(workspace, json.loads((ROOT / "data/demo/cases.json").read_text()))
-            self.store.expand_demo_catalog(workspace, core_ids(), expanded)
-            self.store.save_cases(workspace, json.loads((ROOT / "data/demo/calibration-cases.json").read_text()))
-            manifest = json.loads((ROOT / "data/demo/migrations/taxonomy-v2.json").read_text())
-            demo_cases = json.loads((ROOT / "data/demo/cases.json").read_text())
-            calibration_cases = json.loads((ROOT / "data/demo/calibration-cases.json").read_text())
-            self.store.revise_demo(workspace, manifest, expanded, demo_cases + calibration_cases, core_ids())
+            preset = workspace_preset(workspace)
+            intents = preset.intents()
+            expanded = [intent.model_dump() for intent in intents]
+            seed_cases = preset.cases()
+            benchmark_cases = preset.benchmark_cases()
+            cases = [json.loads(case.payload) for case in seed_cases]
+            current = self.store.catalog(workspace)
+            if current is None:
+                self.store.bootstrap_workspace(workspace, intents, seed_cases + benchmark_cases)
+            if preset.id == "banking":
+                # Historical targets are required to upgrade untouched v1 records before
+                # the separate English migration. Never translate arbitrary user records.
+                historical = json.loads((ROOT / "data/demo/migrations/taxonomy-v2-targets.json").read_text())
+                manifest = json.loads((ROOT / "data/demo/migrations/taxonomy-v2.json").read_text())
+                english = json.loads((ROOT / "data/demo/migrations/english-v3.json").read_text())
+                previous_hashes = set(manifest["previous_catalog_hashes"].values()) | set(english["previous_catalog_hashes"].values())
+                legacy = current is not None and any(
+                    fingerprint(Intent.model_validate(intent).model_dump()) in previous_hashes
+                    for intent in current["intents"])
+                # An already-English core must never acquire a transient Turkish version.
+                baseline = historical["intents"] if legacy else expanded
+                baseline_cases = historical["cases"] if legacy else cases
+                self.store.expand_demo_catalog(workspace, core_ids(), baseline)
+                self.store.revise_demo(workspace, manifest, baseline, baseline_cases, core_ids())
+                self.store.revise_demo(workspace, english, expanded, cases, core_ids())
+            else:
+                for revision in preset.revisions():
+                    self.store.expand_preset(workspace, revision, intents, seed_cases)
+            self.store.expand_preset(workspace, preset.benchmark_revision(), intents, benchmark_cases)
             self.seeded_workspaces.add(workspace)
 
     def retriever(self, workspace, version=None, settings=None):
         settings = settings or self.settings
         catalog = self.store.catalog(workspace, version)
         if not catalog:
-            raise ValueError("Katalog bulunamadı.")
+            raise ValueError("Catalog not found.")
         model_key = embedding_runtime_key(settings)
         key = (workspace, catalog["version"], model_key)
         with self.lock:
@@ -104,9 +123,9 @@ class Studio:
                 if embedding and llm:
                     break
         return [
-            {"id": "lexical", "name": "Sözcüksel referans", "available": True, "description": "Karakter benzerliği + BM25. Semantik model veya LLM kullanmaz.", "model": "char-tfidf+bm25-v1", "calibrated": False},
-            {"id": "e5", "name": "Semantik arama", "available": embedding, "description": "Seçili çok dilli embedding modeli ile en yakın intent.", "model": self.settings.embedding_model, "calibrated": False},
-            {"id": "hybrid_llm", "name": "Hibrit arama + LLM", "available": embedding and llm, "description": "Embedding + sözcüksel arama; seçili LLM ile bağlama göre seçim.", "model": self.settings.llm_model, "calibrated": False},
+            {"id": "lexical", "name": "Lexical baseline", "available": True, "description": "Character similarity + BM25. Uses no semantic model or LLM.", "model": "char-tfidf+bm25-v1", "calibrated": False},
+            {"id": "e5", "name": "Semantic retrieval", "available": embedding, "description": "Nearest intent using the selected multilingual embedding model.", "model": self.settings.embedding_model, "calibrated": False},
+            {"id": "hybrid_llm", "name": "Hybrid retrieval + LLM", "available": embedding and llm, "description": "Embedding and lexical retrieval, with contextual selection by the chosen LLM.", "model": self.settings.llm_model, "calibrated": False},
         ]
 
     def get_reranker(self, settings):
@@ -136,7 +155,7 @@ class Studio:
             proposal = context_decision(text, state)
             trace["context_bypass"] = proposal is not None
             timings["context"] = (time.perf_counter()-t)*1000
-            emit("context", "Konuşma bağlamı hazır")
+            emit("context", "Conversation context ready")
             if proposal is None:
                 phase = "retrieval"
                 t = time.perf_counter()
@@ -152,7 +171,7 @@ class Studio:
                                                         profile.semantic_weight if profile else .5)
                 candidates = pool[:settings.candidate_k]
                 timings["retrieval"] = (time.perf_counter()-t)*1000
-                emit("retrieval", f"{len(pool)} intent adayı bulundu", candidates=[c.model_dump() for c in pool])
+                emit("retrieval", f"{len(pool)} intent candidates retrieved", candidates=[c.model_dump() for c in pool])
                 trace["reranker_used"] = bool(profile and profile.reranker_id)
                 if profile and profile.reranker_id:
                     phase = "reranking"
@@ -161,7 +180,7 @@ class Studio:
                     t = time.perf_counter()
                     candidates = self.get_reranker(settings).rank(query, pool, retriever.intents, settings.candidate_k)
                     timings["reranking"] = (time.perf_counter()-t)*1000
-                    emit("reranking", f"{len(candidates)} aday yeniden sıralandı", candidates=[c.model_dump() for c in candidates])
+                    emit("reranking", f"{len(candidates)} candidates reranked", candidates=[c.model_dump() for c in candidates])
                 trace["final"] = [c.intent_id for c in candidates]
                 phase = "selection"
                 t = time.perf_counter()
@@ -175,14 +194,14 @@ class Studio:
                 trace["selection_completed"] = True
                 trace["proposal_decision"] = proposal.decision
                 trace["proposal_intent_id"] = proposal.intent_id
-                emit("selection", "Intent kararı üretildi")
+                emit("selection", "Intent decision generated")
             phase = "policy"
             t = time.perf_counter()
             if proposal.decision == "route" and proposal.intent_id in retriever.intents:
                 proposal.slots = explicit_workflow_slots(text, retriever.intents[proposal.intent_id])
             result, new_state = apply_decision(proposal, state, retriever.intents, channel)
             timings["policy"] = (time.perf_counter()-t)*1000
-            emit("policy", "Karar ve workflow eşlemesi doğrulandı")
+            emit("policy", "Decision and workflow mapping validated")
         except (ModelUnavailable, ValueError) as exc:
             error_stage = phase
             if phase not in timings and phase not in ("preparation",):
@@ -215,18 +234,18 @@ class Studio:
             result.update(request_id=request.request_id, session_id=request.session_id, turn_revision=request.turn_revision)
             saved = self.store.finish_turn(workspace, updated, request.turn_revision)
             if not saved:
-                self.store.patch_job(workspace, request.request_id, {"status": "superseded", "error": "Daha yeni bir konuşma adımı var; eski karar uygulanmadı.", "result": result})
+                self.store.patch_job(workspace, request.request_id, {"status": "superseded", "error": "A newer conversation turn exists; the earlier decision was not applied.", "result": result})
             else:
-                self.store.patch_job(workspace, request.request_id, {"status": "failed" if result["decision"] == "error" else "completed", "result": result, "event": {"stage": "complete", "label": "Karar hazır"}})
+                self.store.patch_job(workspace, request.request_id, {"status": "failed" if result["decision"] == "error" else "completed", "result": result, "event": {"stage": "complete", "label": "Decision ready"}})
         except Exception:
-            self.store.patch_job(workspace, request.request_id, {"status": "failed", "error": "İstek işlenemedi. Servis yapılandırmasını kontrol edin."})
+            self.store.patch_job(workspace, request.request_id, {"status": "failed", "error": "The request could not be processed. Check the service configuration."})
 
     def start_evaluation(self, workspace, options):
         variants = self.model_catalog.expand(options, workspace)
         all_cases = self.store.cases(workspace, options.source, split=options.split)
         cases = [c for c in all_cases if c["reviewed"]][:options.limit]
         if not cases:
-            raise ValueError("Bu seçimde doğrulanmış etiketli vaka yok. Önce Vakalar ekranında beklenen kararları kaydedin.")
+            raise ValueError("No reviewed labeled cases match this selection. Save expected decisions on the Cases page first.")
         catalog = self.store.catalog(workspace)
         scale_fit = options.catalog_sizes is not None and options.semantic_rejection == "calibrated" and any(v.method == "e5" for v in variants)
         fit_cases = self.calibrator.cases(workspace, options.scale_calibration_source) if scale_fit else []
@@ -234,10 +253,10 @@ class Studio:
             self.calibrator.validate_cases(workspace, fit_cases, catalog)
             from .calibration import question_hash
             if {question_hash(c["question"]) for c in fit_cases} & {question_hash(c["question"]) for c in cases}:
-                raise ValueError("Kalibrasyonda kullanılan vakalar aynı eşikle test edilemez. Ayrı test bölümü seçin.")
+                raise ValueError("Cases used for calibration cannot be tested with the same threshold. Select a separate test split.")
         scopes = select_catalogs(catalog, options.catalog_sizes, cases, fit_cases, options.catalog_seed)
         if len(scopes)*len(variants) > MAX_VARIANTS:
-            raise ValueError(f"Katalog büyüklükleri dahil en fazla {MAX_VARIANTS} kombinasyon çalıştırılabilir.")
+            raise ValueError(f"At most {MAX_VARIANTS} combinations can run, including catalog sizes.")
         runs, calibrations = [], {}
         for variant in variants:
             for scope in scopes:
@@ -339,4 +358,4 @@ class Studio:
                 self.store.patch_job(workspace, job_id, {"progress": progress, "results": results})
             self.store.patch_job(workspace, job_id, {"status": "completed", "phase": "complete", "progress": progress, "results": results, "elapsed_ms": round((time.time()-job["created"])*1000, 2)})
         except Exception:
-            self.store.patch_job(workspace, job_id, {"status": "failed", "results": results, "error": "Değerlendirme tamamlanamadı. Model ve veri yapılandırmasını kontrol edin."})
+            self.store.patch_job(workspace, job_id, {"status": "failed", "results": results, "error": "The evaluation could not complete. Check the model and data configuration."})

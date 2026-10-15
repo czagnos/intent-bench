@@ -30,7 +30,7 @@ def select_catalogs(catalog, sizes, cases, calibration_cases=(), seed=42):
     ids = {i["intent_id"] for i in intents}
     required = required_ids([*cases, *calibration_cases])
     if required - ids:
-        raise ValueError("Test veya kalibrasyon için gereken intent aktif katalogda yok.")
+        raise ValueError("An intent required by the test or calibration cohort is missing from the active catalog.")
     # Labels and dialogue targets must survive every scope. Core intents fill the remaining
     # budget first; making all 48 mandatory would exclude every new product-specific label.
     policy_ids = {"card.cancel", "card.temporary_block", "service.human"}
@@ -39,7 +39,7 @@ def select_catalogs(catalog, sizes, cases, calibration_cases=(), seed=42):
     preferred = [i["intent_id"] for i in intents if i["intent_id"] in preferred_ids]
     sizes = sorted(set(sizes or [len(intents)]))
     if any(size < len(protected) or size > len(intents) for size in sizes):
-        raise ValueError(f"Katalog büyüklüğü {len(protected)} ile {len(intents)} arasında olmalı. Test, bağlam ve kalibrasyon intentleri korunur.")
+        raise ValueError(f"Catalog size must be between {len(protected)} and {len(intents)}. Test, context, and calibration intents are preserved.")
     domains = defaultdict(list)
     for intent in intents:
         if intent["intent_id"] not in protected and intent["intent_id"] not in preferred:

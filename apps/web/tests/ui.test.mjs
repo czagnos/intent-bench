@@ -13,7 +13,7 @@ const bundle = join(temporary, "components.cjs");
 await build({
   stdin: {
     contents:
-      'export {default as App} from "./src/App"; export {LanguageProvider} from "./src/i18n"; export * from "./src/i18n-core"; export * from "./src/routing-map";',
+      'export {default as App} from "./src/App"; export {LanguageProvider} from "./src/i18n"; export * from "./src/i18n-core"; export * from "./src/routing-map"; export {createWorkspaceClient} from "./src/api";',
     resolveDir: directory,
     loader: "tsx",
   },
@@ -45,6 +45,7 @@ Object.defineProperty(globalThis, "navigator", {
 });
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 HTMLElement.prototype.scrollIntoView = () => {};
+dom.window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
 window.scrollTo = () => {};
 const { createElement, act } = await import("react");
 const { createRoot } = await import("react-dom/client");
@@ -57,6 +58,7 @@ const {
   formatDuration,
   groupCatalog,
   layoutMap,
+  createWorkspaceClient,
 } = require(bundle);
 const catalog = JSON.parse(
   readFileSync(join(directory, "../../data/demo/catalog.json"), "utf8"),
@@ -66,7 +68,7 @@ const model = (id, name, model) => ({
   name,
   model,
   available: true,
-  description: "Sunucuda tanımlı mevcut model ve bağlantı ayarları.",
+  description: "Current model and connection settings configured on the server.",
   settings: {},
   license: "MIT",
   weights_url: null,
@@ -86,19 +88,19 @@ const status = {
   methods: [
     {
       id: "lexical",
-      name: "Sözcüksel referans",
+      name: "Lexical baseline",
       available: true,
       model: "char-tfidf-bm25",
     },
     {
       id: "e5",
-      name: "Semantik arama",
+      name: "Semantic search",
       available: true,
       model: "qwen/qwen3-embedding-8b",
     },
     {
       id: "hybrid_llm",
-      name: "Hibrit arama + LLM",
+      name: "Hybrid retrieval + LLM",
       available: true,
       model: "qwen/qwen3.5-35b-a3b",
     },
@@ -146,7 +148,7 @@ const calibrationData = {
     },
   ],
 };
-const question = "Kart limitimi artırmak istiyorum.";
+const question = catalog[0].examples[0];
 const record = {
   case_id: "case-1",
   question,
@@ -195,9 +197,19 @@ const evaluation = {
     },
   },
 };
-let root, requests, streams, latestEvaluation, registeredModels, latestCatalog;
+const presets = [
+  { id: "banking", name: "Banking", description: "Banking operations", workspace: "demo", intent_count: 800 },
+  { id: "airline", name: "Airline", description: "Air travel operations", workspace: "airline", intent_count: 1 },
+  { id: "insurance", name: "Insurance", description: "Policy and claim operations", workspace: "insurance", intent_count: 1 },
+  { id: "ecommerce", name: "E-commerce", description: "Shopping operations", workspace: "ecommerce", intent_count: 1 },
+];
+const airlineIntent = { ...catalog[0], intent_id: "airline.booking.create", name: "Book a flight", domain: "Bookings",
+  description: "Create an airline reservation.", examples: ["I want to book a flight."], confusable_with: [], required_slots: [],
+  slot_questions: {}, workflow_id: "workflow.airline.booking.create", channels: ["chat", "voice"] };
+let root, requests, streams, latestEvaluation, registeredModels, latestCatalog, workspaceCatalogs;
 class EventStream {
-  constructor() {
+  constructor(url) {
+    this.url = url;
     this.listeners = {};
     this.closed = false;
     streams.push(this);
@@ -253,14 +265,26 @@ beforeEach(async () => {
   latestEvaluation = evaluation;
   registeredModels = [];
   latestCatalog = { version: status.catalog_version, intents: catalog };
+  workspaceCatalogs = new Map(presets.slice(1).map(p => [p.workspace, { version: p.workspace + "-version", intents: [airlineIntent] }]));
   globalThis.fetch = async (input, init = {}) => {
-    const path = new URL(input, "http://localhost").pathname;
+    const parsedUrl = new URL(input, "http://localhost");
+    const path = parsedUrl.pathname;
+    const workspace = parsedUrl.searchParams.get("workspace") || "demo";
     const body = init.body ? JSON.parse(init.body) : undefined;
-    requests.push({ path, method: init.method || "GET", body });
+    requests.push({ path, workspace, method: init.method || "GET", body });
     let data;
-    if (path === "/v1/status") data = status;
+    if (path === "/v1/catalog/presets") data = presets;
+    else if (path === "/v1/status") data = workspace === "demo" ? status : { ...status, workspace,
+      catalog_version: workspaceCatalogs.get(workspace).version, intent_count: workspaceCatalogs.get(workspace).intents.length, catalog_min_size: 1 };
+
     else if (path === "/v1/catalog")
-      data = latestCatalog;
+      data = workspace === "demo" ? latestCatalog : workspaceCatalogs.get(workspace);
+    else if (path === "/v1/catalog/intents" && init.method === "POST") {
+      const current = workspace === "demo" ? latestCatalog : workspaceCatalogs.get(workspace);
+      const updated = { version: workspace + "-custom-version", intents: [...current.intents, body.intent] };
+      if (workspace === "demo") latestCatalog = updated; else workspaceCatalogs.set(workspace, updated);
+      data = { version: updated.version, intent_count: updated.intents.length, intent: body.intent };
+    }
     else if (path === "/v1/catalog/audit") data = { catalog_version: latestCatalog.version, tested_intent_count: 26, untested_intent_count: 774,
       seed_migrations: [{ id: "demo-taxonomy-v2", applicable: true, updated_intents: ["transfer.status"], updated_cases: ["seed-011"],
         preserved_intents: [], preserved_cases: ["seed-007"], case_changes: [{ case_id: "seed-011", previous_intent_id: "transfer.status", intent_id: "bank.transfer.eft.status" }] }],
@@ -386,18 +410,17 @@ after(() => {
   rmSync(temporary, { recursive: true, force: true });
 });
 
-test("language switch preserves an in-flight semantic request, its settings and source utterance", async () => {
+test("English interface preserves an in-flight semantic request, its settings and source utterance", async () => {
   await change(document.getElementById("method"), "e5");
-  await change(select("Embedding modeli"), "bge-m3");
+  await change(select("Embedding model"), "bge-m3");
   await click(button(question));
   const request = requests.find((r) => r.path === "/v1/route");
   assert.equal(request.body.user_text, question);
   assert.equal(request.body.embedding_id, "bge-m3");
   assert.equal(request.body.semantic_rejection, "calibrated");
   assert.equal(streams.length, 1);
-  await change(document.querySelector(".language-select select"), "en");
   assert.equal(document.documentElement.lang, "en");
-  assert.equal(document.title, "IntentBench · Banking PoC");
+  assert.equal(document.title, "IntentBench · Decision Model Benchmarks");
   assert.equal(document.getElementById("method").value, "e5");
   assert.equal(select("Embedding model").value, "bge-m3");
   assert.equal(streams[0].closed, false);
@@ -431,11 +454,10 @@ test("language switch preserves an in-flight semantic request, its settings and 
   // Persisted language is restored on a fresh application mount.
   await act(() => root.unmount());
   await mount();
-  assert.equal(document.querySelector(".language-select select").value, "en");
+  assert.equal(document.querySelector(".language-select"), null);
 });
 
 test("English calibration and experiments submit stable API values and show metric definitions", async () => {
-  await change(document.querySelector(".language-select select"), "en");
   await click(button("Calibration"));
   assert.match(
     document.body.textContent,
@@ -481,7 +503,6 @@ test("English calibration and experiments submit stable API values and show metr
 });
 
 test("English catalog and cases retain original content and translate navigation and filters", async () => {
-  await change(document.querySelector(".language-select select"), "en");
   await click(button("Intent catalog"));
   assert.match(document.body.textContent, /Example|examples/);
   assert.ok(document.body.textContent.includes(catalog[0].name));
@@ -496,11 +517,10 @@ test("English catalog and cases retain original content and translate navigation
   );
   await act(() => delay(240));
   assert.match(document.body.textContent, /Awaiting|No cases found/);
-  await change(document.querySelector(".language-select select"), "tr");
-  assert.equal(document.documentElement.lang, "tr");
+  assert.equal(document.documentElement.lang, "en");
   assert.match(
     document.body.textContent,
-    /Gerçek ifadeler, ölçülebilir sonuçlar/,
+    /Real utterances, measurable results/,
   );
 });
 
@@ -517,7 +537,7 @@ test("localized formatting and provider errors preserve values and diagnostics",
     "Embedding: API rate limit or provider capacity reached.",
   );
   assert.equal(
-    translate("en", "  Reddetme skoru: {score} ", { score: 0.9 }),
+    translate("en", "  Rejection score: {score} ", { score: 0.9 }),
     "  Rejection score: 0.9 ",
   );
   assert.equal(translate("en", question), question);
@@ -528,18 +548,17 @@ test("localized formatting and provider errors preserve values and diagnostics",
 });
 
 test("catalog size controls preserve the test cohort and language while multiplying the matrix", async () => {
-  await click(button("Deneyler"));
-  await click(button("Tüm büyüklükleri karşılaştır"));
+  await click(button("Experiments"));
+  await click(button("Compare all sizes"));
   assert.equal(
-    document.querySelector('[aria-label="Aranacak katalog büyüklükleri"]')
+    document.querySelector('[aria-label="Catalog sizes to search"]')
       .value,
     "48, 100, 200, 400, 800",
   );
   assert.match(
     document.querySelector(".matrix-summary").textContent,
-    /5 kombinasyon · 29 vaka · 145 karar/,
+    /5 combinations · 29 cases · 145 decisions/,
   );
-  await change(document.querySelector(".language-select select"), "en");
   assert.equal(
     document.querySelector('[aria-label="Catalog sizes to search"]').value,
     "48, 100, 200, 400, 800",
@@ -563,7 +582,6 @@ test("catalog size controls preserve the test cohort and language while multiply
 });
 
 test("custom catalog sizes are validated and an empty selection cannot start a run", async () => {
-  await change(document.querySelector(".language-select select"), "en");
   await click(button("Experiments"));
   await click(button("800"));
   assert.equal(button("Run evaluation").disabled, true);
@@ -596,12 +614,12 @@ test("custom catalog sizes are validated and an empty selection cannot start a r
 const inputByLabel = (text) =>
   [...document.querySelectorAll("label")]
     .find((element) => element.textContent.trim().startsWith(text))
-    ?.querySelector("input");
+    ?.querySelector("input, textarea");
 async function fillInput(input, value) {
   assert.ok(input, "input exists");
   await act(async () => {
     Object.getOwnPropertyDescriptor(
-      dom.window.HTMLInputElement.prototype,
+      input.tagName === "TEXTAREA" ? dom.window.HTMLTextAreaElement.prototype : dom.window.HTMLInputElement.prototype,
       "value",
     ).set.call(input, value);
     input.dispatchEvent(new Event("input", { bubbles: true }));
@@ -610,7 +628,6 @@ async function fillInput(input, value) {
 }
 
 test("English model registry saves on-prem connections, tests them, and updates experiment choices", async () => {
-  await change(document.querySelector(".language-select select"), "en");
   await click(button("Model catalog"));
   await click(button("Add on-prem model"));
   await fillInput(inputByLabel("Display name"), "Bank GPU");
@@ -671,7 +688,6 @@ test("English model registry saves on-prem connections, tests them, and updates 
 });
 
 test("model editor offers only supported public connections and server key references", async () => {
-  await change(document.querySelector(".language-select select"), "en");
   await click(button("Model catalog"));
   await click(button("Add TypeSafe Jev"));
   assert.deepEqual([...select("Connection type").options].map(option => option.value).sort(),
@@ -681,9 +697,8 @@ test("model editor offers only supported public connections and server key refer
 });
 
 test("TypeSafe Jev registers directly and works in live and experiment selections", async () => {
-  await click(button("Model kataloğu"));
-  assert.ok(button("TypeSafe Jev ekle"));
-  await change(document.querySelector(".language-select select"), "en");
+  await click(button("Model catalog"));
+  assert.ok(button("Add TypeSafe Jev"));
   await click(button("Add TypeSafe Jev"));
   assert.equal(select("Connection type").value, "typesafe");
   assert.equal(select("Model type").value, "llm");
@@ -748,7 +763,6 @@ test("TypeSafe Jev registers directly and works in live and experiment selection
 });
 
 test("OpenRouter discovery imports both model kinds with advertised response settings", async () => {
-  await change(document.querySelector(".language-select select"), "en");
   await click(button("Model catalog"));
   await click(button("Discover on OpenRouter"));
   await act(() => delay(300));
@@ -797,15 +811,15 @@ test("new connections are selected when env defaults are unavailable", async () 
   };
   await act(() => root.unmount());
   await mount();
-  assert.equal(select("Embedding modeli").value, "custom_embedding");
-  assert.equal(select("Karar modeli (LLM)").value, "custom_llm");
-  await click(button("Deneyler"));
+  assert.equal(select("Embedding model").value, "custom_embedding");
+  assert.equal(select("Decision model (LLM)").value, "custom_llm");
+  await click(button("Experiments"));
   await click(
     [...document.querySelectorAll(".method-checks label")]
-      .find((label) => label.textContent.includes("Hibrit arama + LLM"))
+      .find((label) => label.textContent.includes("Hybrid retrieval + LLM"))
       .querySelector("input"),
   );
-  await click(button("Değerlendirmeyi çalıştır"));
+  await click(button("Run evaluation"));
   const experiment = requests.find(
     (r) => r.path === "/v1/evaluations" && r.method === "POST",
   );
@@ -814,10 +828,10 @@ test("new connections are selected when env defaults are unavailable", async () 
 });
 
 const mapViews = [
-  "Workflow haritası",
-  "Dairesel harita",
-  "Intent galaksisi",
-  "Intent mozaiği",
+  "Workflow map",
+  "Radial map",
+  "Intent galaxy",
+  "Intent mosaic",
 ];
 const mapCandidate = (id, score = 0.9) => {
   const intent = catalog.find((item) => item.intent_id === id);
@@ -840,7 +854,7 @@ const liveStages = [
   {
     id: 1,
     stage: "context",
-    label: "Konuşma bağlamı hazır",
+    label: "Conversation context ready",
     catalog_version: "catalog-version",
     at: 100,
   },
@@ -855,14 +869,14 @@ const liveStages = [
   {
     id: 3,
     stage: "selection",
-    label: "Intent kararı üretildi",
+    label: "Intent decision produced",
     catalog_version: "catalog-version",
     at: 102,
   },
   {
     id: 4,
     stage: "policy",
-    label: "Karar ve workflow eşlemesi doğrulandı",
+    label: "Decision and workflow mapping validated",
     catalog_version: "catalog-version",
     at: 103,
   },
@@ -909,12 +923,12 @@ async function sendText(value) {
     ).set.call(element, value);
     element.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  await click(document.querySelector('button[aria-label="Mesajı gönder"]'));
+  await click(document.querySelector('button[aria-label="Send message"]'));
 }
 
 test("all live views share one request, show early candidates and select the actual decision", async () => {
   const conversation = document.querySelector(".conversation");
-  await click(button("Workflow haritası"));
+  await click(button("Workflow map"));
   await click(button(question));
   const stream = streams[0];
   await act(async () => {
@@ -930,7 +944,7 @@ test("all live views share one request, show early candidates and select the act
     document.querySelectorAll('.routing-intent[data-state="selected"]').length,
     0,
   );
-  for (const label of [...mapViews.slice(1), "Standart", mapViews[0]]) {
+  for (const label of [...mapViews.slice(1), "Standard", mapViews[0]]) {
     await click(button(label));
     assert.equal(document.querySelector(".conversation"), conversation);
     assert.equal(stream.closed, false);
@@ -954,7 +968,7 @@ test("all live views share one request, show early candidates and select the act
     assert.equal(document.querySelectorAll(".routing-map").length, 1);
     assert.match(
       document.querySelector(".routing-workflow").textContent,
-      /Yeni limit.*Bekleniyor/s,
+      /New limit.*Pending/s,
     );
     assert.match(
       document.querySelector(".routing-statusbar").textContent,
@@ -962,13 +976,12 @@ test("all live views share one request, show early candidates and select the act
     );
   }
   assert.equal(requests.filter((r) => r.path === "/v1/route").length, 1);
-  await click(button("Tüm katalog"));
+  await click(button("Full catalog"));
   assert.equal(document.querySelectorAll(".routing-intent").length, 800);
   assert.equal(
     document.querySelectorAll('.routing-intent[data-state="selected"]').length,
     1,
   );
-  await change(document.querySelector(".language-select select"), "en");
   assert.ok(button("Intent mosaic"));
   assert.match(
     document.querySelector(".routing-visualization").textContent,
@@ -983,30 +996,30 @@ test("all live views share one request, show early candidates and select the act
 });
 
 test("visual replay never sends a request and reset discards stale events and old playback", async () => {
-  await click(button("Intent galaksisi"));
+  await click(button("Intent galaxy"));
   await click(button(question));
   const oldStream = streams[0];
   await deliver(liveDecision());
   const before = requests.length;
-  await click(button("Tekrar oynat"));
+  await click(button("Replay"));
   assert.match(
     document.querySelector(".routing-statusbar").textContent,
-    /TEKRAR OYNATMA/,
+    /REPLAY/,
   );
   assert.equal(
     document.querySelectorAll('.routing-intent[data-state="selected"]').length,
     0,
   );
-  await click(button("Duraklat"));
-  await click(button("Dairesel harita"));
-  assert.ok(button("Devam et"));
+  await click(button("Pause"));
+  await click(button("Radial map"));
+  assert.ok(button("Resume"));
   assert.equal(requests.length, before);
   assert.ok(
     document
       .querySelector(".chat-body")
       .textContent.includes("Yeni kart limitiniz kaç TL olsun?"),
   );
-  await click(button("Yeni konuşma"));
+  await click(button("New conversation"));
   await act(async () =>
     oldStream.emit("stage", {
       id: 99,
@@ -1024,12 +1037,12 @@ test("visual replay never sends a request and reset discards stale events and ol
   assert.ok(
     !document
       .querySelector(".routing-statusbar")
-      .textContent.includes("TEKRAR OYNATMA"),
+      .textContent.includes("REPLAY"),
   );
   assert.ok(!document.body.textContent.includes("STALE"));
   assert.equal(
     document.querySelector(".demo-view-picker [aria-pressed=true]").textContent,
-    "Dairesel harita",
+    "Radial map",
   );
   await click(button(question));
   await act(async () =>
@@ -1050,8 +1063,8 @@ test("clarification, rejection, handoff, cancellation and errors never look like
     "cancel",
     "error",
   ]) {
-    await click(button("Yeni konuşma"));
-    await click(button("Workflow haritası"));
+    await click(button("New conversation"));
+    await click(button("Workflow map"));
     await click(button(question));
     await deliver(
       liveDecision({
@@ -1088,7 +1101,7 @@ test("clarification, rejection, handoff, cancellation and errors never look like
 });
 
 test("contextual slot replies and confirmation use the active workflow without stale retrieval candidates", async () => {
-  await click(button("Workflow haritası"));
+  await click(button("Workflow map"));
   await click(button(question));
   await deliver(liveDecision());
   await sendText("3000");
@@ -1125,7 +1138,7 @@ test("contextual slot replies and confirmation use the active workflow without s
   assert.ok(
     !document
       .querySelector(".routing-trace")
-      .textContent.includes("Aday arama"),
+      .textContent.includes("Candidate retrieval"),
   );
   await sendText("evet");
   await deliver(
@@ -1191,7 +1204,6 @@ test("map geometry represents each catalog intent once and remains within narrow
 });
 
 test("retrieval strategy matrix preserves the cohort and submits explicit validated budgets", async () => {
-  await change(document.querySelector(".language-select select"), "en");
   await click(button("Experiments"));
   await click([...document.querySelectorAll(".method-checks label")].find(l => l.textContent.includes("Hybrid retrieval + LLM")).querySelector("input"));
   await click(document.querySelector(".strategy-toggle > label input"));
@@ -1213,7 +1225,6 @@ test("retrieval strategy matrix preserves the cohort and submits explicit valida
 });
 
 test("controlled reranker comparison submits identical retrieval and LLM budgets", async () => {
-  await change(document.querySelector(".language-select select"), "en");
   await click(button("Experiments"));
   await click([...document.querySelectorAll(".method-checks label")].find(l => l.textContent.includes("Hybrid retrieval + LLM")).querySelector("input"));
   await click(document.querySelector(".strategy-toggle > label input"));
@@ -1232,7 +1243,6 @@ test("controlled reranker comparison submits identical retrieval and LLM budgets
 });
 
 test("catalog review exposes versioned demo relabeling and preserved edits in English", async () => {
-  await change(document.querySelector(".language-select select"), "en");
   await click(button("Intent catalog"));
   await click(button("Audit catalog"));
   assert.match(document.body.textContent, /Demo taxonomy version: demo-taxonomy-v2/);
@@ -1242,7 +1252,6 @@ test("catalog review exposes versioned demo relabeling and preserved edits in En
 });
 
 test("custom TEI reranker can be registered and selected in live demo without exposing a key", async () => {
-  await change(document.querySelector(".language-select select"), "en");
   await click(button("Model catalog"));
   await click(button("Add reranker"));
   assert.equal(select("Model type").value, "reranker");
@@ -1272,7 +1281,7 @@ test("stage diagnostics distinguish a retrieval miss from a selection error in E
     const response = await baseFetch(url, init);
     if (new URL(url, "http://localhost").pathname !== "/v1/evaluations/eval-1") return response;
     return { ok: true, json: async () => ({ ...evaluation, results: { hybrid: { ...evaluation.results.e5,
-      method: "hybrid_llm", retrieval_profile: { name: "Semantik adaylar + LLM", pool_k: 20, candidate_k: 20 },
+      method: "hybrid_llm", retrieval_profile: { name: "Semantic candidates + LLM", pool_k: 20, candidate_k: 20 },
       metrics: { ...metrics, stage_quality: { protocol: "routing-stage-quality-v1", routing_total: 3, retrieval_completed: 3, context_bypasses: 0, retrieval_incomplete: 0,
         stages: { semantic: { hits: 2, total: 3, recall: 2/3 }, lexical: { hits: 0, total: 0, recall: null }, pool: { hits: 2, total: 3, recall: 2/3 }, final: { hits: 2, total: 3, recall: 2/3 } },
         candidate_conditioned_accuracy: .5, candidate_conditioned_correct: 1, candidate_conditioned_total: 2,
@@ -1280,7 +1289,6 @@ test("stage diagnostics distinguish a retrieval miss from a selection error in E
       records: [{ ...record, correct: false, analysis: { category: "selection_error", expected_ranks: { semantic: 2, lexical: null, pool: 2, final: 2 } },
         candidates: [{ intent_id: "card.limit.change", name: "Kart limit değişikliği", score: .8, score_type: "cosine_similarity" }] }] } } }) };
   };
-  await change(document.querySelector(".language-select select"), "en");
   await click(button("Experiments"));
   await click(button("Run evaluation"));
   assert.match(document.querySelector(".retrieval-diagnostics").textContent, /Where is accuracy lost/);
@@ -1292,7 +1300,6 @@ test("stage diagnostics distinguish a retrieval miss from a selection error in E
 });
 
 test("catalog audit edits are versioned and preserve original labels and source language", async () => {
-  await change(document.querySelector(".language-select select"), "en");
   await click(button("Intent catalog"));
   // Another browser edits the server catalog after this page has loaded its props.
   latestCatalog = { version: "other-session-version", intents: catalog.map(i => i.intent_id === "transfer.status"
@@ -1316,4 +1323,280 @@ test("catalog audit edits are versioned and preserve original labels and source 
   assert.equal(edit.body.intent.workflow_id, catalog.find(i => i.intent_id === "transfer.status").workflow_id);
   assert.ok(!requests.some(r => r.path.startsWith("/v1/cases/") && r.method === "PATCH"));
   assert.match(document.body.textContent, /New catalog version saved/);
+});
+
+test("interface is English even when a previous installation stored Turkish", async () => {
+  await act(() => root.unmount());
+  localStorage.setItem("intent-studio-language", "tr");
+  await mount();
+  assert.equal(document.documentElement.lang, "en");
+  assert.equal(document.title, "IntentBench · Decision Model Benchmarks");
+  assert.ok(button("Intent catalog"));
+  assert.equal(document.querySelector(".language-select"), null);
+  assert.match(document.body.textContent, /Decision model benchmarks/);
+});
+
+test("sector selection isolates catalog, requests and streams and restores the saved workspace", async () => {
+  await click(button(question));
+  const oldStream = streams[0];
+  assert.match(oldStream.url, /workspace=demo/);
+  await change(document.querySelector('[aria-label="Sector workspace"]'), "airline");
+  assert.equal(oldStream.closed, true);
+  assert.ok(button("I want to book a flight."));
+  assert.equal(button(question), undefined);
+  await click(button("I want to book a flight."));
+  assert.equal(requests.filter(r => r.path === "/v1/route").at(-1).workspace, "airline");
+  assert.equal(requests.filter(r => r.path === "/v1/sessions").at(-1).workspace, "airline");
+  assert.match(streams[1].url, /workspace=airline/);
+  await act(async () => oldStream.emit("result", { status: "completed", result: { ...record, message: "STALE BANKING RESULT" } }));
+  assert.doesNotMatch(document.body.textContent, /STALE BANKING RESULT/);
+  await act(() => root.unmount());
+  await mount();
+  assert.equal(document.querySelector('[aria-label="Sector workspace"]').value, "airline");
+  assert.ok(button("I want to book a flight."));
+});
+
+test("custom intents append to the selected sector and survive switching without translating input", async () => {
+  await change(document.querySelector('[aria-label="Sector workspace"]'), "airline");
+  await click(button("Intent catalog"));
+  await click(button("Add intent"));
+  await fillInput(inputByLabel("Intent ID"), "airline.lounge.reserve");
+  await fillInput(inputByLabel("Intent name"), "Reserve a lounge");
+  await fillInput(inputByLabel("Domain"), "Airport services");
+  await fillInput(inputByLabel("Workflow ID"), "workflow.airline.lounge.reserve");
+  await fillInput(inputByLabel("Description"), "Reserve airport lounge access.");
+  await fillInput(inputByLabel("Examples"), "Lounge erişimi ayırtmak istiyorum.");
+  await click(button("Save intent"));
+  const created = requests.find(r => r.path === "/v1/catalog/intents" && r.method === "POST");
+  assert.equal(created.workspace, "airline");
+  assert.equal(created.body.expected_version, "airline-version");
+  assert.deepEqual(created.body.intent.examples, ["Lounge erişimi ayırtmak istiyorum."]);
+  assert.deepEqual(created.body.intent.channels, ["chat", "voice"]);
+  assert.match(document.body.textContent, /Reserve a lounge/);
+  assert.match(document.body.textContent, /Book a flight/);
+  await change(document.querySelector('[aria-label="Sector workspace"]'), "demo");
+  await click(button("Intent catalog"));
+  assert.doesNotMatch(document.body.textContent, /Reserve a lounge/);
+  await change(document.querySelector('[aria-label="Sector workspace"]'), "airline");
+  await click(button("Intent catalog"));
+  assert.match(document.body.textContent, /Reserve a lounge/);
+});
+
+test("aborting a fallback poll prevents late stage callbacks and retains the original workspace", async () => {
+  const originalFetch = globalThis.fetch;
+  let release;
+  let pollSignal;
+  let pollWorkspace;
+  globalThis.fetch = async (input, init) => {
+    if (new URL(input, "http://localhost").pathname === "/v1/requests/pending-route") {
+      pollSignal = init.signal;
+      pollWorkspace = new URL(input, "http://localhost").searchParams.get("workspace");
+      return new Promise(resolve => { release = resolve; });
+    }
+    return originalFetch(input, init);
+  };
+  const controller = new AbortController();
+  const delivered = [];
+  const client = createWorkspaceClient("airline");
+  const waiting = client.waitForRoute("pending-route", stage => delivered.push(stage), controller.signal);
+  const rejected = assert.rejects(waiting, error => error.name === "AbortError");
+  streams.at(-1).onerror();
+  await act(() => delay(800));
+  assert.equal(pollWorkspace, "airline");
+  controller.abort();
+  await rejected;
+  release({ ok: true, json: async () => ({ status: "completed", events: [{ id: 99, stage: "selection" }] }) });
+  await flush();
+  assert.deepEqual(delivered, []);
+  assert.equal(pollSignal, controller.signal);
+});
+
+test("a stale custom-intent form retains edits and can refresh its version before retrying", async () => {
+  await change(document.querySelector('[aria-label="Sector workspace"]'), "airline");
+  await click(button("Intent catalog"));
+  await click(button("Add intent"));
+  await fillInput(inputByLabel("Intent ID"), "airline.pet.travel");
+  await fillInput(inputByLabel("Intent name"), "Travel with a pet");
+  await fillInput(inputByLabel("Domain"), "Travel preparation");
+  await fillInput(inputByLabel("Workflow ID"), "workflow.airline.pet.travel");
+  await fillInput(inputByLabel("Description"), "Arrange travel with a pet.");
+  await fillInput(inputByLabel("Examples"), "I want to fly with my dog.");
+  const originalFetch = globalThis.fetch;
+  let stale = true;
+  globalThis.fetch = async (input, init) => {
+    if (new URL(input, "http://localhost").pathname === "/v1/catalog/intents" && stale) {
+      stale = false;
+      workspaceCatalogs.set("airline", { version: "changed-elsewhere", intents: [airlineIntent] });
+      return { ok: false, json: async () => ({ detail: "The catalog changed. Refresh the catalog before retrying." }) };
+    }
+    return originalFetch(input, init);
+  };
+  await click(button("Save intent"));
+  assert.match(document.querySelector('[role="alert"]').textContent, /catalog changed/);
+  assert.equal(inputByLabel("Intent ID").value, "airline.pet.travel");
+  await click(button("Refresh catalog"));
+  await click(button("Save intent"));
+  assert.equal(requests.find(r => r.path === "/v1/catalog/intents").body.expected_version, "changed-elsewhere");
+  assert.match(document.body.textContent, /Travel with a pet/);
+});
+
+test("late catalog loading cannot replace the newly selected workspace", async () => {
+  const originalFetch = globalThis.fetch;
+  let release;
+  globalThis.fetch = async (input, init) => {
+    const parsed = new URL(input, "http://localhost");
+    if (parsed.pathname === "/v1/catalog" && parsed.searchParams.get("workspace") === "demo") {
+      return new Promise(resolve => { release = resolve; });
+    }
+    return originalFetch(input, init);
+  };
+  await act(() => root.unmount());
+  await mount();
+  await change(document.querySelector('[aria-label="Sector workspace"]'), "airline");
+  assert.ok(button("I want to book a flight."));
+  release({ ok: true, json: async () => latestCatalog });
+  await flush();
+  assert.equal(document.querySelector('[aria-label="Sector workspace"]').value, "airline");
+  assert.ok(button("I want to book a flight."));
+  assert.equal(button(question), undefined);
+});
+
+test("model setup opens read-only with explicit shared-key instructions and selected-model readiness", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    if (new URL(input, "http://localhost").pathname === "/v1/setup") return { ok: true, json: async () => ({
+      workspace: "demo", catalog_version: "catalog-version", shared_openrouter_key_present: false,
+      embedding: { id: "default", model: "embedding", configured: true },
+      llm: { id: "default", model: "llm", configured: true },
+      index: { state: "missing", representation: "combined" }, calibration: { state: "missing_or_stale" },
+    }) };
+    return originalFetch(input, init);
+  };
+  const postsBefore = requests.filter(r => r.method === "POST").length;
+  await click(button("Model connections"));
+  const dialog = document.querySelector('section[aria-label="Model connections"]');
+  assert.match(dialog.textContent, /Model setup/);
+  assert.match(dialog.textContent, /INTENT_OPENROUTER_API_KEY/);
+  assert.match(dialog.textContent, /recreate the container/);
+  assert.match(dialog.textContent, /Not present/);
+  assert.match(dialog.textContent, /Not tested in this session/);
+  assert.match(dialog.textContent, /Index missing/);
+  assert.match(dialog.textContent, /Missing or stale/);
+  assert.match(dialog.textContent, /Lexical and hybrid routing do not require/);
+  assert.equal(requests.filter(r => r.method === "POST").length, postsBefore);
+  assert.equal(button("Test embedding connection").disabled, false);
+  assert.ok(button("Open experiments"));
+});
+
+test("refreshing model catalog connections clears previous probe evidence", async () => {
+  await click(button("Model catalog"));
+  await click(button("Add TypeSafe Jev"));
+  await click(button("Save model"));
+  await click(button("Test connection"));
+  assert.match(document.body.textContent, /Test passed/);
+  await click(button("Refresh connections"));
+  assert.doesNotMatch(document.body.textContent, /Test passed/);
+});
+
+function setupBody(url) {
+  return {
+    workspace: url.searchParams.get("workspace"), catalog_version: "catalog-version", shared_openrouter_key_present: true,
+    embedding: { id: url.searchParams.get("embedding_id"), model: "embedding", configured: true },
+    llm: { id: url.searchParams.get("llm_id"), model: "llm", configured: true },
+    index: { state: "present", representation: "combined" }, calibration: { state: "current" },
+  };
+}
+
+test("setup tests only on request and discards pending evidence after selection or refresh", async () => {
+  const originalFetch = globalThis.fetch;
+  const probes = [];
+  let release;
+  let defer = false;
+  globalThis.fetch = async (input, init) => {
+    const url = new URL(input, "http://localhost");
+    if (url.pathname === "/v1/setup") return { ok: true, json: async () => setupBody(url) };
+    if (url.pathname.startsWith("/v1/models/") && url.pathname.endsWith("/check")) {
+      probes.push({ path: url.pathname, workspace: url.searchParams.get("workspace"), method: init.method });
+      const result = { ok: true, json: async () => ({ ok: true, elapsed_ms: 12, accuracy_benchmark: false, model: "selected" }) };
+      return defer ? new Promise(resolve => { release = () => resolve(result); }) : result;
+    }
+    return originalFetch(input, init);
+  };
+  await click(button("Model connections"));
+  assert.deepEqual(probes, []);
+  await click(button("Test embedding connection"));
+  assert.match(document.querySelector(".setup-content").textContent, /Test passed.*current session only/);
+  assert.deepEqual(probes, [{ path: "/v1/models/embedding/default/check", workspace: "demo", method: "POST" }]);
+  await click(button("Refresh connections"));
+  assert.doesNotMatch(document.querySelector(".setup-content").textContent, /Test passed/);
+  assert.equal(probes.length, 1);
+  defer = true;
+  await click(button("Test embedding connection"));
+  await change(select("Setup embedding model"), "bge-m3");
+  await act(async () => { release(); await delay(); });
+  assert.doesNotMatch(document.querySelector(".setup-content").textContent, /Test passed/);
+  await click(button("Test embedding connection"));
+  await click(button("Refresh connections"));
+  await act(async () => { release(); await delay(); });
+  assert.doesNotMatch(document.querySelector(".setup-content").textContent, /Test passed/);
+  await click(button("Open calibration"));
+  assert.equal(document.querySelector(".setup-content"), null);
+  assert.ok(button("Fit thresholds"));
+});
+
+test("setup retries read-only failures and selects configured registrations when defaults are unavailable", async () => {
+  const originalFetch = globalThis.fetch;
+  const reads = [];
+  let fail = true;
+  globalThis.fetch = async (input, init) => {
+    const url = new URL(input, "http://localhost");
+    if (url.pathname === "/v1/models") return { ok: true, json: async () => ({ ...status.models,
+      embedding: [{ ...status.models.embedding[0], available: false }, model("model_embedding", "Private embedding", "private-embedding")],
+      llm: [{ ...status.models.llm[0], available: false }, model("model_llm", "Private LLM", "private-llm")],
+    }) };
+    if (url.pathname === "/v1/setup") {
+      reads.push(url);
+      return fail ? { ok: false, json: async () => ({ detail: "Readiness temporarily unavailable" }) }
+        : { ok: true, json: async () => setupBody(url) };
+    }
+    return originalFetch(input, init);
+  };
+  await act(() => root.unmount());
+  await mount();
+  await change(document.querySelector('[aria-label="Sector workspace"]'), "airline");
+  await click(button("Model connections"));
+  assert.match(document.querySelector('.setup-content [role="alert"]').textContent, /Readiness temporarily unavailable/);
+  assert.equal(button("Test embedding connection").disabled, true);
+  assert.equal(select("Setup embedding model").value, "model_embedding");
+  assert.equal(select("Setup LLM model").value, "model_llm");
+  fail = false;
+  await click(button("Retry readiness"));
+  assert.equal(document.querySelector('.setup-content [role="alert"]'), null);
+  assert.equal(button("Test embedding connection").disabled, false);
+  assert.ok(reads.every(url => url.searchParams.get("workspace") === "airline"));
+  assert.ok(reads.every(url => url.searchParams.get("embedding_id") === "model_embedding"));
+  assert.ok(!requests.some(request => request.method === "POST"));
+});
+
+test("a late model-catalog probe cannot restore success after setup refreshes connections", async () => {
+  await click(button("Model catalog"));
+  await click(button("Add TypeSafe Jev"));
+  await click(button("Save model"));
+  const originalFetch = globalThis.fetch;
+  let release;
+  globalThis.fetch = async (input, init) => {
+    const url = new URL(input, "http://localhost");
+    if (url.pathname === "/v1/setup") return { ok: true, json: async () => setupBody(url) };
+    if (url.pathname === "/v1/model-registry/model_0/check") return new Promise(resolve => {
+      release = () => resolve({ ok: true, json: async () => ({ ok: true, elapsed_ms: 12 }) });
+    });
+    return originalFetch(input, init);
+  };
+  await click(button("Test connection"));
+  await click(button("Model connections"));
+  await click([...document.querySelectorAll('.setup-content button')].find(button => button.textContent === "Refresh connections"));
+  await click(document.querySelector('button[aria-label="Close"]'));
+  await act(async () => { release(); await delay(); });
+  assert.doesNotMatch(document.body.textContent, /Test passed/);
+  assert.equal(button("Test connection").disabled, false);
 });

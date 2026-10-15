@@ -1,3 +1,5 @@
+import { WorkspaceProvider, useWorkspaceApi, type CatalogPreset } from "./workspace";
+import { createWorkspaceClient } from "./api";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Activity,
@@ -25,9 +27,7 @@ import {
   X,
 } from "lucide-react";
 import {
-  api,
   download,
-  waitForRoute,
   type Candidate,
   type Case,
   type Decision,
@@ -50,11 +50,13 @@ import { CaseComparison } from "./CaseComparison";
 import Calibration, { RejectionControl, RejectionSummary } from "./Calibration";
 import { CatalogSizes, parseCatalogSizes } from "./CatalogSizes";
 import Models from "./Models";
+import Setup from "./Setup";
 import { RetrievalProfiles, initialProfiles, selectedProfiles, profilesValid } from "./RetrievalProfiles";
 import { RetrievalDiagnostics, CandidateTrace } from "./RetrievalDiagnostics";
 import CatalogQuality from "./CatalogQuality";
+import AddIntent from "./AddIntent";
 import "./retrieval-quality.css";
-import { LanguageSelect, useI18n, type Translate } from "./i18n";
+import { useI18n, type Translate } from "./i18n";
 import RoutingVisualization from "./RoutingVisualization";
 import {
   demoViews,
@@ -68,35 +70,35 @@ import {
 import "./routing-visualization.css";
 
 const nav = [
-  { id: "demo", label: "Canlı demo", icon: MessageSquare },
-  { id: "catalog", label: "Intent kataloğu", icon: Layers3 },
-  { id: "models", label: "Model kataloğu", icon: Database },
-  { id: "cases", label: "Vakalar", icon: FileCheck2 },
-  { id: "calibration", label: "Kalibrasyon", icon: Settings2 },
-  { id: "experiments", label: "Deneyler", icon: FlaskConical },
+  { id: "demo", label: "Live demo", icon: MessageSquare },
+  { id: "catalog", label: "Intent catalog", icon: Layers3 },
+  { id: "models", label: "Model catalog", icon: Database },
+  { id: "cases", label: "Cases", icon: FileCheck2 },
+  { id: "calibration", label: "Calibration", icon: Settings2 },
+  { id: "experiments", label: "Experiments", icon: FlaskConical },
 ];
 const decisionNames: Record<string, string> = {
-  route: "Yönlendirildi",
-  continue: "Akış sürüyor",
-  clarify: "Netleştirme gerekli",
-  cancel: "İptal edildi",
-  out_of_scope: "Kapsam dışı",
-  handoff: "Temsilciye aktarım",
-  error: "Bağlantı hatası",
+  route: "Routed",
+  continue: "Workflow in progress",
+  clarify: "Clarification needed",
+  cancel: "Cancelled",
+  out_of_scope: "Out of scope",
+  handoff: "Agent handoff",
+  error: "Connection error",
 };
 const methodNames: Record<string, string> = {
-  lexical: "Sözcüksel referans",
-  e5: "Semantik arama",
-  hybrid_llm: "Hibrit arama + LLM",
+  lexical: "Lexical baseline",
+  e5: "Semantic search",
+  hybrid_llm: "Hybrid retrieval + LLM",
 };
 const resultMethod = (id: string, result: EvaluationResult) =>
   result.method || id;
 const resultLabel = (id: string, result: EvaluationResult, t: Translate) =>
-  `${t(result.retrieval_profile?.name || methodNames[resultMethod(id, result)] || "Deney")} · ${result.model_labels?.[resultMethod(id, result) === "hybrid_llm" ? "llm" : "embedding"] || result.model}${resultMethod(id, result) === "hybrid_llm" && result.embedding ? " + " + (result.model_labels?.embedding || result.embedding.model) : ""}${result.catalog ? " · " + t("{count} intent", { count: result.catalog.intent_count }) : ""}`;
+  `${t(result.retrieval_profile?.name || methodNames[resultMethod(id, result)] || "Experiment")} · ${result.model_labels?.[resultMethod(id, result) === "hybrid_llm" ? "llm" : "embedding"] || result.model}${resultMethod(id, result) === "hybrid_llm" && result.embedding ? " + " + (result.model_labels?.embedding || result.embedding.model) : ""}${result.catalog ? " · " + t("{count} intents", { count: result.catalog.intent_count }) : ""}`;
 const slotNames: Record<string, string> = {
-  new_limit: "Yeni limit",
-  card_last4: "Kartın son dört hanesi",
-  transfer_reference: "Transfer referansı",
+  new_limit: "New limit",
+  card_last4: "Last four card digits",
+  transfer_reference: "Transfer reference",
 };
 
 function ErrorBox({ message }: { message: string }) {
@@ -134,7 +136,45 @@ function Empty({
   );
 }
 
+const PRESET_STORAGE_KEY = "intent-studio-workspace";
+const presetClient = createWorkspaceClient("demo");
+function savedWorkspace() {
+  try { return localStorage.getItem(PRESET_STORAGE_KEY) || "demo"; } catch { return "demo"; }
+}
+
 export default function App() {
+  const [presets, setPresets] = useState<CatalogPreset[]>([]);
+  const [workspace, setWorkspace] = useState(savedWorkspace);
+  const [error, setError] = useState("");
+  const [reload, setReload] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    presetClient.api<CatalogPreset[]>("/catalog/presets", { signal: controller.signal })
+      .then(items => {
+        if (controller.signal.aborted) return;
+        if (!items.length) throw new Error("No sector presets are available.");
+        setPresets(items);
+        setWorkspace(current => items.some(item => item.workspace === current) ? current : items[0].workspace);
+        setError("");
+      })
+      .catch(e => { if (!controller.signal.aborted) setError((e as Error).message); });
+    return () => controller.abort();
+  }, [reload]);
+  function selectWorkspace(value: string) {
+    setWorkspace(value);
+    try { localStorage.setItem(PRESET_STORAGE_KEY, value); } catch { /* Selection works without storage. */ }
+  }
+  const selected = presets.find(item => item.workspace === workspace);
+  if (!selected) return <div className="loading-page">{error ? <div><ErrorBox message={error} /><button className="button" onClick={() => setReload(value => value + 1)}>Retry</button></div> : "Loading sector workspaces…"}</div>;
+  return <WorkspaceProvider key={workspace} workspace={workspace}>
+    <WorkspaceApp preset={selected} presets={presets} onWorkspaceChange={selectWorkspace} />
+  </WorkspaceProvider>;
+}
+
+function WorkspaceApp({ preset, presets, onWorkspaceChange }: {
+  preset: CatalogPreset; presets: CatalogPreset[]; onWorkspaceChange: (workspace: string) => void;
+}) {
+  const { api } = useWorkspaceApi();
   const { t, locale, tag, ms, pct } = useI18n();
   const [page, setPage] = useState("demo");
   const [status, setStatus] = useState<Status>();
@@ -145,13 +185,16 @@ export default function App() {
   useEffect(() => {
     if (settingsOpen) settingsDialog.current?.showModal();
   }, [settingsOpen]);
+  const refreshGeneration = useRef(0);
   const refresh = useCallback(async () => {
+    const generation = ++refreshGeneration.current;
     try {
       const [s, c, models] = await Promise.all([
         api<Status>("/status"),
         api<{ version: string; intents: Intent[] }>("/catalog"),
         api<ModelCatalog>("/models"),
       ]);
+      if (generation !== refreshGeneration.current) return;
       setStatus({
         ...s,
         models,
@@ -161,11 +204,12 @@ export default function App() {
       setCatalog(c.intents);
       setError("");
     } catch (e) {
-      setError((e as Error).message);
+      if (generation === refreshGeneration.current) setError((e as Error).message);
     }
-  }, []);
+  }, [api]);
   useEffect(() => {
     void refresh();
+    return () => { refreshGeneration.current++; };
   }, [refresh]);
   return (
     <div className="shell">
@@ -191,12 +235,12 @@ export default function App() {
             <Database size={18} />
           </div>
           <div>
-            <strong>{t("Bankacılık")}</strong>
-            <span>{t("PoC çalışma alanı")}</span>
+            <strong>{preset.name}</strong>
+            <span>{t("Decision model benchmarks")}</span>
           </div>
         </div>
-        <div className="nav-label">{t("ÇALIŞMA ALANI")}</div>
-        <nav aria-label={t("Ana menü")}>
+        <div className="nav-label">{t("WORKSPACE")}</div>
+        <nav aria-label={t("Main navigation")}>
           {nav.map((item) => (
             <button
               key={item.id}
@@ -215,14 +259,14 @@ export default function App() {
           <div className="system-note">
             <ShieldCheck size={18} />
             <span>
-              {t("İşlem simülasyonu")}
+              {t("Workflow simulation")}
               <br />
-              <small>{t("On-prem uyumlu mimari")}</small>
+              <small>{t("On-premises compatible architecture")}</small>
             </span>
           </div>
           <button className="nav-item" onClick={() => setSettingsOpen(true)}>
             <Settings2 size={18} />
-            {t("Model bağlantıları")}
+            {t("Model connections")}
           </button>
           <div className="sidebar-version">
             {t("INTENTBENCH ")}
@@ -233,20 +277,24 @@ export default function App() {
       <main>
         <header className="topbar">
           <div className="breadcrumb">
-            {t("Çalışma alanı ")}
+            {t("Workspace ")}
             <span>/</span>{" "}
             <strong>{t(nav.find((n) => n.id === page)?.label)}</strong>
           </div>
           <div className="topbar-actions">
-            <LanguageSelect />
-            <Badge tone="blue">{t("BANKACILIK PoC")}</Badge>
+            <label className="sector-select">
+              <span>Sector workspace</span>
+              <select aria-label="Sector workspace" value={preset.workspace} onChange={event => onWorkspaceChange(event.target.value)}>
+                {presets.map(item => <option key={item.id} value={item.workspace}>{item.name}</option>)}
+              </select>
+            </label>
           </div>
         </header>
         {error && (
           <div className="page-pad">
             <ErrorBox message={error} />
             <button className="button subtle" onClick={() => void refresh()}>
-              {t("Yeniden bağlan")}
+              {t("Reconnect")}
             </button>
           </div>
         )}
@@ -254,14 +302,14 @@ export default function App() {
           !error && (
             <div className="loading-page">
               <LoaderCircle className="spin" />
-              {t("Çalışma alanı yükleniyor…")}
+              {t("Loading workspace…")}
             </div>
           )
         ) : (
           <>
             {page === "demo" && <Demo status={status} catalog={catalog} />}
             {page === "catalog" && (
-              <Catalog catalog={catalog} refresh={refresh} />
+              <Catalog catalog={catalog} version={status.catalog_version} refresh={refresh} />
             )}
             {page === "cases" && (
               <Cases catalog={catalog} status={status} refresh={refresh} />
@@ -283,73 +331,20 @@ export default function App() {
             className="settings-panel"
             role="dialog"
             aria-modal="true"
-            aria-label={t("Model bağlantıları")}
+            aria-label={t("Model connections")}
             onClick={(e) => e.stopPropagation()}
           >
             <button
               className="icon-button close"
-              aria-label={t("Kapat")}
+              aria-label={t("Close")}
               onClick={() => setSettingsOpen(false)}
             >
               <X />
             </button>
-            <p className="eyebrow">{t("MODEL BAĞLANTILARI")}</p>
-            <h2>
-              {t("Cloud’da başla.")}
-              <br />
-              {t("On-prem’e taşı.")}
-            </h2>
-            <p>
-              {t(
-                "LLM ve embedding modellerini OpenRouter üzerinden veya kendi sunucunuzda çalıştırabilirsiniz.",
-              )}
-            </p>
-            <div className="setting-row">
-              <span>{t("Seçim modeli")}</span>
-              <strong>{status?.llm_model}</strong>
-              <Badge tone={status?.llm_configured ? "green" : "amber"}>
-                {status?.llm_configured
-                  ? t("Bağlantı tanımlı")
-                  : t("Bağlantı bekliyor")}
-              </Badge>
-            </div>
-            <div className="setting-row">
-              <span>{t("Embedding modeli")}</span>
-              <strong>{status?.embedding_model}</strong>
-              <Badge>
-                {status?.embedding_configured
-                  ? t("Bağlantı tanımlı")
-                  : t("Bağlantı bekliyor")}
-              </Badge>
-            </div>
-            <div className="notice">
-              {status?.llm_provider === "openrouter"
-                ? t(
-                    "OpenRouter için sunucudaki .env dosyasına tek API anahtarı ekleyin; aynı anahtar iki model için de kullanılır. Ardından API’yi yeniden başlatın.",
-                  )
-                : t(
-                    "Sunucudaki .env dosyasında model endpoint’ini ve gerekiyorsa API anahtarını tanımlayın.",
-                  )}{" "}
-              {t(
-                "Bağlantı tanımı, canlı erişimin doğrulandığı anlamına gelmez.",
-              )}
-            </div>
-            <code className="config-example">
-              {status?.llm_provider === "openrouter"
-                ? t("INTENT_OPENROUTER_API_KEY")
-                : t(
-                    "INTENT_LLM_BASE_URL / INTENT_LLM_MODEL / INTENT_LLM_API_KEY",
-                  )}
-            </code>
-            <a
-              className="button primary"
-              href="https://github.com/czagnos/intent-bench/blob/main/README.md"
-              target="_blank"
-              rel="noreferrer"
-            >
-              {t("Kurulum rehberi ")}
-              <ArrowUpRight size={16} />
-            </a>
+            {status ? <Setup status={status} refresh={refresh} navigate={page => {
+              setSettingsOpen(false);
+              setPage(page);
+            }} /> : <p>Load the workspace before checking model setup.</p>}
           </section>
         </dialog>
       )}
@@ -364,6 +359,7 @@ export function Demo({
   status: Status;
   catalog: Intent[];
 }) {
+  const { api, waitForRoute } = useWorkspaceApi();
   const { t, locale, tag, ms, pct } = useI18n();
   const [view, setView] = useState<DemoView>(savedDemoView);
   const [visualTurn, setVisualTurn] = useState(0);
@@ -406,7 +402,7 @@ export function Demo({
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [messages, busy]);
-  useEffect(() => () => request.current?.abort(), []);
+  useEffect(() => () => { generation.current++; request.current?.abort(); }, []);
   useEffect(() => {
     try {
       localStorage.setItem(VIEW_STORAGE_KEY, view);
@@ -479,7 +475,7 @@ export function Demo({
       if (generation.current !== version) return;
       if (job.status === "superseded")
         throw new Error(
-          job.error || "Yeni konuşma adımı nedeniyle eski sonuç uygulanmadı.",
+          job.error || "A newer conversation turn superseded this result.",
         );
       if (job.result) {
         setStages((previous) => mergeStages(previous, job.events || []));
@@ -488,7 +484,7 @@ export function Demo({
           ...previous,
           { role: "assistant", content: job.result!.message },
         ]);
-      } else throw new Error(job.error || "Karar üretilemedi.");
+      } else throw new Error(job.error || "No decision could be produced.");
     } catch (e) {
       if (generation.current === version && (e as Error).name !== "AbortError")
         setError((e as Error).message);
@@ -500,55 +496,55 @@ export function Demo({
     <div className="page-pad">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">{t("CANLI DEMO")}</p>
-          <h1>{t("İstekten doğru akışa.")}</h1>
+          <p className="eyebrow">{t("LIVE DEMO")}</p>
+          <h1>{t("From request to the right workflow.")}</h1>
           <p>
             {t(
-              "Bir bankacılık isteği yazın, yönlendirme kararını adım adım inceleyin.",
+              "Enter a request and inspect the decision model’s routing step by step.",
             )}
           </p>
         </div>
         <button className="button" onClick={reset}>
           <Plus size={17} />
-          {t("Yeni konuşma")}
+          {t("New conversation")}
         </button>
       </div>
       <div className="summary-strip">
         <div>
-          <span>{t("Katalog")}</span>
+          <span>{t("Catalog")}</span>
           <strong>
             {status.intent_count}
             <small>{t("intent")}</small>
           </strong>
         </div>
         <div>
-          <span>{t("Müşteri vakaları")}</span>
+          <span>{t("Customer cases")}</span>
           <strong>
             {status.customer_case_count}
-            <small>{t("kayıt")}</small>
+            <small>{t("records")}</small>
           </strong>
         </div>
         <div>
-          <span>{t("Doğrulanmış müşteri etiketi")}</span>
+          <span>{t("Reviewed customer labels")}</span>
           <strong>
             {status.reviewed_customer_count}
-            <small>{t("vaka")}</small>
+            <small>{t("cases")}</small>
           </strong>
         </div>
         <div>
-          <span>{t("Doğruluk hedefi")}</span>
+          <span>{t("Accuracy target")}</span>
           <strong>
-            {t("%90")}
-            <small>{t("henüz doğrulanmadı")}</small>
+            {t("90%")}
+            <small>{t("not yet validated")}</small>
           </strong>
         </div>
       </div>
       <div
         className="demo-view-picker"
         role="group"
-        aria-label={t("Demo görünümü")}
+        aria-label={t("Demo view")}
       >
-        <span>{t("Görünüm")}</span>
+        <span>{t("View")}</span>
         {demoViews.map(([id, label]) => (
           <button
             type="button"
@@ -569,12 +565,12 @@ export function Demo({
           <div className="panel-heading">
             <div className="heading-icon">
               <MessageSquare size={19} />
-              <h2>{t("Konuşma")}</h2>
+              <h2>{t("Conversation")}</h2>
             </div>
-            <Badge>{t("Metin")}</Badge>
+            <Badge>{t("Text")}</Badge>
           </div>
           <div className="method-picker">
-            <label htmlFor="method">{t("Yönlendirme yöntemi")}</label>
+            <label htmlFor="method">{t("Routing method")}</label>
             <select
               id="method"
               value={method}
@@ -587,7 +583,7 @@ export function Demo({
               {status.methods.map((m) => (
                 <option key={m.id} value={m.id} disabled={!m.available}>
                   {t(m.name)}
-                  {!m.available ? t(" · bağlantı gerekli") : ""}
+                  {!m.available ? t(" · connection required") : ""}
                 </option>
               ))}
             </select>
@@ -595,7 +591,7 @@ export function Demo({
             {method !== "lexical" && (
               <div className="demo-models">
                 <ModelSelect
-                  label={t("Embedding modeli")}
+                  label={t("Embedding model")}
                   options={status.models.embedding}
                   value={embeddingId}
                   disabled={busy}
@@ -606,7 +602,7 @@ export function Demo({
                 />
                 {method === "hybrid_llm" && (
                   <ModelSelect
-                    label={t("Karar modeli (LLM)")}
+                    label={t("Decision model (LLM)")}
                     options={status.models.llm}
                     value={llmId}
                     disabled={busy}
@@ -617,12 +613,12 @@ export function Demo({
                   />
                 )}
                 <small className="muted">
-                  {t("Model seçimi değişince yeni konuşma başlar.")}
+                  {t("Changing a model starts a new conversation.")}
                 </small>
                 {method === "hybrid_llm" && <>
-                  <label className="model-select"><span>{t("Arama stratejisi")}</span><select value={recipeId} disabled={busy} onChange={e => { reset(); setRecipeId(e.target.value); }}>
+                  <label className="model-select"><span>{t("Retrieval strategy")}</span><select value={recipeId} disabled={busy} onChange={e => { reset(); setRecipeId(e.target.value); }}>
                     {demoRecipes.map(p => <option key={p.id} value={p.id} disabled={p.id === "reranked" && !(status.models.reranker || []).some(r => r.available)}>{t(p.name)}</option>)}
-                  </select><small>{t("Havuz {pool} → LLM {final}", { pool: recipe.pool_k, final: recipe.candidate_k })}</small></label>
+                  </select><small>{t("Pool {pool} → LLM {final}", { pool: recipe.pool_k, final: recipe.candidate_k })}</small></label>
                   {recipeId === "reranked" && <ModelSelect label="Reranker" options={status.models.reranker || []} value={rerankerId} disabled={busy} onChange={id => { reset(); setRerankerId(id); }} />}
                 </>}
               </div>
@@ -644,19 +640,15 @@ export function Demo({
                 <div className="assistant-mark">
                   <Workflow size={24} />
                 </div>
-                <h3>{t("Hangi işlemle başlayalım?")}</h3>
-                <p>{t("Bir örnek seçin veya kendi cümlenizi yazın.")}</p>
+                <h3>{t("Which request shall we start with?")}</h3>
+                <p>{t("Choose an example or write your own request.")}</p>
                 <p className="field-hint">
-                  {t("Veri ve konuşma içeriği özgün dilinde gösterilir.")}
+                  {t("Source data and conversation content are shown in their original language.")}
                 </p>
                 <div className="scenario-list">
-                  {[
-                    "Kart limitimi artırmak istiyorum.",
-                    "Gönderdiğim para karşıya ulaşmadı.",
-                    "Kartımı kapatmak istiyorum.",
-                  ].map((s) => (
-                    <button key={s} onClick={() => void send(s)}>
-                      {s}
+                  {catalog.slice(0, 3).map((intent) => (
+                    <button key={intent.intent_id} onClick={() => void send(intent.examples[0])}>
+                      {intent.examples[0]}
                       <ArrowUpRight size={16} />
                     </button>
                   ))}
@@ -666,19 +658,19 @@ export function Demo({
             {messages.map((message, index) => (
               <div className={"chat-message " + message.role} key={index}>
                 <span className="speaker">
-                  {message.role === "user" ? t("SİZ") : t("ASİSTAN")}
+                  {message.role === "user" ? t("YOU") : t("ASSISTANT")}
                 </span>
                 <div>{message.content}</div>
               </div>
             ))}
             {busy && (
               <div className="chat-message assistant">
-                <span className="speaker">{t("ASİSTAN")}</span>
+                <span className="speaker">{t("ASSISTANT")}</span>
                 <div className="typing">
                   <i />
                   <i />
                   <i />
-                  <span>{t(stages.at(-1)?.label || "İstek işleniyor")}</span>
+                  <span>{t(stages.at(-1)?.label || "Processing request")}</span>
                 </div>
               </div>
             )}
@@ -693,7 +685,7 @@ export function Demo({
             }}
           >
             <label className="sr-only" htmlFor="message">
-              {t("Bankacılık isteğiniz")}
+              {t("Your request")}
             </label>
             <textarea
               id="message"
@@ -702,7 +694,7 @@ export function Demo({
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder={t(
-                "Örn. Kredi kartımın limitini yükseltmek istiyorum…",
+                "Enter a request to classify…",
               )}
               disabled={busy}
               onKeyDown={(e) => {
@@ -715,7 +707,7 @@ export function Demo({
             <button
               className="send-button"
               disabled={busy || !text.trim()}
-              aria-label={t("Mesajı gönder")}
+              aria-label={t("Send message")}
             >
               {busy ? (
                 <LoaderCircle className="spin" size={19} />
@@ -725,7 +717,7 @@ export function Demo({
             </button>
           </form>
           <div className="composer-note">
-            {t("Enter ile gönder · Shift + Enter ile yeni satır")}
+            {t("Enter to send · Shift + Enter for a new line")}
           </div>
         </section>
         <aside className="inspector">
@@ -749,27 +741,27 @@ export function Demo({
             }
             open={view === "standard"}
           >
-            <summary>{t("Karar ve aday ayrıntıları")}</summary>
+            <summary>{t("Decision and candidate details")}</summary>
             <div className="inspector">
               <section className="panel">
                 <div className="panel-heading">
                   <div className="heading-icon">
                     <Activity size={19} />
-                    <h2>{t("Kararı incele")}</h2>
+                    <h2>{t("Inspect the decision")}</h2>
                   </div>
-                  <Badge tone="blue">{t("CANLI")}</Badge>
+                  <Badge tone="blue">{t("LIVE")}</Badge>
                 </div>
                 {!result ? (
                   <>
                     <Empty
                       title={
                         busy
-                          ? t("Karar hazırlanıyor")
-                          : t("İlk mesajı bekliyor")
+                          ? t("Preparing the decision")
+                          : t("Waiting for the first message")
                       }
                     >
                       {t(
-                        "Aday intent’ler, seçilen akış ve ölçülen süre burada görünecek.",
+                        "Intent candidates, the selected workflow and measured latency will appear here.",
                       )}
                     </Empty>
                     {busy && (
@@ -809,7 +801,7 @@ export function Demo({
                       <div className="workflow-box">
                         <Workflow size={19} />
                         <div>
-                          <span>{t("HEDEF WORKFLOW")}</span>
+                          <span>{t("TARGET WORKFLOW")}</span>
                           <strong>{result.workflow_id}</strong>
                         </div>
                       </div>
@@ -824,19 +816,19 @@ export function Demo({
                     {result.missing_slots.map((s) => (
                       <div className="slot pending" key={s}>
                         <span>{t(slotNames[s] || s)}</span>
-                        <Badge tone="amber">{t("Bekleniyor")}</Badge>
+                        <Badge tone="amber">{t("Pending")}</Badge>
                       </div>
                     ))}
                     {result.simulation_complete && (
                       <div className="notice success">
-                        {t("İşlem simülasyonu tamamlandı.")}
+                        {t("Workflow simulation completed.")}
                       </div>
                     )}
                     <div className="timings">
                       {[
-                        ["retrieval", "Aday arama"],
-                        ["selection", "Intent seçimi"],
-                        ["policy", "Karar kontrolü"],
+                        ["retrieval", "Candidate retrieval"],
+                        ["selection", "Intent selection"],
+                        ["policy", "Decision validation"],
                       ].map(([key, label]) => (
                         <div key={key}>
                           <span>{t(label)}</span>
@@ -851,7 +843,7 @@ export function Demo({
                 <div className="panel-heading">
                   <div className="heading-icon">
                     <Layers3 size={18} />
-                    <h2>{t("Intent adayları")}</h2>
+                    <h2>{t("Intent candidates")}</h2>
                   </div>
                   <span className="muted">{candidates.length || "—"}</span>
                 </div>
@@ -868,7 +860,7 @@ export function Demo({
                   </div>
                 ) : (
                   <div className="small-empty">
-                    {t("Arama tamamlandığında adaylar listelenir.")}
+                    {t("Candidates will appear after retrieval.")}
                   </div>
                 )}
               </section>
@@ -876,14 +868,14 @@ export function Demo({
                 <div className="run-meta">
                   <span>{t(methodNames[result.method])}</span>
                   <span>
-                    {t("Katalog ")}
+                    {t("Catalog ")}
                     {result.catalog_version.slice(0, 8)}
                   </span>
                   <span>{result.model}</span>
                   <RejectionSummary value={result.calibration} />
                   {result.rejection_score != null && (
                     <span>
-                      {t("Reddetme skoru: {score}", {
+                      {t("Rejection score: {score}", {
                         score: result.rejection_score.toFixed(4),
                       })}
                     </span>
@@ -931,11 +923,11 @@ function CandidateRow({
         <p>{c.evidence}</p>
         <span>
           {c.score_type === "reciprocal_rank_fusion"
-            ? t("Birleştirilmiş sıra puanı")
+            ? t("Reciprocal rank fusion score")
             : c.score_type === "cosine_similarity"
-              ? t("Cosine benzerliği")
-              : t("Sözcüksel benzerlik")}{" "}
-          {t("· Olasılık değildir.")}
+              ? t("Cosine similarity")
+              : t("Lexical similarity")}{" "}
+          {t("· Not a probability.")}
         </span>
       </div>
     </details>
@@ -944,12 +936,17 @@ function CandidateRow({
 
 export function Catalog({
   catalog,
+  version,
   refresh,
 }: {
   catalog: Intent[];
+  version: string;
   refresh: () => Promise<void>;
 }) {
+  const { api } = useWorkspaceApi();
   const { t, locale, tag, ms, pct } = useI18n();
+  const [adding, setAdding] = useState(false);
+  const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
   const [domain, setDomain] = useState("all");
   const [selected, setSelected] = useState<Intent>();
@@ -959,8 +956,8 @@ export function Catalog({
     (i) =>
       (domain === "all" || i.domain === domain) &&
       (i.name + " " + i.description + " " + i.intent_id)
-        .toLocaleLowerCase("tr")
-        .includes(query.toLocaleLowerCase("tr")),
+        .toLocaleLowerCase("en")
+        .includes(query.toLocaleLowerCase("en")),
   );
   async function upload(file: File | undefined) {
     if (!file) return;
@@ -980,31 +977,32 @@ export function Catalog({
     <div className="page-pad">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">{t("INTENT KATALOĞU")}</p>
-          <h1>{t("İşlemlerin ortak dili.")}</h1>
-          <p>{t("Açıklamalar, örnek ifadeler ve workflow eşlemeleri.")}</p>
+          <p className="eyebrow">{t("INTENT CATALOG")}</p>
+          <h1>{t("A shared definition of every intent.")}</h1>
+          <p>{t("Descriptions, example utterances and workflow mappings.")}</p>
           <p className="field-hint">
-            {t("Veri ve konuşma içeriği özgün dilinde gösterilir.")}
+            {t("Source data and conversation content are shown in their original language.")}
           </p>
           {catalog.some((intent) => intent.intent_id.startsWith("bank.")) && (
             <p className="field-hint">
               {t(
-                "Genişletilmiş demo kataloğu temsili ürün/işlem tanımları içerir. Gerçek müşteri kataloğu için ürün kapsamı ve intent ayrımları doğrulanmalıdır.",
+                "The expanded demo catalog contains illustrative product/action definitions. Validate product availability and intent boundaries for a real customer catalog.",
               )}
             </p>
           )}
         </div>
         <div className="actions">
+          <button className="button primary" onClick={() => { setAdding(true); setNotice(""); }}> <Plus size={16} />Add intent</button>
           <button
             className="button"
             onClick={() => download("intent-catalog.json", catalog)}
           >
             <ArrowDownToLine size={16} />
-            {t("Dışa aktar")}
+            {t("Export")}
           </button>
           <label className="button primary">
             <Upload size={16} />
-            {busy ? t("Yükleniyor…") : t("JSON içe aktar")}
+            {busy ? t("Uploading…") : t("Import JSON")}
             <input
               className="sr-only"
               type="file"
@@ -1016,22 +1014,24 @@ export function Catalog({
         </div>
       </div>
       {error && <ErrorBox message={error} />}
+      {notice && <p className="notice" role="status">{notice}</p>}
+      {adding && <AddIntent version={version} catalog={catalog} refresh={refresh} onCancel={() => setAdding(false)} onSaved={() => { setAdding(false); setNotice("Intent added. Refit calibration and evaluate the updated catalog."); }} />}
       <div className="toolbar">
         <div className="search-field">
           <Search size={18} />
           <input
-            aria-label={t("Intent ara")}
-            placeholder={t("Intent adı, açıklama veya kimlik ara…")}
+            aria-label={t("Search intents")}
+            placeholder={t("Search by intent name, description or ID…")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
         <select
-          aria-label={t("İşlem alanı")}
+          aria-label={t("Domain")}
           value={domain}
           onChange={(e) => setDomain(e.target.value)}
         >
-          <option value="all">{t("Tüm alanlar")}</option>
+          <option value="all">{t("All domains")}</option>
           {[...new Set(catalog.map((i) => i.domain))].map((d) => (
             <option key={d}>{d}</option>
           ))}
@@ -1059,7 +1059,7 @@ export function Catalog({
               <div>
                 <span>
                   {i.examples.length}
-                  {t(" örnek")}
+                  {t(" examples")}
                 </span>
                 <ArrowUpRight size={17} />
               </div>
@@ -1069,11 +1069,11 @@ export function Catalog({
         {selected && (
           <aside className="panel catalog-detail">
             <div className="panel-heading">
-              <h2>{t("Intent ayrıntısı")}</h2>
+              <h2>{t("Intent details")}</h2>
               <button
                 className="icon-button"
                 onClick={() => setSelected(undefined)}
-                aria-label={t("Ayrıntıyı kapat")}
+                aria-label={t("Close details")}
               >
                 <X size={18} />
               </button>
@@ -1083,13 +1083,13 @@ export function Catalog({
               <h3>{selected.name}</h3>
               <code>{selected.intent_id}</code>
               <p>{selected.description}</p>
-              <h4>{t("Örnek ifadeler")}</h4>
+              <h4>{t("Example utterances")}</h4>
               {selected.examples.map((e) => (
                 <blockquote key={e}>{e}</blockquote>
               ))}
               {!!selected.exclusions.length && (
                 <>
-                  <h4>{t("Ayrı değerlendirilmesi gerekenler")}</h4>
+                  <h4>{t("Exclusions")}</h4>
                   {selected.exclusions.map((e) => (
                     <p key={e} className="exclusion">
                       {e}
@@ -1099,11 +1099,11 @@ export function Catalog({
               )}
               <h4>{t("Workflow")}</h4>
               <code>{selected.workflow_id}</code>
-              <h4>{t("Gerekli bilgiler")}</h4>
+              <h4>{t("Required information")}</h4>
               <p>
                 {selected.required_slots
                   .map((s) => t(slotNames[s] || s))
-                  .join(", ") || t("İlk yönlendirmede gerekli slot yok.")}
+                  .join(", ") || t("No slots required for the initial routing decision.")}
               </p>
             </div>
           </aside>
@@ -1122,6 +1122,7 @@ export function Cases({
   status: Status;
   refresh: () => Promise<void>;
 }) {
+  const { api } = useWorkspaceApi();
   const { t, locale, tag, ms, pct } = useI18n();
   const [source, setSource] = useState(
     status.customer_case_count ? "customer" : "all",
@@ -1222,20 +1223,20 @@ export function Cases({
     <div className="page-pad">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">{t("VAKALAR")}</p>
-          <h1>{t("Gerçek ifadeler, ölçülebilir sonuçlar.")}</h1>
+          <p className="eyebrow">{t("CASES")}</p>
+          <h1>{t("Real utterances, measurable results.")}</h1>
           <p>
             {t(
-              "Beklenen kararı doğrulayın; vakayı değerlendirme kümesine alın.",
+              "Review the expected decision and assign the case to a data split.",
             )}
           </p>
           <p className="field-hint">
-            {t("Veri ve konuşma içeriği özgün dilinde gösterilir.")}
+            {t("Source data and conversation content are shown in their original language.")}
           </p>
         </div>
         <label className="button primary">
           <Upload size={17} />
-          {busy ? t("İşleniyor…") : t("Benchmark CSV yükle")}
+          {busy ? t("Processing…") : t("Upload benchmark CSV")}
           <input
             className="sr-only"
             type="file"
@@ -1250,7 +1251,7 @@ export function Cases({
         <FileCheck2 size={19} />
         <span>
           {t(
-            "Müşteri dosyasındaki TRUE/FALSE alanı intent etiketi değildir. Doğrulanmamış vakalar accuracy hesabına katılmaz; bekleyen vaka sayısı ayrıca gösterilir.",
+            "The TRUE/FALSE field in the customer file is not an intent label. Unreviewed cases are excluded from accuracy calculations; their count is shown separately.",
           )}
         </span>
       </div>
@@ -1259,11 +1260,11 @@ export function Cases({
           <Check size={18} />
           <span>
             {report.imported}
-            {t(" vaka alındı. ")}
+            {t(" cases imported. ")}
             {report.skipped_empty_question}
-            {t(" boş soru kaydı ayrıldı; ")}
+            {t(" empty questions excluded; ")}
             {report.valid_traces}
-            {t(" çalışma izi çözümlendi.")}
+            {t(" execution traces parsed.")}
           </span>
         </div>
       )}
@@ -1271,8 +1272,8 @@ export function Cases({
         <div className="search-field">
           <Search size={18} />
           <input
-            aria-label={t("Vaka ara")}
-            placeholder={t("Müşteri ifadesinde ara…")}
+            aria-label={t("Search cases")}
+            placeholder={t("Search customer utterances…")}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -1282,32 +1283,32 @@ export function Cases({
         </div>
         <select
           value={source}
-          aria-label={t("Veri kaynağı")}
+          aria-label={t("Data source")}
           onChange={(e) => {
             setSource(e.target.value);
             setOffset(0);
           }}
         >
-          <option value="all">{t("Tüm kaynaklar")}</option>
-          <option value="customer">{t("Müşteri vakaları")}</option>
-          <option value="seed">{t("Demo senaryoları")}</option>
+          <option value="all">{t("All sources")}</option>
+          <option value="customer">{t("Customer cases")}</option>
+          <option value="seed">{t("Demo scenarios")}</option>
         </select>
         <select
-          aria-label={t("Veri bölümü filtresi")}
+          aria-label={t("Filter by data split")}
           value={splitFilter}
           onChange={(e) => {
             setSplitFilter(e.target.value);
             setOffset(0);
           }}
         >
-          <option value="all">{t("Tüm veri bölümleri")}</option>
+          <option value="all">{t("All data splits")}</option>
           <option value="test">{t("Test")}</option>
-          <option value="calibration">{t("Kalibrasyon")}</option>
-          <option value="dev">{t("Geliştirme")}</option>
+          <option value="calibration">{t("Calibration")}</option>
+          <option value="dev">{t("Development")}</option>
         </select>
         <Badge>
           {data.total}
-          {t(" vaka")}
+          {t(" cases")}
         </Badge>
       </div>
       <div className={"cases-layout " + (selected ? "with-detail" : "")}>
@@ -1316,10 +1317,10 @@ export function Cases({
             <table>
               <thead>
                 <tr>
-                  <th>{t("İfade")}</th>
-                  <th>{t("Kaynak")}</th>
-                  <th>{t("Etiket durumu")}</th>
-                  <th>{t("Veri bölümü")}</th>
+                  <th>{t("Utterance")}</th>
+                  <th>{t("Source")}</th>
+                  <th>{t("Label status")}</th>
+                  <th>{t("Data split")}</th>
                   <th />
                 </tr>
               </thead>
@@ -1341,20 +1342,20 @@ export function Cases({
                     </td>
                     <td>
                       <Badge>
-                        {c.source === "customer" ? t("Müşteri") : t("Demo")}
+                        {c.source === "customer" ? t("Customer") : t("Demo")}
                       </Badge>
                     </td>
                     <td>
                       <Badge tone={c.reviewed ? "green" : "amber"}>
-                        {c.reviewed ? t("Doğrulandı") : t("İnceleme bekliyor")}
+                        {c.reviewed ? t("Reviewed") : t("Awaiting review")}
                       </Badge>
                     </td>
                     <td>
                       {t(
                         c.split === "calibration"
-                          ? "Kalibrasyon"
+                          ? "Calibration"
                           : c.split === "dev"
-                            ? "Geliştirme"
+                            ? "Development"
                             : "Test",
                       )}
                     </td>
@@ -1362,7 +1363,7 @@ export function Cases({
                       <button
                         className="icon-button"
                         onClick={() => open(c)}
-                        aria-label={t("Vakayı incele")}
+                        aria-label={t("Review case")}
                       >
                         <ArrowUpRight size={18} />
                       </button>
@@ -1373,8 +1374,8 @@ export function Cases({
             </table>
           </div>
           {!data.items.length && (
-            <Empty title={t("Vaka bulunamadı")}>
-              {t("CSV yükleyin veya arama koşullarını değiştirin.")}
+            <Empty title={t("No cases found")}>
+              {t("Upload a CSV or change the search filters.")}
             </Empty>
           )}
           <div className="pagination">
@@ -1387,7 +1388,7 @@ export function Cases({
                 className="icon-button"
                 disabled={offset === 0}
                 onClick={() => setOffset((o) => Math.max(0, o - 20))}
-                aria-label={t("Önceki sayfa")}
+                aria-label={t("Previous page")}
               >
                 <ChevronLeft size={18} />
               </button>
@@ -1395,7 +1396,7 @@ export function Cases({
                 className="icon-button"
                 disabled={offset + 20 >= data.total}
                 onClick={() => setOffset((o) => o + 20)}
-                aria-label={t("Sonraki sayfa")}
+                aria-label={t("Next page")}
               >
                 <ChevronRight size={18} />
               </button>
@@ -1405,11 +1406,11 @@ export function Cases({
         {selected && (
           <aside className="panel review-panel">
             <div className="panel-heading">
-              <h2>{t("Beklenen karar")}</h2>
+              <h2>{t("Expected decision")}</h2>
               <button
                 className="icon-button"
                 onClick={() => setSelected(undefined)}
-                aria-label={t("İncelemeyi kapat")}
+                aria-label={t("Close review")}
               >
                 <X size={18} />
               </button>
@@ -1419,25 +1420,25 @@ export function Cases({
                 {selected.question}
               </blockquote>
               <label>
-                {t("Karar türü")}
+                {t("Decision type")}
                 <select
                   value={decision}
                   onChange={(e) => setDecision(e.target.value)}
                 >
-                  <option value="route">{t("Intent’e yönlendir")}</option>
-                  <option value="clarify">{t("Netleştir")}</option>
-                  <option value="out_of_scope">{t("Kapsam dışı")}</option>
-                  <option value="handoff">{t("Temsilciye aktar")}</option>
+                  <option value="route">{t("Route to intent")}</option>
+                  <option value="clarify">{t("Clarify")}</option>
+                  <option value="out_of_scope">{t("Out of scope")}</option>
+                  <option value="handoff">{t("Hand off to an agent")}</option>
                 </select>
               </label>
               {decision === "route" && (
                 <label>
-                  {t("Doğru intent")}
+                  {t("Correct intent")}
                   <select
                     value={intentId}
                     onChange={(e) => setIntentId(e.target.value)}
                   >
-                    <option value="">{t("Seçin")}</option>
+                    <option value="">{t("Select")}</option>
                     {catalog.map((i) => (
                       <option key={i.intent_id} value={i.intent_id}>
                         {i.name}
@@ -1447,19 +1448,19 @@ export function Cases({
                 </label>
               )}
               <label>
-                {t("Veri bölümü")}
+                {t("Data split")}
                 <select
                   value={split}
                   onChange={(e) => setSplit(e.target.value)}
                 >
                   <option value="test">{t("Test")}</option>
-                  <option value="dev">{t("Geliştirme")}</option>
-                  <option value="calibration">{t("Kalibrasyon")}</option>
+                  <option value="dev">{t("Development")}</option>
+                  <option value="calibration">{t("Calibration")}</option>
                 </select>
               </label>
               <p className="field-hint">
                 {t(
-                  "İlk seçim sözcüksel arama önerisidir. Kaydetmeden önce iş anlamını doğrulayın.",
+                  "The initial selection is a lexical search suggestion. Verify the business meaning before saving.",
                 )}
               </p>
               <button
@@ -1468,24 +1469,24 @@ export function Cases({
                 onClick={() => void review()}
               >
                 <Check size={17} />
-                {t("Etiketi doğrula ve kaydet")}
+                {t("Confirm and save label")}
               </button>
-              <h4>{t("Arama önerileri")}</h4>
+              <h4>{t("Retrieval suggestions")}</h4>
               {selected.suggestions.slice(0, 3).map((c, i) => (
                 <CandidateRow key={c.intent_id} candidate={c} rank={i + 1} />
               ))}
               {selected.reference_answer && (
                 <details className="source-answer">
-                  <summary>{t("Kaynak dosyadaki yanıt")}</summary>
+                  <summary>{t("Answer from source file")}</summary>
                   <p>{selected.reference_answer}</p>
                   <span>
-                    {t("Bu yanıt intent seçimi için modele verilmez.")}
+                    {t("This answer is not passed to the model for intent selection.")}
                   </span>
                 </details>
               )}
               <div className="field-hint">
-                {t("Kaynak TRUE/FALSE: ")}
-                {selected.source_flag || t("Yok")}
+                {t("Source TRUE/FALSE: ")}
+                {selected.source_flag || t("None")}
               </div>
             </div>
           </aside>
@@ -1496,6 +1497,7 @@ export function Cases({
 }
 
 export function Experiments({ status }: { status: Status }) {
+  const { api } = useWorkspaceApi();
   const { t, locale, tag, ms, pct } = useI18n();
   const [rejection, setRejection] = useState<"calibrated" | "off">(
     "calibrated",
@@ -1518,7 +1520,7 @@ export function Experiments({ status }: { status: Status }) {
   const [calibrationSource, setCalibrationSource] = useState("seed");
   const [calibrationTarget, setCalibrationTarget] = useState(5);
   const catalogMinimum =
-    status.catalog_min_size ?? Math.min(48, status.intent_count);
+    Math.max(1, status.catalog_min_size ?? Math.min(48, status.intent_count));
   const catalogSizes = parseCatalogSizes(
     catalogSizesText,
     catalogMinimum,
@@ -1658,11 +1660,11 @@ export function Experiments({ status }: { status: Status }) {
     <div className="page-pad">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">{t("DENEYLER")}</p>
-          <h1>{t("Modelleri aynı vakalarla karşılaştır.")}</h1>
+          <p className="eyebrow">{t("EXPERIMENTS")}</p>
+          <h1>{t("Compare models on the same cases.")}</h1>
           <p>
             {t(
-              "Aynı test vakaları, sabit katalog sürümü ve açık metrik tanımları.",
+              "The same test cases, a fixed catalog version and explicit metric definitions.",
             )}
           </p>
         </div>
@@ -1672,32 +1674,32 @@ export function Experiments({ status }: { status: Status }) {
             onClick={() => download("evaluation-" + job.id + ".json", job)}
           >
             <ArrowDownToLine size={16} />
-            {t("Sonuçları indir")}
+            {t("Download results")}
           </button>
         )}
       </div>
       <section className="panel experiment-setup">
         <div className="experiment-controls">
           <label>
-            {t("Test kümesi")}
+            {t("Test set")}
             <select
               value={source}
               disabled={busy}
               onChange={(e) => setSource(e.target.value)}
             >
               <option value="seed">
-                {t("Demo senaryoları (")}
+                {t("Demo scenarios (")}
                 {status.seed_case_count})
               </option>
               <option value="customer">
-                {t("Doğrulanmış müşteri vakaları (")}
+                {t("Reviewed customer test cases (")}
                 {status.reviewed_customer_test_count})
               </option>
-              <option value="all">{t("Tüm doğrulanmış vakalar")}</option>
+              <option value="all">{t("All reviewed test cases")}</option>
             </select>
           </label>
           <label>
-            {t("En fazla vaka")}
+            {t("Maximum cases")}
             <input
               type="number"
               min={1}
@@ -1717,7 +1719,7 @@ export function Experiments({ status }: { status: Status }) {
             ) : (
               <FlaskConical size={17} />
             )}
-            {t("Değerlendirmeyi çalıştır")}
+            {t("Run evaluation")}
           </button>
         </div>
         <CatalogSizes
@@ -1748,8 +1750,8 @@ export function Experiments({ status }: { status: Status }) {
                   {m.available
                     ? m.id === "lexical"
                       ? m.model
-                      : t("Aşağıdaki model seçimini kullanır")
-                    : t("Model bağlantısı gerekli")}
+                      : t("Uses the models selected below")
+                    : t("Model connection required")}
                 </small>
               </span>
             </label>
@@ -1758,7 +1760,7 @@ export function Experiments({ status }: { status: Status }) {
         {needsEmbedding && (
           <div className="experiment-models">
             <ModelChecklist
-              label={t("Embedding modelleri")}
+              label={t("Embedding models")}
               options={status.models.embedding}
               selected={embeddingIds}
               disabled={busy}
@@ -1766,7 +1768,7 @@ export function Experiments({ status }: { status: Status }) {
             />
             {needsLlm && (
               <ModelChecklist
-                label={t("Karar modelleri (LLM)")}
+                label={t("Decision models (LLM)")}
                 options={status.models.llm}
                 selected={llmIds}
                 disabled={busy}
@@ -1776,7 +1778,7 @@ export function Experiments({ status }: { status: Status }) {
           </div>
         )}
         {needsLlm && <div className="strategy-toggle">
-          <label><input type="checkbox" checked={compareProfiles} disabled={busy} onChange={e => setCompareProfiles(e.target.checked)} />{t("Arama stratejilerini karşılaştır")}</label>
+          <label><input type="checkbox" checked={compareProfiles} disabled={busy} onChange={e => setCompareProfiles(e.target.checked)} />{t("Compare retrieval strategies")}</label>
           {compareProfiles && <RetrievalProfiles rows={profileRows} onChange={setProfileRows} rerankers={status.models.reranker || []} disabled={busy} />}
         </div>}
         {methods.includes("e5") && (
@@ -1790,20 +1792,20 @@ export function Experiments({ status }: { status: Status }) {
         {methods.includes("e5") && rejection === "calibrated" && (
           <div className="scale-calibration-controls">
             <label>
-              {t("Deney kalibrasyon verisi")}
+              {t("Experiment calibration data")}
               <select
                 value={calibrationSource}
                 disabled={busy}
                 onChange={(e) => setCalibrationSource(e.target.value)}
               >
-                <option value="seed">{t("Demo kalibrasyon vakaları")}</option>
+                <option value="seed">{t("Demo calibration cases")}</option>
                 <option value="customer">
-                  {t("Müşteri kalibrasyon vakaları")}
+                  {t("Customer calibration cases")}
                 </option>
               </select>
             </label>
             <label>
-              {t("En fazla OOS yanlış kabul (%)")}
+              {t("Maximum OOS false acceptance (%)")}
               <input
                 type="number"
                 min={0}
@@ -1819,16 +1821,16 @@ export function Experiments({ status }: { status: Status }) {
         <div className="matrix-summary">
           <strong>
             {preview.length}
-            {t(" kombinasyon · ")}
+            {t(" combinations · ")}
             {caseCount}
-            {t(" vaka · ")}
+            {t(" cases · ")}
             {preview.length * caseCount}
-            {t(" karar")}
+            {t(" decisions")}
           </strong>
           <p>
             {needsLlm && !compareProfiles
               ? t(
-                  "{embeddings} embedding × {llms} LLM = {count} hibrit kombinasyon. ",
+                  "{embeddings} embeddings × {llms} LLMs = {count} hybrid combinations. ",
                   {
                     embeddings: embeddingIds.length,
                     llms: llmIds.length,
@@ -1836,39 +1838,39 @@ export function Experiments({ status }: { status: Status }) {
                   },
                 )
               : ""}
-            {t("{models} model/yöntem seçimi × {sizes} katalog büyüklüğü", {
+            {t("{models} model/method selections × {sizes} catalog sizes", {
               models: modelPreview.length,
               sizes: catalogSizes.length,
             })}
             {" · "}
-            {t("Her kombinasyon aynı vakalarda sırayla çalışır.")}
+            {t("Each combination runs sequentially on the same cases.")}
           </p>
           {needsEmbedding && (
             <p>
               {t(
-                "Model seçimi ayrı API çağrıları oluşturur. Bağlantı durumu, her modelin sağlayıcıda erişilebilir olduğunu garanti etmez.",
+                "Each model selection makes separate API calls. A configured connection does not guarantee that every model is available from the provider.",
               )}
             </p>
           )}
           {invalidSelection && (
             <p className="selection-warning">
-              {t("Gerekli model gruplarından seçim yapın. En fazla ")}
+              {t("Select models from the required groups. A maximum of ")}
               {status.models.max_variants}
-              {t(" kombinasyon çalıştırılabilir.")}
+              {t(" combinations can run per evaluation.")}
             </p>
           )}
           {!!preview.length && (
             <details>
-              <summary>{t("Çalıştırılacak kombinasyonları göster")}</summary>
+              <summary>{t("Show planned combinations")}</summary>
               <div className="table-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>{t("Yöntem")}</th>
-                      <th>{t("Katalog intent sayısı")}</th>
+                      <th>{t("Method")}</th>
+                      <th>{t("Catalog intents")}</th>
                       <th>{t("Embedding")}</th>
                       <th>{t("LLM")}</th>
-                      <th>{t("Arama stratejisi")}</th>
+                      <th>{t("Retrieval strategy")}</th>
                       <th>Reranker</th>
                     </tr>
                   </thead>
@@ -1898,7 +1900,7 @@ export function Experiments({ status }: { status: Status }) {
             <LoaderCircle size={17} className="spin" />
             <span>
               {job.progress} / {job.total}
-              {t(" karar değerlendirildi")}
+              {t(" decisions evaluated")}
               {activeVariant && (
                 <small className="active-variant">
                   {activeVariant.llm?.model ||
@@ -1910,17 +1912,17 @@ export function Experiments({ status }: { status: Status }) {
                   ·{" "}
                   {activeVariant.catalog && (
                     <>
-                      {t("{count} intent", {
+                      {t("{count} intents", {
                         count: activeVariant.catalog.intent_count,
                       })}{" "}
                       ·{" "}
                     </>
                   )}
                   {job.phase === "calibration"
-                    ? t("Eşik hesaplanıyor")
+                    ? t("Fitting threshold")
                     : job.phase === "index"
-                      ? t("İndeks hazırlanıyor")
-                      : t("Vakalar çalışıyor")}
+                      ? t("Preparing index")
+                      : t("Running cases")}
                 </small>
               )}
             </span>
@@ -1934,43 +1936,43 @@ export function Experiments({ status }: { status: Status }) {
             <div>
               <Badge tone="blue">
                 {job.source_counts.customer
-                  ? t("Müşteri verisi içeriyor")
-                  : t("Demo veri kümesi")}
+                  ? t("Includes customer data")
+                  : t("Demo dataset")}
               </Badge>
               <span>
                 {job.selected_count}
-                {t(" vaka · ")}
+                {t(" cases · ")}
                 {metrics.intent_count}
-                {t(" test intenti ·")}{" "}
+                {t(" test intents ·")}{" "}
                 {result.catalog && (
                   <>
-                    {t("{count} intentlik katalog", {
+                    {t("{count}-intent catalog", {
                       count: result.catalog.intent_count,
                     })}{" "}
                     ·{" "}
                   </>
                 )}{" "}
                 {job.unreviewed_excluded}
-                {t(" etiketsiz vaka hariç")}
+                {t(" unreviewed cases excluded")}
               </span>
             </div>
             <span className="mono">
-              {t("Veri ")}
+              {t("Data ")}
               {job.dataset_fingerprint.slice(0, 8)}
-              {t(" / Katalog")}{" "}
+              {t(" / Catalog")}{" "}
               {(result.catalog?.version || job.catalog_version).slice(0, 8)}
             </span>
           </div>
           {!job.source_counts.customer && (
             <div className="notice">
               {t(
-                "Bu sonuç demo senaryolarına aittir. Müşterinin işlem kapsamındaki %90 hedefini doğrulamaz.",
+                "These results are from demo scenarios. They do not validate the 90% target across the customer’s transaction scope.",
               )}
             </div>
           )}
           <div className="metric-grid">
             <div>
-              <span>{t("İlk karar doğruluğu")}</span>
+              <span>{t("In-scope routing accuracy")}</span>
               <strong
                 className={
                   (metrics.routing_accuracy || 0) >= 0.9 ? "green-text" : ""
@@ -1980,7 +1982,7 @@ export function Experiments({ status }: { status: Status }) {
               </strong>
               <small>
                 {metrics.routing_correct} / {metrics.routing_total}
-                {t(" yönlendirme doğru · hedef %90")}
+                {t(" correct routes · target 90%")}
               </small>
             </div>
             <div>
@@ -1989,101 +1991,101 @@ export function Experiments({ status }: { status: Status }) {
                 {metrics.k}
               </span>
               <strong>{pct(metrics.recall_at_k)}</strong>
-              <small>{t("Doğru intent aday listesinde")}</small>
+              <small>{t("Correct intent appears in the candidate list")}</small>
             </div>
             <div>
               <span>{t("Macro-F1")}</span>
               <strong>
                 {metrics.macro_f1 == null ? "—" : metrics.macro_f1.toFixed(3)}
               </strong>
-              <small>{t("Intent’lere eşit ağırlık")}</small>
+              <small>{t("Equal weight for each intent")}</small>
             </div>
             <div>
-              <span>{t("p95 yönlendirme")}</span>
+              <span>{t("p95 routing latency")}</span>
               <strong>{ms(metrics.latency_ms.p95)}</strong>
-              <small>{t("Bu deneyde ölçüldü")}</small>
+              <small>{t("Measured in this experiment")}</small>
             </div>
           </div>
           <p className="field-hint selected-result-label">
-            {t("Seçili sonuç: ")}
+            {t("Selected result: ")}
             {resultLabel(selectedId, result, t)}
           </p>
           <section className="panel">
             <div className="panel-heading">
-              <h2>{t("Model ve yöntem karşılaştırması")}</h2>
+              <h2>{t("Model and method comparison")}</h2>
               <Badge>
                 {Object.keys(job.results || {}).length}
-                {t(" kombinasyon")}
+                {t(" combinations")}
               </Badge>
             </div>
             <div className="table-wrap">
               <table className="comparison-table">
                 <thead>
                   <tr>
-                    <th>{t("Yöntem")}</th>
-                    <th>{t("Katalog intent sayısı")}</th>
+                    <th>{t("Method")}</th>
+                    <th>{t("Catalog intents")}</th>
                     <th>
                       <abbr
                         title={t(
-                          "Beklenen kararı route olan vakalarda doğru intent ve route kararı oranı. Ret, hata ve gereksiz netleştirme başarısız sayılır.",
+                          "Among cases that should route, the fraction returning route with the correct intent. Rejection, errors and unnecessary clarification count as failures.",
                         )}
                         tabIndex={0}
                       >
-                        {t("Doğruluk")}
+                        {t("In-scope accuracy")}
                       </abbr>
                     </th>
                     <th>
                       <abbr
                         title={t(
-                          "OOS ve diğer karar türleri dahil tüm vakalarda doğru karar oranı; route için intent de eşleşmelidir.",
+                          "Correct decisions across all cases, including OOS and other decision types. A route decision must also match the expected intent.",
                         )}
                         tabIndex={0}
                       >
-                        {t("Tüm kararlar")}
+                        {t("Overall decision accuracy")}
                       </abbr>
                     </th>
                     <th>
                       <abbr
                         title={t(
-                          "Doğru veya yanlış, route dönen vakaların tüm vakalara oranı.",
+                          "Fraction of all cases returning route, whether correct or incorrect.",
                         )}
                         tabIndex={0}
                       >
-                        {t("Otomatik yönlendirme")}
+                        {t("Auto-routing coverage")}
                       </abbr>
                     </th>
                     <th>
                       <abbr
-                        title={t("clarify dönen vakaların tüm vakalara oranı.")}
+                        title={t("Fraction of all cases returning clarify.")}
                         tabIndex={0}
                       >
-                        {t("Netleştirme")}
+                        {t("Clarification rate")}
                       </abbr>
                     </th>
                     <th>
                       <abbr
                         title={t(
-                          "Kapsam dışı vakalarda yanlışlıkla route dönenlerin oranı. Düşük olması iyidir; hata veya netleştirme doğru ret anlamına gelmez.",
+                          "Fraction of OOS cases incorrectly returning route. Lower is better; errors or clarifications are not necessarily correct rejections.",
                         )}
                         tabIndex={0}
                       >
-                        {t("OOS yanlış kabul")}
+                        {t("OOS false acceptance")}
                       </abbr>
                     </th>
                     <th>
                       <abbr
                         title={t(
-                          "Model veya bağlantı hatasıyla sonuçlanan vaka sayısı. Accuracy hesabında başarısız sayılır.",
+                          "Cases ending with a model or connection error. They count as failures in accuracy metrics.",
                         )}
                         tabIndex={0}
                       >
-                        {t("Teknik hata")}
+                        {t("Technical errors")}
                       </abbr>
                     </th>
                     <th>
                       <abbr
                         title={t(
-                          "Tek bir isteğin gecikmesinin 95. yüzdeliği. İsteklerin yaklaşık %95’i bu sürede veya daha hızlı tamamlanır; toplam deney süresi değildir.",
+                          "The 95th percentile of individual request latency. About 95% of requests finish within this duration; this is not the total experiment runtime.",
                         )}
                         tabIndex={0}
                       >
@@ -2093,7 +2095,7 @@ export function Experiments({ status }: { status: Status }) {
                     <th>
                       <abbr
                         title={t(
-                          "Doğru intentin aday listesinde bulunma oranı.",
+                          "Fraction of cases whose expected intent is in the candidate list.",
                         )}
                       >
                         Recall@K
@@ -2102,28 +2104,28 @@ export function Experiments({ status }: { status: Status }) {
                     <th>
                       <abbr
                         title={t(
-                          "Embedding ve aday aramasının p95 süresi; LLM seçimi hariç.",
+                          "p95 of query embedding and candidate retrieval, excluding LLM selection.",
                         )}
                       >
-                        {t("Arama p95")}
+                        {t("Retrieval p95")}
                       </abbr>
                     </th>
                     <th>
                       <abbr
                         title={t(
-                          "Aynı modelin bu deneydeki en küçük katalog sonucuna göre doğruluk farkı; yüzde puan.",
+                          "Accuracy difference in percentage points against this model's smallest catalog in this experiment.",
                         )}
                       >
-                        {t("Δ doğruluk (yp)")}
+                        {t("Δ accuracy (pp)")}
                       </abbr>
                     </th>
                     <th>
                       <abbr
                         title={t(
-                          "Aynı modelin en küçük katalog sonucuna göre p95 oranı. 2×, iki kat süre demektir.",
+                          "p95 ratio against this model's smallest catalog. 2× means twice as long.",
                         )}
                       >
-                        {t("p95 oranı")}
+                        {t("p95 ratio")}
                       </abbr>
                     </th>
                   </tr>
@@ -2139,11 +2141,11 @@ export function Experiments({ status }: { status: Status }) {
                           className="text-button"
                           onClick={() => setSelectedMethod(id)}
                         >
-                          {t(r.retrieval_profile?.name || methodNames[resultMethod(id, r)] || "Deney")}
+                          {t(r.retrieval_profile?.name || methodNames[resultMethod(id, r)] || "Experiment")}
                         </button>
                         <div className="muted">{r.model}</div>
                         {r.reranker && <div className="muted">Reranker: {r.reranker.model}</div>}
-                        {r.retrieval_profile && <div className="muted">{t("Havuz {pool} → LLM {final}", { pool: r.retrieval_profile.pool_k, final: r.retrieval_profile.candidate_k })}</div>}
+                        {r.retrieval_profile && <div className="muted">{t("Pool {pool} → LLM {final}", { pool: r.retrieval_profile.pool_k, final: r.retrieval_profile.candidate_k })}</div>}
                         {r.model_labels && (
                           <div className="muted">
                             {Object.values(r.model_labels).join(" + ")}
@@ -2159,7 +2161,7 @@ export function Experiments({ status }: { status: Status }) {
                           )}
                         {!!r.embedding?.provider_only?.length && (
                           <div className="muted">
-                            {t("Sağlayıcı: ")}
+                            {t("Provider: ")}
                             {r.embedding.provider_only.join(", ")}
                           </div>
                         )}
@@ -2205,28 +2207,28 @@ export function Experiments({ status }: { status: Status }) {
           {job.catalog_scopes && job.catalog_scopes.length > 1 && (
             <p className="field-hint">
               {t(
-                "Fark ve oranlar her modelin bu deneydeki en küçük kataloğuna göredir. Tüm büyüklüklerde aynı vakalar kullanılır; bu ölçüm eklenen intentlerin rekabet etkisini gösterir, katalogdaki her intentin doğrulandığı anlamına gelmez.",
+                "Deltas and ratios use each model's smallest catalog as the baseline. Every size uses the same cases: this measures competition from added intents, not validation of every intent in the catalog.",
               )}
             </p>
           )}
           {job.latency_protocol && (
             <p className="field-hint">
               {t(
-                "p95, indeks hazırlandıktan sonraki sorguları ölçer. Seçili kombinasyonda indeks hazırlığı: ",
+                "p95 measures individual queries after the index is ready. Index preparation for the selected combination: ",
               )}
               {ms(result.index_build_ms)}
-              {result.index_cache_hit ? t(" (hazır indeks kullanıldı)") : ""}
+              {result.index_cache_hit ? t(" (cached index used)") : ""}
               {" · "}
-              {t("Eşik hazırlığı: {duration}", {
+              {t("Threshold preparation: {duration}", {
                 duration: ms(result.calibration_build_ms ?? 0),
               })}
-              {t(". Sonuçlar anlık sağlayıcı yükünden etkilenebilir.")}
+              {t(". Results may vary with provider load.")}
             </p>
           )}
           {result.calibration?.calibrated && (
             <p className="field-hint">
               {t(
-                "Testte kapsam içi yanlış ret: {rate}. Beklenen intent yerine kapsam dışı dönen geçerli vakaların oranı.",
+                "In-scope false rejection on test data: {rate}. Valid routing cases that returned out of scope instead of the expected intent.",
                 { rate: pct(metrics.in_scope_false_reject_rate) },
               )}
             </p>
@@ -2244,10 +2246,10 @@ export function Experiments({ status }: { status: Status }) {
             />
           )}
           <div className="result-detail-bar">
-            <h2>{t("Vaka bazında sonuçlar")}</h2>
+            <h2>{t("Results by case")}</h2>
             <span>
               {result.model} · {metrics.errors}
-              {t(" teknik hata")}
+              {t(" technical errors")}
             </span>
           </div>
           <section className="panel">
@@ -2255,12 +2257,12 @@ export function Experiments({ status }: { status: Status }) {
               <table>
                 <thead>
                   <tr>
-                    <th>{t("Vaka")}</th>
-                    <th>{t("Beklenen")}</th>
-                    <th>{t("Üretilen karar")}</th>
-                    <th>{t("Karar / hata ayrıntısı")}</th>
-                    <th>{t("Süre")}</th>
-                    <th>{t("Sonuç")}</th>
+                    <th>{t("Case")}</th>
+                    <th>{t("Expected")}</th>
+                    <th>{t("Predicted decision")}</th>
+                    <th>{t("Decision / error details")}</th>
+                    <th>{t("Latency")}</th>
+                    <th>{t("Outcome")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2283,14 +2285,14 @@ export function Experiments({ status }: { status: Status }) {
                         <small className="muted">{r.reason_code}</small>
                         {r.rejection_score != null && (
                           <small className="muted">
-                            {t("Reddetme skoru: {score}", {
+                            {t("Rejection score: {score}", {
                               score: r.rejection_score.toFixed(4),
                             })}
                           </small>
                         )}
                         {r.diagnostics && (
                           <details>
-                            <summary>{t("Teknik ayrıntı")}</summary>
+                            <summary>{t("Technical details")}</summary>
                             <pre>{JSON.stringify(r.diagnostics, null, 2)}</pre>
                           </details>
                         )}
@@ -2298,7 +2300,7 @@ export function Experiments({ status }: { status: Status }) {
                       <td>{ms(r.total_ms)}</td>
                       <td>
                         <Badge tone={r.correct ? "green" : "amber"}>
-                          {r.correct ? t("Doğru") : t("İncelenmeli")}
+                          {r.correct ? t("Correct") : t("Needs review")}
                         </Badge>
                       </td>
                     </tr>
@@ -2309,11 +2311,11 @@ export function Experiments({ status }: { status: Status }) {
           </section>
           {metrics.routing_accuracy_ci95 && (
             <p className="field-hint">
-              {t("İlk karar doğruluğu için %95 Wilson güven aralığı:")}{" "}
+              {t("95% Wilson confidence interval for in-scope routing accuracy:")}{" "}
               {pct(metrics.routing_accuracy_ci95[0])}–
               {pct(metrics.routing_accuracy_ci95[1])}
               {t(
-                ". Teknik hatalar ve gereksiz netleştirmeler ilk karar başarısızlığı sayılır.",
+                ". Technical errors and unnecessary clarifications count as initial decision failures.",
               )}
             </p>
           )}
@@ -2321,9 +2323,9 @@ export function Experiments({ status }: { status: Status }) {
       ) : (
         !busy && (
           <section className="panel">
-            <Empty title={t("Henüz sonuç yok")}>
+            <Empty title={t("No results yet")}>
               {t(
-                "Bir test kümesi ve yöntem seçerek ilk karşılaştırmayı çalıştırın.",
+                "Choose a test set and a method to run your first comparison.",
               )}
             </Empty>
           </section>
@@ -2331,27 +2333,27 @@ export function Experiments({ status }: { status: Status }) {
       )}
       {!!history.length && (
         <section className="history">
-          <h2>{t("Önceki çalışmalar")}</h2>
+          <h2>{t("Previous runs")}</h2>
           {history.slice(0, 8).map((h) => (
             <button key={h.id} onClick={() => void open(h.id)}>
               <FlaskConical size={17} />
               <span>{new Date(h.created * 1000).toLocaleString(tag)}</span>
               <span>
                 {h.selected_count}
-                {t(" vaka")}
+                {t(" cases")}
               </span>
               {h.variants && (
                 <span>
                   {h.variants.length}
-                  {t(" kombinasyon")}
+                  {t(" combinations")}
                 </span>
               )}
               <Badge>
                 {h.status === "completed"
-                  ? t("Tamamlandı")
+                  ? t("Completed")
                   : h.status === "failed"
-                    ? t("Hata")
-                    : t("Çalışıyor")}
+                    ? t("Failed")
+                    : t("Running")}
               </Badge>
               <ArrowRight size={16} />
             </button>

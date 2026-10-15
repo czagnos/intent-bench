@@ -6,6 +6,9 @@ from contextlib import contextmanager
 from pathlib import Path
 from uuid import uuid4
 
+from .catalog_presets import PresetRevision, PresetRevisionReport, SeedCase
+from .contracts import Intent
+
 
 def fingerprint(value) -> str:
     return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:16]
@@ -89,10 +92,25 @@ class Store:
             db.execute("BEGIN IMMEDIATE")
             exists = db.execute("SELECT 1 FROM model_registrations WHERE workspace=? AND model_id=?", (workspace, payload["id"])).fetchone()
             if update and not exists:
-                raise KeyError("Model kaydı bulunamadı.")
+                raise KeyError("Model registration not found.")
             if not exists and db.execute("SELECT COUNT(*) FROM model_registrations WHERE workspace=?", (workspace,)).fetchone()[0] >= 200:
-                raise ValueError("Çalışma alanında en fazla 200 model kaydı olabilir.")
+                raise ValueError("A workspace can contain at most 200 model registrations.")
             db.execute("INSERT INTO model_registrations VALUES(?,?,?) ON CONFLICT(workspace,model_id) DO UPDATE SET payload=excluded.payload", (workspace, payload["id"], json.dumps(payload, ensure_ascii=False)))
+
+    def bootstrap_workspace(self, workspace: str, intents: list[Intent], cases: list[SeedCase]) -> bool:
+        """Publish an initial catalog and its cases together, or preserve an existing workspace."""
+        payload = [intent.model_dump() for intent in intents]
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            if db.execute("SELECT 1 FROM catalogs WHERE workspace=? LIMIT 1", (workspace,)).fetchone():
+                return False
+            db.execute("INSERT INTO catalogs VALUES(?,?,?,?)",
+                       (workspace, fingerprint(payload), time.time(), json.dumps(payload, ensure_ascii=False)))
+            for case in cases:
+                db.execute("INSERT OR IGNORE INTO cases VALUES(?,?,?,?,?,?,?)",
+                           (workspace, case.case_id, case.source, case.dataset_version, int(case.reviewed),
+                            case.split, case.payload))
+        return True
 
     def save_catalog(self, workspace: str, intents: list[dict], expected_version=None) -> str:
         version = fingerprint(intents)
@@ -101,7 +119,7 @@ class Store:
             if expected_version is not None:
                 current = db.execute("SELECT version FROM catalogs WHERE workspace=? ORDER BY created DESC LIMIT 1", (workspace,)).fetchone()
                 if not current or current[0] != expected_version:
-                    raise ValueError("Katalog değişti. Güncel sürümü yükleyip düzenlemeyi tekrar uygulayın.")
+                    raise ValueError("The catalog changed. Reload the current version and apply your edit again.")
             db.execute("INSERT INTO catalogs VALUES(?,?,?,?) ON CONFLICT(workspace, version) DO UPDATE SET created=excluded.created", (workspace, version, time.time(), json.dumps(intents, ensure_ascii=False)))
         return version
 
@@ -206,6 +224,80 @@ class Store:
         with self.connect() as db:
             return [json.loads(row[0]) for row in db.execute("SELECT payload FROM seed_migration_reports WHERE workspace=? ORDER BY rowid", (workspace,))]
 
+    def expand_preset(self, workspace: str, revision: PresetRevision,
+                      intents: list[Intent], cases: list[SeedCase]) -> None:
+        """Publish an additive preset revision and its report in one transaction."""
+        targets = {intent.intent_id: intent.model_dump() for intent in intents}
+        previous_ids = set(revision.previous_catalog_hashes)
+        previous_case_ids = set(revision.previous_case_ids)
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            if db.execute("SELECT 1 FROM seed_migrations WHERE workspace=? AND migration=?",
+                          (workspace, revision.id)).fetchone():
+                return
+            row = db.execute("SELECT version,payload FROM catalogs WHERE workspace=? ORDER BY created DESC LIMIT 1",
+                             (workspace,)).fetchone()
+            current = json.loads(row["payload"]) if row else []
+            normalized = {item["intent_id"]: Intent.model_validate(item).model_dump() for item in current}
+            # The shared human intent alone cannot establish sector provenance.
+            pristine_previous = any(iid != "service.human" and fingerprint(item) == revision.previous_catalog_hashes.get(iid)
+                                    for iid, item in normalized.items())
+            already_current = all(normalized.get(iid) == item for iid, item in targets.items())
+            recognized = previous_ids <= normalized.keys() and (pristine_previous or already_current)
+            report = PresetRevisionReport(id=revision.id, created=time.time(), applicable=recognized,
+                                          from_catalog_version=row["version"] if row else None,
+                                          to_catalog_version=row["version"] if row else None)
+            additions = [item for iid, item in targets.items() if iid not in previous_ids and iid not in normalized]
+            if not recognized:
+                report.skipped_reason = "unrecognized_catalog"
+            elif len(current) + len(additions) > 2000:
+                report.skipped_reason = "capacity_exceeded"
+            else:
+                revised = []
+                safe_ids = set()
+                for item in current:
+                    iid = item["intent_id"]
+                    target = targets.get(iid)
+                    if target == normalized[iid]:
+                        safe_ids.add(iid)
+                    elif target is not None and fingerprint(normalized[iid]) == revision.previous_catalog_hashes.get(iid):
+                        item = target
+                        safe_ids.add(iid)
+                        report.updated_intents.append(iid)
+                    elif target is not None:
+                        report.preserved_intents.append(iid)
+                    revised.append(item)
+                for item in additions:
+                    revised.append(item)
+                    safe_ids.add(item["intent_id"])
+                    report.updated_intents.append(item["intent_id"])
+                if report.updated_intents:
+                    version = fingerprint(revised)
+                    db.execute("INSERT INTO catalogs VALUES(?,?,?,?) ON CONFLICT(workspace,version) DO UPDATE SET created=excluded.created",
+                               (workspace, version, time.time(), json.dumps(revised, ensure_ascii=False)))
+                    report.to_catalog_version = version
+                for case in cases:
+                    existing = db.execute("SELECT payload FROM cases WHERE workspace=? AND case_id=?",
+                                          (workspace, case.case_id)).fetchone()
+                    if existing:
+                        if json.loads(existing[0]) != json.loads(case.payload):
+                            report.preserved_cases.append(case.case_id)
+                        continue
+                    # A prior ID may have been intentionally deleted; never recreate it.
+                    if case.case_id in previous_case_ids:
+                        continue
+                    references = case.references()
+                    if not references.intent_ids() <= safe_ids:
+                        report.skipped_cases.append(case.case_id)
+                        continue
+                    db.execute("INSERT INTO cases VALUES(?,?,?,?,?,?,?)",
+                               (workspace, case.case_id, case.source, case.dataset_version,
+                                int(case.reviewed), case.split, case.payload))
+                    report.updated_cases.append(case.case_id)
+            db.execute("INSERT INTO seed_migration_reports VALUES(?,?,?)",
+                       (workspace, revision.id, report.model_dump_json()))
+            db.execute("INSERT INTO seed_migrations VALUES(?,?)", (workspace, revision.id))
+
     def case_versions(self, workspace, case_id):
         with self.connect() as db:
             current = db.execute("SELECT payload FROM cases WHERE workspace=? AND case_id=?", (workspace, case_id)).fetchone()
@@ -256,7 +348,7 @@ class Store:
             if not row:
                 raise KeyError(session_id)
             if revision <= row["revision"]:
-                raise ValueError("Bu konuşma adımı daha önce işlendi veya eski bir sürüme ait.")
+                raise ValueError("This conversation turn was already processed or belongs to an older revision.")
             session = json.loads(row["payload"])
             session["revision"] = revision
             db.execute("UPDATE sessions SET revision=?,payload=? WHERE workspace=? AND session_id=?", (revision, json.dumps(session, ensure_ascii=False), workspace, session_id))
@@ -308,7 +400,7 @@ class Store:
             rows = db.execute("SELECT workspace,job_id,payload FROM jobs WHERE status IN ('queued','running')").fetchall()
             for row in rows:
                 job = json.loads(row["payload"])
-                job.update(status="failed", error="Çalışma servis yeniden başlatıldığı için tamamlanamadı.")
+                job.update(status="failed", error="The run could not complete because the service restarted.")
                 db.execute("UPDATE jobs SET status='failed',payload=? WHERE workspace=? AND job_id=?", (json.dumps(job, ensure_ascii=False), row["workspace"], row["job_id"]))
 
     def save_calibration(self, workspace, calibration):

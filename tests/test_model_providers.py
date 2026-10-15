@@ -27,7 +27,7 @@ def settings(tmp_path):
 def selector_input(settings):
     catalog = [Intent.model_validate(i) for i in json.loads((ROOT / "data/demo/catalog.json").read_text())]
     retriever = Retriever(catalog, "test", Embeddings(settings))
-    return retriever.search("Kart limitimi artırmak istiyorum", k=5), retriever.intents
+    return retriever.search("I want to increase my credit card limit", k=5), retriever.intents
 
 
 def completion_response(intent="card.limit.change", **choice_fields):
@@ -49,7 +49,7 @@ def test_openrouter_chat_contract_and_shared_key(settings):
         assert "chat_template_kwargs" not in body and "enable_thinking" not in body
         assert "card.limit.change" in body["response_format"]["json_schema"]["schema"]["properties"]["intent_id"]["enum"]
         return completion_response()
-    proposal, usage = Selector(settings, httpx.MockTransport(respond)).select("Kart limitimi artırmak istiyorum", {}, *selector_input(settings))
+    proposal, usage = Selector(settings, httpx.MockTransport(respond)).select("I want to increase my credit card limit", {}, *selector_input(settings))
     assert proposal.intent_id == "card.limit.change" and usage["total_tokens"] == 50
 
 
@@ -98,7 +98,7 @@ def test_onprem_and_other_providers_keep_their_request_format(settings, mode, fi
         assert "provider" not in body and "reasoning" not in body
         assert (field in body) if field else not ("chat_template_kwargs" in body or "enable_thinking" in body)
         return completion_response()
-    Selector(settings, httpx.MockTransport(respond)).select("Kart limitimi artırmak istiyorum", {}, *selector_input(settings))
+    Selector(settings, httpx.MockTransport(respond)).select("I want to increase my credit card limit", {}, *selector_input(settings))
 
 
 def test_qwen_embeddings_use_instruction_only_for_queries_and_batch_in_order(settings):
@@ -121,8 +121,8 @@ def test_qwen_embeddings_use_instruction_only_for_queries_and_batch_in_order(set
     assert inputs == [texts[:2], texts[2:]]
     expected = np.array([[len(t), 1.] for t in texts])
     np.testing.assert_allclose(vectors, expected / np.linalg.norm(expected, axis=1, keepdims=True), rtol=1e-6)
-    embeddings.encode(["Kart limitimi artır"], query=True)
-    assert inputs[-1] == [f"Instruct: {settings.embedding_query_instruction}\nQuery:Kart limitimi artır"]
+    embeddings.encode(["Increase my credit card limit"], query=True)
+    assert inputs[-1] == [f"Instruct: {settings.embedding_query_instruction}\nQuery:Increase my credit card limit"]
 
 
 @pytest.mark.parametrize("model,profile,query,passage", [
@@ -152,7 +152,7 @@ def test_local_encoding_does_not_apply_model_prompt_twice(settings):
     np.testing.assert_allclose(embeddings.encode(["Kart"], query=True), [[.6, .8]])
 
 
-@pytest.mark.parametrize("status,word", [(401, "anahtarı"), (402, "kredisi"), (429, "sınırına"), (503, "kullanılamıyor")])
+@pytest.mark.parametrize("status,word", [(401, "API key"), (402, "credits"), (429, "rate limit"), (503, "unavailable")])
 def test_provider_errors_are_actionable_and_do_not_leak_payloads(settings, status, word):
     def respond(request):
         return httpx.Response(status, json={"error": {"code": status, "message": "private-request-and-api-secret"}})
@@ -198,7 +198,7 @@ def test_openrouter_route_integration_and_embedding_metadata(settings):
         assert settings.openrouter_api_key not in status.text
         assert status.json()["embedding_configured"] and status.json()["llm_configured"]
         sid = client.post("/v1/sessions").json()["session_id"]
-        response = client.post("/v1/route", json={"session_id": sid, "turn_revision": 1, "user_text": "Kart limitimi artırmak istiyorum", "method": "hybrid_llm"})
+        response = client.post("/v1/route", json={"session_id": sid, "turn_revision": 1, "user_text": "I want to increase my credit card limit", "method": "hybrid_llm"})
         assert response.status_code == 202
         for _ in range(200):
             job = client.get("/v1/requests/" + response.json()["request_id"]).json()

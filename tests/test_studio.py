@@ -60,6 +60,59 @@ def route(client, session_id, revision, text):
     return wait_job(client, "/v1/requests/" + response.json()["request_id"])
 
 
+def test_unblock_card_routes_without_losing_card_closure_clarification(client):
+    sid = client.post("/v1/sessions").json()["session_id"]
+    unblock = route(client, sid, 1, "Unblock my card")["result"]
+    assert unblock["decision"] == "route"
+    assert unblock["intent_id"] == "card.unblock"
+
+    sid = client.post("/v1/sessions").json()["session_id"]
+    close = route(client, sid, 1, "Close my card")["result"]
+    assert close["decision"] == "clarify"
+    assert close["reason_code"] == "ambiguous_card_closure"
+
+
+def test_english_workflow_supports_target_amount_correction_and_confirmation(client):
+    intent = {
+        "intent_id": "card.limit.change", "name": "Change card limit", "domain": "Cards",
+        "description": "Change the total credit limit on a card.",
+        "examples": ["Set my card limit to 5000", "I want to change my card limit"],
+        "workflow_id": "workflow.card.limit.change", "required_slots": ["new_limit"],
+        "slot_questions": {"new_limit": "What should the new limit be?"},
+    }
+    assert client.post("/v1/catalog/import", json=[intent]).status_code == 200
+    sid = client.post("/v1/sessions").json()["session_id"]
+    first = route(client, sid, 1, "Set my card limit to 5000")["result"]
+    assert first["intent_id"] == "card.limit.change"
+    assert first["slots"] == {"new_limit": "5000"}
+    assert first["pending_confirmation"]
+    corrected = route(client, sid, 2, "Not 5000, make it 6000")["result"]
+    assert corrected["slots"] == {"new_limit": "6000"}
+    confirmed = route(client, sid, 3, "yes")["result"]
+    assert confirmed["simulation_complete"]
+    assert "No real transaction" in confirmed["message"]
+
+
+def test_custom_catalog_ignores_bank_ambiguity_and_bounds_unsupported_slots(client):
+    intent = {
+        "intent_id": "shop.card.close", "name": "Close loyalty card", "domain": "Loyalty",
+        "description": "Close a shop loyalty card membership.",
+        "examples": ["Kartımı kapatmak istiyorum", "Close my loyalty card"],
+        "workflow_id": "workflow.shop.card.close", "required_slots": ["membership_number"],
+        "slot_questions": {"membership_number": "What is your membership number?"},
+    }
+    assert client.post("/v1/catalog/import", json=[intent]).status_code == 200
+    sid = client.post("/v1/sessions").json()["session_id"]
+    result = route(client, sid, 1, "Kartımı kapatmak istiyorum")["result"]
+    assert result["decision"] == "route" and result["intent_id"] == "shop.card.close"
+    assert result["workflow_id"] == "workflow.shop.card.close"
+    assert result["missing_slots"] == ["membership_number"]
+    assert not result["pending_confirmation"]
+    assert "preview" in result["message"]
+    assert "bank" not in result["message"].lower()
+    assert route(client, sid, 2, "cancel")["result"]["decision"] != "cancel"
+
+
 def test_csv_multiline_large_trace_and_missing_gold():
     cases, report = import_benchmark(csv_fixture())
     assert report["imported"] == 2
@@ -99,7 +152,7 @@ def test_workspace_isolation(client):
 
 def test_limit_workflow_slot_correction_and_confirmation(client):
     sid = client.post("/v1/sessions").json()["session_id"]
-    first = route(client, sid, 1, "Kart limitimi artırmak istiyorum")
+    first = route(client, sid, 1, "I want to increase my credit card limit")
     assert first["result"]["intent_id"] == "card.limit.change"
     second = route(client, sid, 2, "iki bin")
     assert second["result"]["decision"] == "continue"
@@ -112,12 +165,12 @@ def test_limit_workflow_slot_correction_and_confirmation(client):
     confirmed = route(client, sid, 4, "onaylıyorum")
     assert confirmed["result"]["simulation_complete"] is True
     assert confirmed["result"]["pending_confirmation"] is False
-    assert "Gerçek banka işlemi yapılmadı" in confirmed["result"]["message"]
+    assert "No real transaction was performed" in confirmed["result"]["message"]
 
 
 @pytest.mark.parametrize("text,intent,slot,value", [
-    ("Gönderdiğim havale karşıya ulaşmadı", "transfer.status", "transfer_reference", "TR12345"),
-    ("Cüzdanım çalındı kartım içinde", "card.lost", "card_last4", "1234"),
+    ("Has the money I sent reached the other account?", "transfer.status", "transfer_reference", "TR12345"),
+    ("My wallet was stolen with my card inside.", "card.lost", "card_last4", "1234"),
 ])
 def test_other_simulation_flows(client, text, intent, slot, value):
     sid = client.post("/v1/sessions").json()["session_id"]
@@ -129,17 +182,28 @@ def test_other_simulation_flows(client, text, intent, slot, value):
 
 def test_ambiguity_then_clarification(client):
     sid = client.post("/v1/sessions").json()["session_id"]
-    first = route(client, sid, 1, "Kartımı kapatmak istiyorum")["result"]
+    first = route(client, sid, 1, "I want to close my card")["result"]
     assert first["decision"] == "clarify"
-    second = route(client, sid, 2, "geçici olarak")["result"]
+    second = route(client, sid, 2, "temporarily")["result"]
     assert second["intent_id"] == "card.temporary_block"
 
 
-def test_cancellation_is_scoped_to_active_flow(client):
+@pytest.mark.parametrize("cancellation", ["iptal et", "cancel", "cancel it"])
+def test_cancellation_is_scoped_to_active_flow(client, cancellation):
     sid = client.post("/v1/sessions").json()["session_id"]
-    route(client, sid, 1, "Kart limitimi artırmak istiyorum")
-    assert route(client, sid, 2, "iptal et")["result"]["decision"] == "cancel"
+    route(client, sid, 1, "I want to increase my credit card limit")
+    assert route(client, sid, 2, cancellation)["result"]["decision"] == "cancel"
     assert context_decision("kartımı iptal et", {"active_intent": "card.limit.change"}) is None
+
+
+def test_pending_amount_accepts_the_displayed_currency(client):
+    sid = client.post("/v1/sessions").json()["session_id"]
+    first = route(client, sid, 1, "I want to increase my credit card limit")["result"]
+    assert first["missing_slots"] == ["new_limit"]
+    assert "TRY" in first["message"]
+    answer = route(client, sid, 2, "5,000 TRY")["result"]
+    assert answer["slots"] == {"new_limit": "5000"}
+    assert answer["pending_confirmation"]
 
 
 def test_stale_turn_cannot_overwrite_newer_state(settings):
@@ -156,7 +220,7 @@ def test_stale_turn_cannot_overwrite_newer_state(settings):
 
 def test_request_idempotency_and_old_revision(client):
     sid = client.post("/v1/sessions").json()["session_id"]
-    body = {"request_id": "same-request", "session_id": sid, "turn_revision": 1, "user_text": "Hesap bakiyemi öğrenmek istiyorum"}
+    body = {"request_id": "same-request", "session_id": sid, "turn_revision": 1, "user_text": "I want to check my account balance"}
     assert client.post("/v1/route", json=body).status_code == 202
     wait_job(client, "/v1/requests/same-request")
     assert client.post("/v1/route", json=body).status_code == 202
@@ -166,7 +230,7 @@ def test_request_idempotency_and_old_revision(client):
 
 def test_sse_replays_completed_result(client):
     sid = client.post("/v1/sessions").json()["session_id"]
-    job = route(client, sid, 1, "Kredi kartı borcumu ödemek istiyorum")
+    job = route(client, sid, 1, "I want to make a payment toward my card debt")
     response = client.get("/v1/requests/" + job["id"] + "/events")
     assert response.status_code == 200
     assert "event: stage" in response.text and "event: result" in response.text
@@ -183,7 +247,7 @@ def test_candidates_are_emitted_before_llm_selection(settings, monkeypatch):
     try:
         studio.ensure_workspace("demo")
         retriever = studio.retriever("demo")
-        candidates = retriever.search("Kart limitimi artırmak istiyorum", "lexical", 5)
+        candidates = retriever.search("I want to increase my credit card limit", "lexical", 5)
         events = []
         monkeypatch.setattr(retriever, "search_with_trace", lambda *args, **kwargs: (candidates, {"executed": True, "completed": True}))
 
@@ -196,7 +260,7 @@ def test_candidates_are_emitted_before_llm_selection(settings, monkeypatch):
 
         monkeypatch.setattr(studio.selector, "select", select)
         state = studio.store.create_session("demo")
-        result, _ = studio.compute("Kart limitimi artırmak istiyorum", state, "hybrid_llm", retriever,
+        result, _ = studio.compute("I want to increase my credit card limit", state, "hybrid_llm", retriever,
             emit=lambda stage, label, **data: events.append({"stage": stage, **data}))
         assert result["intent_id"] == "card.limit.change"
         assert [event["stage"] for event in events] == ["context", "retrieval", "selection", "policy"]
@@ -212,7 +276,7 @@ def test_live_map_catalog_snapshot_is_versioned_and_workspace_scoped(client):
     custom[0]["description"] += " Demo workspace only."
     pinned = store.save_catalog("demo", custom)
     sid = client.post("/v1/sessions").json()["session_id"]
-    response = client.post("/v1/route", json={"session_id": sid, "turn_revision": 1, "user_text": "Kart limitimi artırmak istiyorum"})
+    response = client.post("/v1/route", json={"session_id": sid, "turn_revision": 1, "user_text": "I want to increase my credit card limit"})
     assert response.json()["catalog_version"] == pinned
     newer = copy.deepcopy(custom)
     newer[0]["name"] += " Updated"
@@ -229,7 +293,7 @@ def test_live_map_catalog_snapshot_is_versioned_and_workspace_scoped(client):
 
 def test_missing_model_is_explicit_not_fake_fallback(client):
     sid = client.post("/v1/sessions").json()["session_id"]
-    response = client.post("/v1/route", json={"session_id": sid, "turn_revision": 1, "user_text": "Kart borcu", "method": "hybrid_llm"})
+    response = client.post("/v1/route", json={"session_id": sid, "turn_revision": 1, "user_text": "Card balance", "method": "hybrid_llm"})
     assert response.status_code == 409
 
 
@@ -238,22 +302,22 @@ def test_selector_constrains_ids_and_never_receives_gold(settings):
     settings.llm_api_key = "test-secret"
     catalog = [Intent.model_validate(x) for x in json.loads((ROOT/"data/demo/catalog.json").read_text())]
     retriever = Retriever(catalog, "test", Embeddings(settings))
-    candidates = retriever.search("Kart limitimi artıracağım", k=5)
+    candidates = retriever.search("I want to increase my credit card limit", k=5)
     def respond(request):
         body = json.loads(request.content)
         assert "GOLD_SHOULD_NOT_LEAK" not in json.dumps(body)
         assert body["response_format"]["json_schema"]["schema"]["properties"]["intent_id"]["enum"] == [c.intent_id for c in candidates] + [None]
         return httpx.Response(200, json={"choices": [{"message": {"content": json.dumps({"decision": "route", "intent_id": "invented.execute", "slots": {}})}}]})
     selector = Selector(settings, httpx.MockTransport(respond))
-    with pytest.raises(ModelUnavailable, match="aday listesinde olmayan"):
-        selector.select("Kart limitimi artıracağım", {"expected_intent_id": "GOLD_SHOULD_NOT_LEAK", "messages": []}, candidates, retriever.intents)
+    with pytest.raises(ModelUnavailable, match="outside the candidate list"):
+        selector.select("I want to increase my credit card limit", {"expected_intent_id": "GOLD_SHOULD_NOT_LEAK", "messages": []}, candidates, retriever.intents)
 
 
 def test_provider_timeout_is_technical_error(settings):
     settings.llm_base_url = "https://model.example/v1"
     def timeout(request):
         raise httpx.ReadTimeout("test", request=request)
-    with pytest.raises(ModelUnavailable, match="süre sınırını"):
+    with pytest.raises(ModelUnavailable, match="timed out"):
         Selector(settings, httpx.MockTransport(timeout)).select("test", {}, [], {})
 
 
@@ -261,10 +325,10 @@ def test_valid_selector_contract_and_usage(settings):
     settings.llm_base_url = "https://model.example/v1"
     catalog = [Intent.model_validate(x) for x in json.loads((ROOT/"data/demo/catalog.json").read_text())]
     retriever = Retriever(catalog, "test", Embeddings(settings))
-    candidates = retriever.search("Kart limitimi artıracağım", k=5)
+    candidates = retriever.search("I want to increase my credit card limit", k=5)
     def respond(request):
         return httpx.Response(200, json={"choices": [{"message": {"content": json.dumps({"decision": "route", "intent_id": "card.limit.change", "slots": {}, "question": None, "reason_code": "model_selection"})}}], "usage": {"total_tokens": 100}})
-    proposal, usage = Selector(settings, httpx.MockTransport(respond)).select("Kart limitimi artıracağım", {}, candidates, retriever.intents)
+    proposal, usage = Selector(settings, httpx.MockTransport(respond)).select("I want to increase my credit card limit", {}, candidates, retriever.intents)
     assert proposal.intent_id == "card.limit.change" and usage["total_tokens"] == 100
 
 
@@ -272,7 +336,7 @@ def test_candidates_are_unique_and_context_retained(settings):
     catalog = [Intent.model_validate(x) for x in json.loads((ROOT/"data/demo/catalog.json").read_text())]
     catalog[0].examples = catalog[0].examples*10
     retriever = Retriever(catalog, "test", Embeddings(settings))
-    candidates = retriever.search("kart limiti", k=20, active_intent="account.balance")
+    candidates = retriever.search("card limit", k=20, active_intent="account.balance")
     ids = [c.intent_id for c in candidates]
     assert len(ids) == len(set(ids)) == 20
     assert "account.balance" in ids
@@ -309,7 +373,7 @@ def test_turkish_amounts(text, expected):
 
 def test_wrong_continue_cannot_switch_workflow(settings):
     catalog = {x["intent_id"]: Intent.model_validate(x) for x in json.loads((ROOT/"data/demo/catalog.json").read_text())}
-    with pytest.raises(ValueError, match="aktif işlem"):
+    with pytest.raises(ValueError, match="active workflow"):
         apply_decision(Proposal(decision="continue", intent_id="card.lost"), {"active_intent": "card.limit.change"}, catalog)
 
 

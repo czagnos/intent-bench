@@ -1,41 +1,65 @@
-# Intent sınırları, workflow ayrımı ve kontrollü reranker deneyi
+# Intent boundaries, workflow ownership, and taxonomy versions
 
-10 Eylül 2026. Katalog/etiket geçişi: `demo-taxonomy-v2`; router promptu: `router-tr-v4-intent-only`.
+Intent recognition selects a business goal and its destination workflow. IntentBench measures that decision separately from retrieving candidates, collecting workflow fields, or executing a business operation. Current selector protocols are `router-en-v6-multisector-array-contract` (OpenAI-compatible) and `router-en-typesafe-v2-multisector-choice` (TypeSafe).
 
-15 Eylül 2026 sözleşme düzeltmesi: `router-tr-v5-array-contract`, her yanıtta `mentioned_intent_ids` için açık JSON dizisi ister; tek bir intent kesinleştiğinde değer `[]` olur. Çoklu amaç veya adaylar arasında gerçek belirsizlik varsa ilgili aday listesi korunur. Sağlayıcıya gönderilen şemada bu alan zorunludur. Mevcut endpoint uyumluluğu için `strict: false` korunur. Bu düzeltme katalog, etiket veya workflow sürümünü değiştirmez.
+## Designing a useful intent catalog
 
-Aday bulma başarısı doğru son yönlendirmeyi tek başına kanıtlamaz. Bu rehber intent sınırlarını, etiket tutarlılığını ve router ile workflow sorumluluklarının ayrılmasını açıklar.
+An intent should represent an atomic goal with a distinct routing outcome. Use stable IDs, precise descriptions, varied positive examples, explicit exclusions, and nearby confusable IDs. Write a `selection_rule` for difficult boundaries. Functional categories are `domain` values; the sector is a separate workspace.
 
-## Seçim kuralı
+Distinguish information requests, starting an operation, changing it, checking its status, and canceling it when those requests lead to different workflows. Avoid making every parameter a new intent: booking reference, date, amount, product variant, or delivery address often belongs to the destination workflow. Split a product-specific intent only when the routing destination or business scope requires it.
 
-Ürün/kanal açıkça belirtilmiş ve işlemle eşleşiyorsa özel intent seçilir. Ürün/kanal belirtilmemişse uygun genel intent seçilir. Sırf ürün adı eksik diye netleştirme yapılmaz; para birimi veya kanal tahmin edilmez. Genel/özel ayrımı bir eşdeğerlik listesi değildir: değerlendirmede yalnız beklenen ID doğru sayılır.
+| Request | Decision boundary |
+|---|---|
+| “Change my flight” | Route to ticket change; collect booking reference and date later |
+| “Where is my refund?” | Refund status, not starting a return or requesting a new refund |
+| “What does my policy cover?” | Coverage information, not reporting a claim |
+| “Close my card” | Clarify temporary blocking versus permanent cancellation if both are available |
+| “Book a flight and cancel my insurance” | Multiple goals require clarification or an explicit supported multi-goal policy |
 
-| İstek | Beklenen seçim | Neden |
+Review these boundaries against actual operations. Starter catalogs cover common lifecycles but cannot define every organization's products or permissions. Add realistic paraphrases and speech-transcript noise to reviewed test data without copying held-out questions into catalog examples.
+
+## Generic versus product-specific intents
+
+The banking taxonomy chooses a specific intent when the request explicitly identifies the relevant product/channel and operation. Otherwise it chooses the appropriate general intent. Missing a product name alone need not trigger clarification, and the model must not invent a currency or channel.
+
+| Request | Expected intent | Reason |
 |---|---|---|
-| “EFT'min durumunu öğrenmek istiyorum” | `bank.transfer.eft.status` | Transfer türü ve işlem açık |
-| “Para gönderdim, durumunu öğrenmek istiyorum” | `transfer.status` | Transfer türü belirtilmemiş |
-| “Bankamatik kartımın şifresini unuttum” | `bank.card.debit.pin_reset` | Bankamatik/banka kartı açık |
-| “Telefonumu değiştirdim, SIM blokesi oldu” | `digital.device` | Cihaz değişimi telefon bankacılığı kanalı değildir |
-| “Vadeli mevduat getirisini hesaplamak istiyorum” | `deposit.rate` | TL/döviz ayrımı belirtilmemiş |
-| “Kartımın limitini artırmak istiyorum” | `card.limit.change` | Toplam kredi limiti günlük harcama üst sınırından ayrılır |
+| “What is the status of my EFT?” | `bank.transfer.eft.status` | Transfer type and operation are explicit |
+| “I sent money; what is its status?” | `transfer.status` | Transfer type is unspecified |
+| “I forgot my debit card PIN” | `bank.card.debit.pin_reset` | Debit card is explicit |
+| “I changed phones and now my SIM is blocked” | `digital.device` | Changing a device does not imply telephone banking |
+| “Calculate my term-deposit return” | `deposit.rate` | No local/foreign-currency product was identified |
+| “Increase my credit card limit” | `card.limit.change` | Total credit limit differs from a daily spending cap |
 
-800 tanımın tamamında `selection_rule` bulunur. Kurallar LLM ve reranker girdisidir; embedding indeksine test etiketleri veya test soruları eklenmez. Bazı genel intent örneklerindeki özel ürün/kanal ifadeleri de genel ifadelerle değiştirilmiştir. Bu kurallar demo taksonomisinin kararıdır; müşterinin işlem kataloğuna aktarılmadan önce bankanın ürün sınırlarıyla doğrulanmalıdır.
+These examples illustrate current boundaries in English; older measurements used Turkish utterances. Exact intent IDs are scored, not an equivalence group of broad and narrow labels. Selection rules are supplied to the selector and reranker. Test labels and test questions are not added to the embedding index.
 
-## Router ve workflow
+## Selector versus workflow
 
-Router doğru akışı seçer. Modelin çıktı sözleşmesinde `slots` yoktur; adaylarda `required_slots`, konuşma durumunda `pending_slot` veya toplanmış alanlar gönderilmez. Önceki konuşma metinleri bağlam için gönderilmeye devam eder. Eski endpoint yanıtındaki `slots` alanı varsa atılır; bu bilgi workflow'a aktarılmaz.
+The model-facing selector contract excludes `slots`, candidate `required_slots`, `pending_slot`, and collected workflow fields. Recent conversation text remains available as context. Legacy endpoint `slots` output is discarded rather than trusted as workflow input.
 
-“Kart limitimi artırmak istiyorum” ilk adımda `route → card.limit.change` üretir. Workflow daha sonra yeni limiti sorar. Bu soru intent belirsizliği olarak sayılmaz. Kullanıcı tutarı verince mevcut deterministik politika devam eder ve simülasyon onayı ister. Aynı ayrım kayıp kartın son dört hanesi ve transfer referans numarası için uygulanır. İlgili özel demo akışları genel akışın gerekli alanlarını devralır; EFT durum akışına geçmek referans adımını atlamaz.
+A clear “Increase my card limit” request produces `route → card.limit.change`; the workflow then asks for a new limit. That field question is not counted as intent clarification. Supported banking simulations also handle a lost card's last four digits and a transfer reference. Related specific workflows inherit those fields where appropriate.
 
-İlk mesajda açıkça verilen hedef tutar, kartın son dört hanesi veya referans numarası workflow tarafında temkinli kurallarla alınabilir. Örneğin “limiti 5000 TL yap” hedef tutardır; “limiti 500 TL artır” fark tutarıdır ve yeni limit olarak kabul edilmez. Bu, genel amaçlı bir slot çıkarım modeli değildir; desteklenmeyen veya belirsiz değerler workflow sorusuyla toplanır.
+Explicit values can be extracted conservatively after selection. “Set my limit to 5000” supplies a target; “increase it by 500” supplies a delta and must not become the new limit. Negated targets must not be extracted. English confirmation/cancellation and supported numeric formats, including `5,000 TRY`, are checked alongside retained Turkish input rules. This is a limited simulator, not a general slot-extraction model. Custom fields without a parser remain a workflow preview; the destination workflow is responsible for collecting them.
 
-Gerçek intent belirsizliği hâlâ `clarify` üretir. Örneğin geçici kart kapatma ile kalıcı iptal arasında ayırt edici soru sorulabilir. `clarify` yanıtında tek bir intent seçilmişse veya soru yoksa sözleşme hatası kaydedilir. Böyle bir yanıt otomatik olarak doğru yönlendirmeye çevrilmez. Teknik hata ve gereksiz netleştirme accuracy paydasında başarısız kalır.
+True uncertainty between intents produces `clarify`. For the OpenAI-compatible protocol, a clarification needs a question and no chosen intent ID; `mentioned_intent_ids` is always a JSON array. A known single intent uses `[]`; genuine ambiguity or multiple goals retains the relevant candidate IDs. Invalid responses remain technical errors, and unnecessary clarification remains incorrect in accuracy denominators. The schema uses `strict: false` for endpoint compatibility while application validation enforces the contract.
 
-## Veri sürümü ve mevcut kurulum
+Banking-specific deterministic rules apply only when their relevant intents are available. A card-related request in a loyalty catalog must not invent banking intent IDs. Workflow previews and handoff states never execute a real transaction.
 
-29 demo test sorusunun metni değişmedi. Beş beklenen ID, yukarıdaki genel seçim kuralına göre sürümlendi:
+## Sector workspaces and custom intents
 
-| Vaka | Önceki etiket | Yeni etiket |
+`GET /v1/catalog/presets` returns an array of `id`, `name`, `description`, `workspace`, and `intent_count`. Banking uses `demo`; the other named workspaces are `airline`, `insurance`, and `ecommerce`. Their catalogs, cases, calibration, sessions, registrations, and jobs are isolated.
+
+The three nonbank catalogs each contain 200 English definitions. The expansion adds 130 airline, 126 insurance, and 116 e-commerce operations while retaining original IDs. Broad intents remain valid for general requests; explicit specialist operations select their own workflow. For example, an ordinary flight-date change stays with ticket change. Same-day change requires an explicit request for today's flight or the named same-day-change facility; merely mentioning another flight on the same calendar date is insufficient.
+
+**Intent catalog → Add intent** submits `POST /v1/catalog/intents?workspace=airline` with `{ "expected_version": "…", "intent": { ... } }`. The complete intent follows the shared schema, including channels and optional workflow fields. It appends to the existing catalog after validation; duplicate IDs, invalid neighbors, missing field questions, excessive size, or a stale version are rejected. A successful response includes `version`, `intent_count`, and `intent`.
+
+The form retains edits after an error. **Refresh catalog** loads the latest version before retrying a conflict. **Export** saves the whole catalog; **Import JSON** replaces it with a complete list. Versioned definition editing from audit findings changes names, descriptions, examples, exclusions, and selection boundaries while retaining workflow mappings. It does not relabel cases automatically.
+
+## Historical taxonomy v2 and current English migration
+
+On **10 September 2026**, `demo-taxonomy-v2` revised five expected labels in the 29-case Turkish banking test set without changing those test utterances:
+
+| Case | Previous label | Revised label |
 |---|---|---|
 | `seed-007` | `card.pin` | `bank.card.debit.pin_reset` |
 | `seed-011` | `transfer.status` | `bank.transfer.eft.status` |
@@ -43,87 +67,72 @@ Gerçek intent belirsizliği hâlâ `clarify` üretir. Örneğin geçici kart ka
 | `seed-019` | `digital.password` | `bank.digital.mobile.password_reset` |
 | `seed-021` | `loan.status` | `bank.loan.personal.application_status` |
 
-Test veri sürümü `seed-specificity-v2`. Ayrı 72 kalibrasyon vakasında 12 etiket revize edildi; `calibration-seed-v1-034` sorusu konut kredisi faizini tek başına soracak şekilde sadeleştirildi. Yeni kalibrasyon sürümü `calibration-seed-specificity-v2`. Vaka ID'leri geçmişe bağlantı için korunur. Tüm etiket değişiklikleri ve gerekçeleri [geçiş kaydında](../data/demo/migrations/taxonomy-v2.json) bulunur.
+That release used test dataset `seed-specificity-v2`, revised 12 of the 72 calibration labels, and simplified `calibration-seed-v1-034`. Its calibration version was `calibration-seed-specificity-v2`. The [taxonomy manifest](../data/demo/migrations/taxonomy-v2.json) records changes; [historical targets](../data/demo/migrations/taxonomy-v2-targets.json) preserve the original language stage. A later 15 September contract fix required explicit candidate arrays under `router-tr-v5-array-contract`.
 
-API yeniden başlatılınca bir defalık atomik geçiş çalışır. Yalnız önceki demo sürümüyle birebir eşleşen tanım ve vakalar güncellenir. Kullanıcının değiştirdiği tanım, soru veya gözden geçirdiği etiket korunur. Müşteri vakaları güncellenmez. Eski veya yeni hedef intenti kullanıcı değiştirmişse ilgili demo etiketi de korunup incelemeye bırakılır. Özel kataloglar bu geçişe dahil edilmez.
+The current `demo-english-v3` migration translates recognized untouched banking content and uses English selector protocols. Stable case and intent IDs retain history. A migration updates only records matching known normalized prior fingerprints; edited definitions, reviewed labels, customer inputs, custom catalogs, and archived snapshots are preserved. A changed target intent can also cause its seed label migration to be preserved for review. Existing jobs are never rescored automatically.
 
-Eski kataloglar, deney çıktıları ve değişen vaka kayıtlarının önceki sürümleri saklanır. **Intent kataloğu → Kataloğu denetle → Demo taksonomi sürümü** alanı geçiş sayısını, korunan kayıtları ve sürümdeki etiket değişikliklerini gösterir. Denetim indirildiğinde geçiş raporu da bulunur. API'de `GET /v1/catalog/migrations` ve `GET /v1/cases/{case_id}/versions` ile ayrıntı alınabilir. Kullanıcının sonraki etiket düzenlemeleri de vaka geçmişine kaydedilir.
+Inspect **Intent catalog → Audit catalog → Demo taxonomy version** or `GET /v1/catalog/migrations?workspace=demo`. Case history is available from `GET /v1/cases/{case_id}/versions?workspace=demo`. New sector workspaces seed their own matching datasets when empty. Refit calibration after a changed catalog and rerun experiments; old Turkish percentages do not quantify an English-language improvement.
 
-Eski deneyin accuracy'si yeniden hesaplanmaz. Etiketler ve alt katalog seçme protokolü değiştiğinden, eski ve yeni yüzdelerin farkı tek başına model başarısı artışı değildir. Bu 29 vaka artık düzeltme çalışmasını yönlendiren bir regresyon kümesidir; üretim doğruluğunu değerlendirmek için ayrıca bağımsız, incelenmiş bir test kümesi gerekir.
+## Nonbank expansion v2
 
-## Katalog büyüklüklerini adil karşılaştırma
+The immutable `data/presets/<sector>/migrations/expansion-v2.json` manifests record original intent fingerprints and case IDs. Migration IDs are `airline-expansion-v2`, `insurance-expansion-v2`, and `ecommerce-expansion-v2`. Recognition requires every v1 intent ID plus at least one unchanged sector-specific v1 definition, or the complete current starter catalog. A shared `service.human` definition alone does not establish provenance.
 
-Protokol `fixed-cohort-nested-domain-v2`: aynı test, bağlam ve kalibrasyon intentleri her alt katalogda zorunlu tutulur. Deterministik diyalog hedefleri de korunur. Kalan bütçe önce çekirdek intentlerden, sonra alanlara dengeli ve sabit tohumlu diğer intentlerden doldurulur. Büyük katalog küçük kataloğu içerir; sorular ve etiketler katalog büyüklüğüne göre değiştirilmez.
+An applicable migration updates unchanged original definitions and appends missing v2 IDs. It preserves edited/custom definitions and all existing cases, including reviewed labels and imports; it does not recreate intentionally deleted original cases. New cases are added only when their referenced intent definitions are safe. Trimmed or unrelated catalogs, and expansions that would exceed 2,000 intents, are skipped. The report, completion marker, catalog version, and case additions commit together, making retries safe after failure and completed migrations idempotent.
 
-Bu sayede beş yeni özel demo etiketi 48/200/800 deneyinin tamamında bulunur. Yeni 48-intent alt kümesi eski sürümdeki çekirdek 48 kümesiyle aynı değildir. Demo testinin tamamı **kalibre edilmiş semantik yöntemle** birlikte çalıştırılırsa test ve kalibrasyon hedefleri toplamda en az **53** intent gerektirir; bu durumda örneğin `64, 200, 800` seçin. İlk üç hibrit strateji ayrı semantik eşik kullanmadığından `48, 200, 800` ile çalışabilir. Müşteri veya elle düzenlenen kümelerde gereken minimum değişebilir; sunucu eksik kapsamı model çağrısından önce reddeder.
+Read `GET /v1/catalog/migrations?workspace=airline` (or the other sector) for applied/preserved records and any skipped reason. Existing workspaces can have fewer or different cases than a fresh workspace because preserving user records takes precedence over reproducing the starter cohort. Refit calibration and rerun comparisons after expansion; archived jobs and catalog snapshots remain unchanged.
 
-## Hangi sırayla çalıştırmalı?
+## Fair catalog-size and reranker comparisons
 
-Önce mevcut embedding ve LLM ile **Deneyler → Hibrit arama + LLM → Arama stratejilerini karşılaştır → İlk üç stratejiyi karşılaştır**. Yalnız bu yöntemi seçip `48, 200, 800`, 29 vaka ile dokuz kombinasyonu çalıştırın. Böylece yeni katalog ve prompt üzerinde semantik kaynak, eşit RRF ve semantik ağırlıklı RRF'yi tekrar göreceğiz. Son aday recall, doğru aday varken doğruluk, teknik hata, OOS yanlış kabul ve istek başına p95'i birlikte inceleyin. Kalibre semantik yöntemi ayrıca kullanacaksanız **Kalibrasyon** ekranında yeni katalog eşiklerini hesaplayın.
+`fixed-cohort-nested-domain-v2` retains expected test/calibration intents, conversation targets, and supported deterministic dialogue targets in every subset. Core intents fill the remaining budget first, followed by deterministic domain-balanced distractors. Larger subsets contain smaller subsets. The 48-intent subset after taxonomy v2 is not identical to the original 48 core definitions.
 
-Ardından kullanılabilir bir reranker bağlayıp **Reranker açık/kapalı karşılaştır** düğmesini kullanın. Düğme aşağıdaki iki stratejiyi seçer ve ayarlarını eşitler:
+The complete 153-case banking cohort requires 59 intents, or 67 when paired with the unchanged calibration cohort. Use `100, 200, 800` for full-cohort comparisons across methods. It covers all 47 routable core definitions and selected specific operations, with 58 distinct route labels; it does not cover all 800 generated definitions. Smaller fixed cohorts can require fewer intents. Other catalogs and edited cohorts have different minima; the server validates coverage before model calls.
 
-| Ayar | Reranker kapalı | Reranker açık |
-|---|---|---|
-| Kaynak | Yalnız semantik | Yalnız semantik |
-| Temsil | Tanım + örnek birlikte | Tanım + örnek birlikte |
-| Kaynak / havuz / LLM adayı | 40 / 20 / 8 | 40 / 20 / 8 |
-| Embedding ve LLM | Seçili ortak modeller | Seçili ortak modeller |
-| Yeniden sıralama | Yok | Seçili reranker |
+The complete 430-case airline, insurance, or e-commerce test cohort requires all 200 sector intents: 199 route targets and the human handoff target. Select a smaller fixed cohort before comparing smaller catalogs, keep that cohort unchanged across sizes, and account for calibration targets too. The CLI's default 100-case limit does not run a full bundled cohort; use `--limit 153` for banking or `--limit 430` for other sectors, or set **Maximum cases** to the corresponding count in the interface.
 
-Tek model çifti ve üç katalog büyüklüğüyle altı kombinasyon oluşur. Karşılaştırma yalnız yeniden sıralamayı değiştirir. Aday sınırını 20'den 8'e indiren önceki üç stratejiyle farkın tamamı reranker kazancı sayılmaz. Reranker doğru intenti ilk 8'e taşıyor mu ve ek süre kabul edilebilir mi, önce bunu ölçün. Çalışma sırası ve sağlayıcı yükü gecikmeyi etkileyebilir; hız kazancı kararı için ölçümü tekrar edin.
+Start with one embedding/decision-model pair and **Experiments → Hybrid retrieval + LLM → Compare retrieval strategies → Compare the first three strategies**. Then use **Compare reranker on/off** to hold both strategies at semantic source, combined representation, 40 source candidates, 20 pool candidates, and eight final candidates. Only reranking changes. One model pair at three sizes produces six combinations.
 
-Reranker bağlantısı yoksa düğme kapalıdır. Yerel veya HTTP bağlantısı **Model kataloğu → Reranker ekle** üzerinden yapılandırılır; [kurulum rehberi](retrieval-quality.md#reranker-bağlama). CLI için `data/reranker-comparison-profiles.json` hazırdır; özel kayıt kullanıyorsanız `reranker_id` alanını kayıt ID'siyle değiştirin.
+A strategy that also changes pool/final budgets cannot isolate a reranker's contribution. Inspect final candidate recall, accuracy when the expected candidate is present, OOS behavior, errors, and p95 together. Repeat timing measurements before drawing speed conclusions. See [retrieval settings and reranker connections](retrieval-quality.md).
 
 ```bash
-.venv/bin/python scripts/evaluate.py --source seed --methods hybrid_llm --catalog-sizes 48 200 800 --retrieval-profiles data/reranker-comparison-profiles.json
+.venv/bin/python scripts/evaluate.py --workspace demo --source seed --methods hybrid_llm --limit 153 --catalog-sizes 100 200 800 --retrieval-profiles data/reranker-comparison-profiles.json
 ```
 
-## Güncelleme
+Replace `reranker_id` in the profile file with your registered connection ID when needed. This command uses the configured providers and can incur charges.
 
-```bash
-npm --prefix apps/web ci
-npm --prefix apps/web run build
-```
+## Supplemental benchmark depth v1
 
-API'yi yeniden başlatın. Mevcut `.env` korunur. Bu aşamada yeni embedding veya LLM anahtarı gerekmez. Gerçek model deneyi ve müşteri verisiyle bağımsız doğrulama sonraki ölçümdür; otomatik HTTP/arayüz testleri bu ölçümün yerine geçmez.
+Every sector keeps its original tests and calibration unchanged and publishes additional English cases in `benchmark-cases.json`. Banking adds 94 core paraphrases and 30 challenge/context cases. Each other sector adds 199 paraphrases, 24 challenges, and two context cases. Challenges include near-neighbor negation, self-correction, synthetic noisy transcripts, underspecified requests, out-of-scope goals, and explicit human handoff. Expected labels follow existing selection rules, including product-specific banking precedence; decision policies are not changed to fit these cases.
+
+The supplements are curated synthetic robustness checks, not recorded speech or an independent held-out benchmark. Test questions remain outside retrieval examples and calibration. Written noise cannot establish ASR accuracy or end-to-end voice quality. See [data provenance and cohort counts](../data/README.md).
+
+After all historical releases, `<sector>-case-depth-v1` uses an immutable manifest of the complete preceding catalog to add eligible cases. Historical migrations receive only their original base-case files. The depth migration preserves all existing rows, rejects new cases whose target or context definitions were customized, and skips unrecognized or trimmed catalogs. It creates no catalog snapshot and never revives deleted supplemental cases after completion. Fresh bootstrap includes the supplement atomically; a failed upgrade rolls back new rows, its report, and its completion marker together. Existing workspace counts can be lower than the published complete cohort because user edits and deletions take precedence.
 
 ## Pitfalls
 
-- Sağlayıcı hata testlerinde backend'in gerçek sağlayıcı önekini ve güvenli hata mesajını kullanın. Yeni bir sağlayıcı eklenince önek çevirisini ve hata metinlerini birlikte doğrulayın.
-
-- Bağlantı testinde HTTP 200 tek başına sağlayıcının hazır olduğunu kanıtlamaz; yanıt sürümünü, model kimliğini, soru/seçenek kapsamını ve token kullanımını doğrulayın. Token toplamı için `result.usage` esas alınmalı, cevapların `input_tokens` değerleri buna tekrar eklenmemelidir. Koşullu seçenek skorlarını kalibre edilmiş karar güveni olarak kullanmayın.
-
-- Bir sağlayıcının yanıt sözleşmesi tamamlandığında kullanılabilirlik bilgisiyle birlikte arayüz açıklamalarını, TypeScript metadata türünü ve HTTP test fixture'larını da güncelleyin. Eski "yanıt formatı bekleniyor" durumu, anahtarı kayıtlı ve çalışmaya hazır modeli hâlâ kullanılamaz gösterir; gerçek model kimliğinin canlı istek ve deney isteğine gönderildiğini doğrulayın.
-
-- Parola alanını normal model formundan ayrı tutun; kapatma/iptal, bağlantı türü değiştirme ve başarılı kayıtta girilen anahtarı temizleyin. Düzenlemede boş alan kayıtlı anahtarı korumalı, eski anahtar formda yeniden gösterilmemelidir.
-
-- Model kaydı ve anahtar kaydı ayrı HTTP istekleriyse ilk isteğin döndürdüğü kimliği hemen saklayıp kaydı listede gösterin. Anahtar yazımı başarısız olduğunda kısmi kayıt görünür kalmalı ve tekrar deneme aynı modeli güncellemelidir; yeniden model oluşturmak yinelenen kayıt üretir.
-
-- Model kaydı değiştiğinde önceki bağlantı testi sonucunu hemen geçersiz kılın. Ayrı anahtar yazımı başarısız olsa bile kaydedilen bağlantının yeni kullanılabilirliğini üst ekranlardaki model seçimlerine yansıtın; eski sağlayıcının başarılı testi veya seçilebilirliği yeni bağlantı için geçerli değildir.
-
-- Sağlayıcı adresi, protokolü ve kullanılabilirlik kontrolü kayıt, listeleme ve çıkarım aşamalarında aynı kurala uymalıdır. Bir sağlayıcıya özgü endpoint'i uyumsuz genel protokolle kaydetmeyi reddedin.
-
-- Sağlayıcı değişirken kayıtlı anahtarı veritabanı işlemi tamamlanmadan kalıcı silmeyin. Anahtarı özel bir geçici dosyaya taşıyın, veritabanı güncellemesi reddedilirse geri yükleyin ve yalnız başarılı güncellemeden sonra silin; başarısız kayıt eski bağlantının anahtarını kaybetmemelidir.
-
-- HTTP test taklitleri dönen veriyi serileştirmeli veya klonlamalıdır. Sunucu fixture'ı ve React state aynı değişebilir nesneyi paylaşırsa fixture güncellemesi arayüzü kod çalışmadan değiştirebilir ve eksik state güncellemesini gizleyebilir.
-
-- Vite production build ile backend testlerini sırayla çalıştırın. Build `dist/assets` dizinini değiştirirken FastAPI `StaticFiles` kurulumu aynı dizini okursa uygulama başlatma testleri geçici dosya sistemi yarışı nedeniyle hata verebilir.
-
-- Harici sağlayıcıyla tam reindex öncesinde gönderilecek gerçek katalog sürümünün kaynağını ve hedef embedding endpoint'ini doğrulayın. `demo` adlı çalışma alanı kullanıcı düzenlemeleri veya içe aktarılan veri içerebilir; adı, içeriğin yalnız sentetik başlangıç verisi olduğunu kanıtlamaz.
-
-- İndeks hazırlama komutu bir deneme araması yapmamalıdır: bu, katalog hazır olsa bile fazladan sorgu embedding'i üretir ve hazırlığın kaynağını RAM gibi gösterebilir. `prepare_index()` sonucunu doğrudan raporlayın; yeni bir komut çalıştırmasının aynı nesli diskten, model çağrısı olmadan yüklediğini HTTP sınırında doğrulayın.
-
-- İndeks hazırlığı testlerinde uygulamanın Embeddings nesnesini eksik bir taklitle değiştirmeyin; kalıcı kimlik metin biçimlendirmesini ve gerçek model ayarlarını da kullanır. Sağlayıcı hatasını HTTP sınırında simüle edip API yanıtını ve aktif katalog sürümünün korunmasını doğrulayın.
-
-- Kalıcı embedding indeksinin kimliği credential içermez; RAM istemcisinin kimliği credential değişimini her bağlantıda izlemelidir. Yalnız kayıtlı bağlantıları ayırmak, varsayılan/env anahtarı değiştiğinde eski Authorization ile sorgu göndermeye yol açar. Disk vektörleri yeniden kullanılabilir, HTTP istemcisi güncel anahtarı almalıdır.
-
-- Yerel API ve proxy portlarını birlikte yapılandırın. Süreç durdurmadan önce çalışma dizini ve komutunun bu projeye ait olduğunu doğrulayın; yalnız port numarasına bakarak süreç sonlandırmayın.
-- Choice başına 255 seçeneğin altında kalmak TypeSafe token sınırlarına uyulduğunu kanıtlamaz. `jev-1.13`, state + tüm sorular için 64k ve state + en uzun soru için 32k sınırı tanımlar. 800 intenti dört 201-seçenekli Choice ile tam örnek/dışlama/seçim kurallarıyla gönderen ilk kontrol `400 / max_tokens_exceeded` verdi. İlk aşama yalnız ad ve açıklamaya indirildi; grup başına beş aday ve ikinci aşamanın tam Selector prompt'u korunarak yöntem tam deneyden önce sabitlendi. Limit hatasında veri sessizce kesilmez. [Sağlayıcı sınırları](https://docs.typesafe.ai/model-jaggedness/jev-1.13.md).
-- Yeni sağlayıcı eklenirken yalnız backend metadata'sını değiştirmek yeterli değildir. TypeSafe `protocol` ve `prompt_version` döndürürken OpenAI'ye özgü `reasoning`, `max_tokens` ve `response_format` alanlarını döndürmez; frontend sonucu sağlayıcıya göre ayrılan bir union ile modellemelidir. Ortak alanları kullanan ekranın çalışması eski tip tanımının doğru olduğunu kanıtlamaz.
-- Geçerli TypeSafe sözleşmesi doğru intent seçimini kanıtlamaz. 17 Eylül 2026'daki dört sabit örnekli canlı kontrolde `jev-1.13.0`, “Kartımı kapatmak istiyorum” mesajını beklenen netleştirme yerine kalıcı iptale yönlendirdi. Bu hata model karşılaştırmasında korunur; başarılı HTTP/olasılık doğrulaması doğruluk başarısı olarak raporlanmaz. [Koşullar ve sonuçlar](typesafe-jev.md).
-- TypeSafe aynı istekteki soruları birbirinden bağımsız değerlendirir. Netleştirme adayları için ek Choice soruları aynı çağrıda önceden sorulur; sonuçları yalnız ana karar netleştirme gerektiriyorsa kullanılır. Bir sorunun yanıtını aynı çağrıdaki başka sorunun girdisi gibi varsaymayın.
-- TypeSafe Choice yanıtında seçenek üyeliği tek başına yeterli değildir: olasılıkların izinli seçenek kümesini kapsaması, sonlu ve sınırlı olması, yuvarlama toleransıyla toplamının 1 olması ve seçimin en yüksek olasılıkla tutarlı olması da doğrulanmalıdır. Geçersiz sağlayıcı yanıtı bankacılık kararına dönüştürülmez.
-- JSON sözleşmesindeki `list_type` hatası tek başına alanın hangi türde geldiğini göstermez. Tanılar alan yolunu, hata kodunu ve izinli JSON türünü kaydetmeli; model yanıtı, kullanıcı içeriği veya ham değeri içermemelidir. Eksik alan ile açık `null` aynı durum değildir.
-- Liste beklenen model yanıt alanlarında eksik alan ve açık `null` durumlarını sözleşme testleriyle ayırın. Bozuk yanıtı sessizce boş listeye dönüştürmeyin; başarılı HTTP yanıtı doğru veya geçerli karar anlamına gelmez.
-- Tek amaç, tek intentin kesinleştiği anlamına gelmez: kart kapatma isteği geçici kapatma ile kalıcı iptal arasında belirsiz kalabilir. Boş liste talimatı yalnız kesinleşmiş tek intent veya belirtilecek aday yokluğu için geçerlidir; gerçek belirsizlik ve çoklu amaçta aday listesini silmek netleştirmeyi bozar.
+- Ambiguous benchmark requests should sound like natural underspecified speech. Avoid meta commentary that tells a classifier which ambiguity or expected label the author intended; record the challenge category separately.
+- Check product aliases as well as canonical product names when assigning benchmark labels. In the banking catalog, “bank card” explicitly aliases a debit card, so a core lost-card or delivery example must use an unqualified “card” unless it is labeled with the specific debit-card operation.
+- Keep supplemental cases out of historical migration inputs. Otherwise an older migration may publish them prematurely or recreate them before the depth revision's completion marker can protect intentional deletions. Restrict historical revision discovery to its release filename pattern and apply the explicit depth revision last.
+- Updating bundled JSON alone does not upgrade existing workspaces. Use immutable prior fingerprints and a versioned, conservative migration; publish the catalog, cases, report, and completion marker atomically and verify retry/idempotency behavior.
+- Do not count omitted new cases as preserved user edits. Migration reports distinguish `skipped_cases`, whose required definitions are unsafe, from `preserved_cases`, which already exist and differ from the bundled revision.
+- New specific operations can invalidate examples under an older broad intent. Review the broad definition's examples, exclusions, and selection rule alongside the new neighbors and their expected labels.
+- Normalize all example/test/calibration texts for duplicate checks, and re-evaluate OOS requests against the expanded scope. More cases do not automatically provide independent coverage.
+- Same-day flight change needs explicit "today" or the named same-day-change facility. A request for a different departure on the same calendar date can still be ordinary ticket change.
+- An English UI alone does not make an English benchmark. Check source utterances, prompts, retrieval instructions, server messages, confirmation/cancellation, number grouping, currencies, and negated amount targets through public requests.
+- Keep seed tests and calibration paired with their catalog. An OOS banking request may be in scope for another sector. Nonbank scaling needs a positive minimum without assuming banking core IDs.
+- Seed a workspace catalog and its test/calibration cases in one transaction. A failed case insert must roll back the catalog too, so retrying can recover the complete workspace instead of leaving a partial seed.
+- Match English routing keywords at word boundaries. Substring matching makes "unblock" trigger "block"; verify that unblocking routes directly while an ambiguous card closure still asks for clarification.
+- Capture old normalized fingerprints before translating. Earlier taxonomy manifests cannot substitute for the actual preceding language revision. Determine legacy targets from content fingerprints, not merely whether a workspace exists; otherwise an already-English partial catalog can briefly acquire a Turkish expansion and an unnecessary version.
+- Guard specialized rules by available catalog/candidate IDs. Keep unsupported custom-field workflows as bounded previews rather than unanswerable collection loops.
+- Model registrations are workspace-scoped. Reload choices on sector changes and never copy credentials implicitly. Bind request/SSE/poll clients immutably; remount workspace state and suppress callbacks after abort or settlement.
+- HTTP 200 alone does not prove a valid model decision. Check protocol version, model ID, allowed questions/options, token usage, and schema. Use top-level provider usage once; do not double-count per-answer usage or treat conditional option scores as calibrated confidence.
+- Update availability, UI descriptions, typed provider metadata, and HTTP fixtures together when adding a protocol. TypeSafe's `protocol`/`prompt_version` fields do not imply OpenAI `reasoning`, `max_tokens`, or `response_format` fields exist.
+- Provider URL, protocol, and availability validation must agree at registration, listing, and inference. Reject a provider-specific endpoint under an incompatible generic protocol. Invalidate prior probe results after connection changes.
+- If a future credential editor separates model and secret writes, retain the created model ID for retries, preserve an existing key on blank edits, never redisplay it, clear transient input on cancel/type changes/success, and make provider changes rollback-safe. Do not permanently remove a key before its model transaction succeeds.
+- HTTP fixtures must clone or serialize responses. Sharing a mutable object with React state can hide missing state updates. Test provider failures at the network boundary instead of replacing internal embedding collaborators with incomplete mocks.
+- Run backend tests and Vite builds sequentially: rebuilding `dist/assets` can race with FastAPI static-directory initialization. Confirm a process belongs to this project before stopping it; a port number alone is insufficient.
+- Distinguish multiprocess startup timeouts from vector-index locking defects. A queue timeout alone does not identify the cause; rerun the failing test in isolation and then the full suite before attributing the failure. Retain assertions that concurrent callers build the corpus once and share the same index generation.
+- Verify actual catalog provenance and endpoint before reindexing. A workspace called `demo` can contain imports. Preparation commands should report index preparation directly, without an extra query embedding. Disk vector identity excludes credentials; HTTP-client identity must track credential changes.
+- TypeSafe evaluates questions in one request independently. Do not assume one answer becomes another question's input. Validate full option coverage, finite bounded probabilities, sum tolerance, and consistency between the selected option and maximum probability.
+- A Choice option-count limit does not establish token-budget compliance. The historical full-text 800-intent request exceeded provider limits; reduced name/description shortlisting was frozen before the experiment rather than silently truncating after failure. See [the direct experiment](typesafe-jev.md#two-stage-experiment-without-embeddings).
+- Distinguish a missing list field from explicit `null`. Safe diagnostics report field path, error code, and JSON type, never raw user/model values. Do not coerce malformed responses into successful empty arrays.
+- A single user goal can still be ambiguous between two intents. Require an empty candidate array only when one intent is known or no candidate can be named; deleting genuine ambiguity candidates breaks clarification.

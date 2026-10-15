@@ -76,15 +76,15 @@ def error_diagnostics(response: httpx.Response, error: dict) -> dict:
 
 def provider_error(service: str, code: int | str | None, diagnostics: dict | None = None) -> ModelUnavailable:
     messages = {
-        "401": "API anahtarı eksik veya geçersiz.",
-        "402": "API kredisi yetersiz; sağlayıcı bakiyesini kontrol edin.",
-        "403": "API anahtarının bu model için erişim izni yok.",
-        "404": "Model veya istenen özellikleri destekleyen sağlayıcı bulunamadı.",
-        "408": "İstek süre sınırını aştı.",
-        "429": "API istek sınırına veya sağlayıcı kapasitesine ulaşıldı.",
-        "503": "Sağlayıcı şu anda kullanılamıyor.",
+        "401": "API key is missing or invalid.",
+        "402": "Insufficient API credits; check the provider balance.",
+        "403": "The API key does not have access to this model.",
+        "404": "No model or provider supporting the requested features was found.",
+        "408": "The request timed out.",
+        "429": "API rate limit or provider capacity reached.",
+        "503": "The provider is currently unavailable.",
     }
-    return ModelUnavailable(f"{service}: {messages.get(str(code), 'Sağlayıcı isteği tamamlayamadı; model ve API ayarlarını kontrol edin.')}", diagnostics=diagnostics)
+    return ModelUnavailable(f"{service}: {messages.get(str(code), 'The provider could not complete the request; check the model and API settings.')}", diagnostics=diagnostics)
 
 
 def response_json(response: httpx.Response, service: str, *, allow_list=False):

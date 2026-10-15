@@ -101,7 +101,7 @@ def source_fixture(tmp_path, settings, catalog):
               "catalog_version": version, "dataset_fingerprint": fingerprint(cases), "selected_count": 2,
               "options": {"methods": ["hybrid_llm"], "llm_ids": [record["id"]], "source": "seed", "split": "test"},
               "results": {"original": {"llm_id": record["id"], "llm": llm_metadata(resolved), "model": "jev-1.13.0",
-                  "prompt_version": "router-tr-typesafe-v1-choice",
+                  "prompt_version": direct.PROMPT_VERSION,
                   "catalog": {"version": version, "intent_count": 800, "intent_ids": [i.intent_id for i in catalog]},
                   "records": [{k: c[k] for k in ("case_id", "question", "expected_decision", "expected_intent_id")} for c in cases]}}}
     path = tmp_path / "source-evaluation.json"

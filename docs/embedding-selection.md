@@ -1,40 +1,38 @@
-# Bankacılık intent yönlendirmesi için embedding seçimi
+# Selecting embedding models for intent retrieval
 
-Karar tarihi: 8 Eylül 2026. İlk cloud PoC adayı **Qwen3-Embedding-4B**. Amaç 800 intent arasından LLM'e doğru adayları getirmek; değerlendirme ölçütleri öncelikle Recall@5/10/20, ardından uçtan uca intent doğruluğu, OOS davranışı ve sıcak sorgu p95 gecikmesi olmalıdır.
+Choose embeddings by their ability to retrieve the correct intent under your actual taxonomy, language, and transcript conditions. Measure candidate Recall@5/10/20 first, then end-to-end decision accuracy, OOS behavior, and warm-query p95. A better retrieval score does not establish a better final decision model.
 
-Bu seçim müşteri verisinde ölçülmüş bir birincilik değildir. Türkçe bankacılıkta kesin tercih, bağımsız ve insan tarafından doğrulanmış vaka etiketleriyle yapılacak karşılaştırmadan çıkacaktır.
+The application supports multiple registered embedding connections and model combinations. Use **Model catalog**, **Calibration**, and **Experiments** rather than changing `.env` between every run. Keep catalog, cases, K, decision model, and policy fixed when comparing embeddings. See [model comparison](model-comparison.md).
 
-## Neden 4B?
+## Input formatting and candidates
 
-- Açık ağırlık ve Apache-2.0 lisansı on-prem kullanımına uygundur.
-- Qwen3 ailesi 100'den fazla dili ve göreve özel sorgu talimatlarını destekler. Bankacılık niyetlerini getirmesini söyleyen İngilizce bir görev talimatı kullanıyoruz; müşteri sorgusu Türkçe kalır.
-- Aynı model ailesinin yayımlanmış çok dilli MTEB değerlendirmesinde 4B, 0.6B'nin üzerinde ve 8B'ye yakın sonuç verir. Bunlar Türkçe bankacılık accuracy yüzdeleri değildir.
-- OpenRouter'ın aktif model kataloğunda 4B doğrulandı. LLM ve embedding tek hesap/anahtarla denenebilir. GPU sunucusu kurmadan ilk müşteri deneyi yapılabilir.
-
-Kaynaklar: [Qwen3-Embedding-4B model kartı ve değerlendirmesi](https://huggingface.co/Qwen/Qwen3-Embedding-4B), [OpenRouter model sayfası](https://openrouter.ai/qwen/qwen3-embedding-4b), [OpenRouter embeddings API](https://openrouter.ai/docs/api_reference/embeddings).
-
-## Karşılaştırma sırası
-
-| Model | Deneydeki rolü | Uygulama notu |
+| Model/profile family | Supported formatting | Comparison purpose |
 |---|---|---|
-| Qwen3-Embedding-4B | İlk doğruluk odaklı aday | OpenRouter: qwen/qwen3-embedding-4b; yerel: Qwen/Qwen3-Embedding-4B |
-| Qwen3-Embedding-8B | Daha büyük modelden ek kazanım var mı? | OpenRouter: qwen/qwen3-embedding-8b; aynı qwen3 giriş profili |
-| Qwen3-Embedding-0.6B | Daha küçük modelle hız/kalite dengesi | Yerel veya uygun sağlayıcı; OpenRouter aktif katalog kontrolünde görünmedi, oradaki sayfası tek başına erişim kanıtı değil |
-| multilingual-e5-base | Önceki ölçümlerle referans | Mevcut yerel model; e5 profili |
-| BGE-M3 | Başka bir çok dilli mimariyle kontrol | Yerel BAAI/bge-m3, plain profili; bu uygulama dense vektörü kullanır |
+| Qwen3 Embedding 4B / 8B | `qwen3`: English task instruction plus the original request | Compare model sizes while keeping formatting fixed |
+| Qwen3 Embedding 0.6B | Local or supported provider with the matching profile | Evaluate a smaller model under measured hardware conditions |
+| Multilingual E5 | `e5`: query and passage prefixes | Compare with earlier E5 experiments |
+| BGE-M3 | `plain`: dense embedding without a prefix | Compare a different multilingual embedding family |
 
-BGE-M3'ün sparse ve çoklu vektör desteği bu adaptörde etkin değildir; mevcut sözcüksel bileşen BM25/karakter TF-IDF'dir. [BGE-M3 model kartı](https://huggingface.co/BAAI/bge-m3).
+Current retrieval instructions describe matching a request to a supported intent definition without fixing the sector to banking. User text is preserved. A custom served-model name can hide the family from automatic detection; select its profile explicitly. Do not apply a Qwen/E5 prefix to an unrelated model without checking that model's input contract.
 
-Güncel bir ek aday [Microsoft Harrier-oss-v1-0.6b](https://huggingface.co/microsoft/harrier-oss-v1-0.6b): MIT lisanslı, 94 dil ve güçlü yayımlanmış çok dilli sonuçlar sunuyor. Kendi sorgu prompt sözleşmesi uygulanmadan Qwen/E5 profiliyle çalıştırılmamalı. Bu teslimde Harrier entegrasyonu veya ölçümü yapılmadı.
+This adapter uses BGE-M3's dense vectors. Its sparse and multiple-vector modes are not enabled; the separate lexical source remains BM25/character TF-IDF. Consult the original model cards for deployment and licensing requirements: [Qwen3 4B](https://huggingface.co/Qwen/Qwen3-Embedding-4B), [Qwen3 8B](https://huggingface.co/Qwen/Qwen3-Embedding-8B), [BGE-M3](https://huggingface.co/BAAI/bge-m3), and [E5](https://huggingface.co/intfloat/multilingual-e5-large).
 
-## Hız ve doğruluk nasıl okunmalı?
+## Historical selection rationale: 8 September 2026
 
-800 kısa intent kaydının vektör karşılaştırması ile sorgu embedding çıkarımı ayrı maliyetlerdir. Katalog vektörleri süreçte bir kez hazırlanıp bellekte tutulur; her yeni sorguda sorgu embedding'i çıkarılır. Katalogda intent başına birden çok örnek bulunduğundan indeks 800'den fazla vektör içerir. İlk indeks oluşturma süresini sıcak sorgu gecikmesine karıştırmayın. HTTP ağı, servis kuyruğu ve donanım gerçek ölçüme dahildir; 4B için henüz p95 taahhüdü yoktur.
+The original Turkish banking prototype selected Qwen3 Embedding 4B as its first cloud trial candidate. Its recorded rationale was downloadable Apache-2.0 weights, multilingual/task-instruction support, a published comparison positioning 4B between 0.6B and 8B, and availability in the OpenRouter catalog checked that day. Published multilingual benchmark scores were not Turkish banking accuracy measurements.
 
-Önceki 26 kapsam içi demo vakasında E5 Recall@20 zaten %100'dü; karar doğruluğu 23/26 ve üç kapsam dışı sorunun tamamı yanlış kabul edilmişti. Dolayısıyla embedding değişimi tek başına seçilen doğruluk hedefinin sağlandığını göstermez. Aday doğru olduğu halde seçim hatalıysa Qwen/policy; aday hiç gelmiyorsa katalog/embedding incelenmelidir. Bu demo sonuçları müşteri benchmark'ı değildir.
+The recorded candidate order was 4B, 8B, 0.6B, E5, and BGE-M3. Qwen3 0.6B was absent from that historical OpenRouter embedding listing; a model page alone did not establish account access. [OpenRouter's embedding API](https://openrouter.ai/docs/api_reference/embeddings) and live discovery should be checked for a new experiment.
 
-Model/profil değiştirildiğinde API yeniden başlatılır ve indeks yeniden oluşturulur. Aynı katalog, aynı veri bölünmesi, aynı K, aynı Qwen modeli ve aynı karar kurallarıyla ayrı deneyler karşılaştırılır. Mevcut arayüz tek aktif embedding modeli kullanır; modeller arasında `.env` üzerinden geçilip ayrı deney kayıtları alınır. Eski sonuçlar kendi embedding model/profil bilgisini korur.
+[Microsoft Harrier-oss-v1-0.6b](https://huggingface.co/microsoft/harrier-oss-v1-0.6b) was noted as another possible family in the original investigation. No Harrier-specific formatting integration or benchmark was completed. These historical notes are not current recommendations or rankings for the new English sector catalogs.
 
-## Bu teslimde doğrulanan sınır
+## Separate preparation, retrieval, and decisions
 
-Model kimlikleri ve API dokümantasyonu kontrol edildi; giriş biçimleri, anahtar çözümleme, hata yanıtları, batch sırası ve yönlendirme entegrasyonu taklit HTTP yanıtlarıyla test edildi. API anahtarı kullanıcı tarafından local ortamda ekleneceği için canlı OpenRouter çağrısı, Qwen embedding accuracy'si ve cloud gecikmesi henüz ölçülmedi.
+Comparing catalog vectors and computing a new query embedding are different costs. Each intent can have multiple indexed examples, so an 800-intent catalog contains more than 800 vectors. Compatible catalog vectors persist on disk; query embeddings are computed per new request. Report cold/index preparation separately from warm-query latency. HTTP transport, provider queues, and hardware remain part of measured query time.
+
+An older Turkish 26-route-case E5 snapshot reported Recall@20 of 26/26, routing accuracy of 23/26, and false acceptance of all three OOS cases. The candidate stage had already found every expected intent; changing embeddings alone could not demonstrate that the final decision problem was solved. Those figures describe the earlier dataset and policy, not current English catalogs or customer traffic.
+
+If the expected intent is absent, inspect taxonomy, examples, input formatting, and retrieval. If it is present but the final decision fails, inspect the selector, clarification contract, and policy. Refit rejection thresholds after embedding/catalog changes, and evaluate on an independent test split.
+
+## Verification limits
+
+Provider adapters have controlled HTTP tests for formatting, key resolution, batch ordering, errors, and routing integration. Those tests do not establish live access, model accuracy, latency, or cost. Record the actual provider/model identity and conditions for every real comparison.

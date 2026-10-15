@@ -38,17 +38,17 @@ def call_with_rate_limit_retry(operation, retries: int, state: dict, sleep=time.
 def check_models(settings: Settings, embedding=True, llm=True, retry_429=0) -> list[dict]:
     checks = []
     embeddings = Embeddings(settings)
-    text = "Kredi kartımın limitini artırmak istiyorum"
+    text = "I want to increase my credit card limit"
     retry_state = {"retry_count": 0, "wait_seconds": 0.0}
     if embedding:
         started = time.perf_counter()
         phase = "passage"
         try:
-            passage = call_with_rate_limit_retry(lambda: embeddings.encode(["Kredi kartı limiti değiştirme. Kart limitimi artırmak istiyorum."]), retry_429, retry_state)
+            passage = call_with_rate_limit_retry(lambda: embeddings.encode(["Change a credit card limit. I want to increase my card limit."]), retry_429, retry_state)
             phase = "query"
             query = call_with_rate_limit_retry(lambda: embeddings.encode([text], query=True), retry_429, retry_state)
             if query.shape != passage.shape:
-                raise ModelUnavailable("Sorgu ve katalog embedding boyutları farklı.")
+                raise ModelUnavailable("Query and catalog embedding dimensions differ.")
             checks.append({"service": "embedding", "ok": True, "model": settings.embedding_model, "dimensions": query.shape[1], "elapsed_ms": round((time.perf_counter()-started)*1000, 2)})
         except ModelUnavailable as exc:
             checks.append({"service": "embedding", "ok": False, "model": settings.embedding_model, "failed_phase": phase, "error": str(exc), "diagnostics": exc.diagnostics})

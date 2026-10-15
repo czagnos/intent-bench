@@ -1,6 +1,6 @@
 # Release preparation
 
-IntentBench is an intent-recognition benchmarking workbench with synthetic example data. Its own code, documentation, and bundled examples are licensed under [Apache-2.0](../LICENSE). Third-party libraries, model weights, datasets, and services retain their own terms.
+IntentBench benchmarks decision models for intent routing using text and conversation context, with English synthetic starter data across four sectors. Its own code, documentation, and bundled examples are licensed under [Apache-2.0](../LICENSE). Third-party libraries, model weights, datasets, and services retain their own terms.
 
 ## Release checklist
 
@@ -32,3 +32,7 @@ If a credential is exposed, revoke or rotate it promptly and review all affected
 - Review a secret-scanner false positive against its exact match. Prefer clarifying ambiguous prose; any necessary exception must identify a narrowly reviewed finding fingerprint. Avoid broad keyword or path exclusions.
 - Run expensive test suites and frontend builds sequentially. Confirm completed job status and reproduce transient timeouts in isolation before classifying them as application defects.
 - License metadata alone is insufficient for distribution. Inspect the built package's license expression and included license file, and verify that the runtime container contains the same license text.
+
+- Verify an English release through the full request flow, including catalog text, retrieval instructions, model prompts, response text, and supported workflow replies. Preserving multilingual user content and historical fixtures is intentional.
+- Use exact known content fingerprints for language migrations. Preserve edited/reviewed records and historical snapshots; never identify a legacy catalog solely by whether its workspace already exists.
+- Verify each sector with its own seed/test/calibration cohort and workspace-scoped model registrations. Do not reuse banking OOS labels or silently copy credentials across sectors.

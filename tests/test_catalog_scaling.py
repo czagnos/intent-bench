@@ -95,7 +95,7 @@ def test_protects_customer_gold_and_context_intents_without_dropping_cases(clien
     catalog = client.get("/v1/catalog").json()
     extra = catalog["intents"][48:51]
     cases = [{"expected_intent_id": extra[0]["intent_id"], "context": {"active_intent": extra[1]["intent_id"], "clarification_options": [{"intent_id": extra[2]["intent_id"]}]}}]
-    with pytest.raises(ValueError, match="6 ile 800"):
+    with pytest.raises(ValueError, match="6 and 800"):
         select_catalogs(catalog, [5], cases)
     scope = select_catalogs(catalog, [48], cases)[0]
     assert {i["intent_id"] for i in extra} <= set(scope["metadata"]["intent_ids"])
@@ -103,7 +103,7 @@ def test_protects_customer_gold_and_context_intents_without_dropping_cases(clien
 
 def test_scale_run_keeps_same_denominators_and_does_not_change_live_catalog(client):
     version = client.get("/v1/catalog").json()["version"]
-    job = wait(client, client.post("/v1/evaluations", json={"methods": ["lexical"], "catalog_sizes": [48, 100, 800]}))
+    job = wait(client, client.post("/v1/evaluations", json={"methods": ["lexical"], "catalog_sizes": [48, 100, 800], "limit": 29}))
     assert job["selected_count"] == 29 and job["total"] == 87
     results = list(job["results"].values())
     assert [r["catalog"]["intent_count"] for r in results] == [48, 100, 800]

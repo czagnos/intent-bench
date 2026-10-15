@@ -1,6 +1,6 @@
 # Calibrated semantic rejection and interface language
 
-The semantic method can now reject out-of-scope requests using a fitted cosine threshold. It makes **no LLM call**. A language selector in the top bar switches the interface between Turkish and English and remembers the selection in the browser.
+The semantic method rejects out-of-scope requests using a fitted cosine threshold and makes **no LLM call**. The interface is English. Select a sector workspace before fitting: its catalog, seed cases, imported cases, model registrations, and saved fits are separate.
 
 ## Update an existing installation
 
@@ -12,7 +12,7 @@ npm --prefix apps/web run build
 PYTHONPATH=apps/api .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8002
 ```
 
-Refresh the browser. Keep the existing model/API key settings. The database adds its calibration table and seeds the new calibration cases automatically, preserving customer records and reviewed labels.
+Refresh the browser. Keep the existing model/API key settings. Fresh sector workspaces receive their matching calibration cases. Existing customer records, reviewed labels, and custom catalogs are preserved; recognized untouched banking records are migrated to the current English release. Recognized nonbank starter workspaces receive the versioned 200-intent expansion and eligible new cases while retaining all existing cases. Inspect the sector's `GET /v1/catalog/migrations` report and refit after an applied catalog expansion; see [preservation rules](../data/README.md#workspace-preservation-and-customization).
 
 ## Catalog-size experiments (9 September 2026)
 
@@ -22,8 +22,8 @@ Experiments now send explicit `catalog_sizes`. In calibrated semantic runs, each
 
 ## First run
 
-1. Open **Calibration / Kalibrasyon**. Select the embedding models you want to compare.
-2. Start with **Demo calibration cases** and the default **5% maximum OOS false acceptance** target. Click **Fit thresholds / Eşikleri hesapla**. This prepares each model's index and embeds each calibration question; it uses the existing embedding connection/key.
+1. Open **Calibration**. Select the embedding models you want to compare.
+2. Start with **Demo calibration cases** and the default **5% maximum OOS false acceptance** target. Click **Fit thresholds**. This prepares each model's index and embeds each calibration question; it uses the existing embedding connection/key.
 3. Inspect the fitted threshold, **in-scope retention**, **in-scope false rejection**, **OOS false acceptance**, sample count and source. A failed model is reported separately and cannot publish a partial fit. Other selected models continue.
 4. In **Live demo** or **Experiments**, select **Semantic search** and **Calibrated threshold**. All selected semantic embedding models must have a current calibration. A missing or stale fit returns an explicit error before a run starts.
 5. Evaluate on the separate **test** split. To compare with the previous semantic baseline, run the same test selection with **Off · previous baseline**. Each run saves its mode and threshold; previous results are unchanged. Hybrid retrieval + LLM retains its existing decision process.
@@ -50,7 +50,8 @@ Cosine scores are **not confidence probabilities**. This feature calibrates a de
 
 ## Data separation and provenance
 
-- The new demo calibration set has **72 handwritten, context-free cases: 48 in scope (47 route, one human handoff), 24 OOS**. The existing **29 demo test cases** remain separate and are not used to choose thresholds. These are illustrative datasets, not representative bank-call validation.
+- The banking calibration set has **72 handwritten, context-free cases: 48 in scope (47 route, one human handoff), 24 OOS**. The **153 banking test cases** (29 original plus 124 supplemental) remain separate and are not used to choose thresholds. A complete fresh banking workspace stores 225 seeded rows across these two splits. Its full test cohort requires at least 59 intents, or 67 with calibration; use `100, 200, 800` for full-cohort size comparisons. These are illustrative datasets, not representative bank-call validation.
+- Airline, insurance, and e-commerce each provide **80 context-free calibration cases: 40 route and 40 OOS**, separate from 400 catalog example utterances and 430 test cases. A complete fresh workspace stores 510 seeded rows. The full test cohort requires all 200 sector intents. Keep both calibration and test targets when choosing a smaller fixed cohort for catalog-size experiments.
 - For customer calibration, review labels on **Cases** and assign them to the **Calibration** split. At least 10 in-scope and 10 OOS cases are required. This minimum is a software prerequisite, not a statistically sufficient sample-size claim. Ambiguous `clarify` cases and cases containing conversation context are excluded by explicit validation rather than silently relabelled.
 - Normalized duplicate utterances within calibration, and overlaps with test utterances or catalog examples, are rejected. This catches exact normalized overlap; it does not detect paraphrase or conversation-level leakage. Keep conversations and near-duplicates in one split when preparing customer data.
 - Evaluating a calibrated semantic model on the utterances used to fit its threshold is blocked. Reviewed customer test counts exclude calibration/development cases.
@@ -79,11 +80,13 @@ The existing OOS metric deliberately retains its original `route` definition for
 
 ```bash
 .venv/bin/python scripts/calibrate.py --source seed --embedding-ids default bge-m3 --max-oos-far 0.05
-.venv/bin/python scripts/evaluate.py --source seed --methods e5 --embedding-ids default bge-m3
-.venv/bin/python scripts/evaluate.py --source seed --methods e5 --embedding-ids default bge-m3 --semantic-rejection off
+.venv/bin/python scripts/evaluate.py --workspace demo --source seed --methods e5 --embedding-ids default bge-m3 --limit 153
+.venv/bin/python scripts/evaluate.py --workspace demo --source seed --methods e5 --embedding-ids default bge-m3 --semantic-rejection off --limit 153
 ```
 
 The calibration CLI and API use the same store and fitter. Run them with the same data directory as the API. Calibration output is written under ignored `artifacts/calibrations/`; it is not added to Git.
+
+These evaluation commands include the complete banking test cohort. Use the matching sector workspace and `--limit 430` for a complete nonbank test cohort. Without an explicit limit, the evaluation CLI selects at most 100 cases.
 
 ```http
 POST /v1/calibrations?workspace=demo
@@ -96,11 +99,13 @@ The response contains the job `id`. Poll `GET /v1/requests/{id}?workspace=demo`.
 
 `POST /v1/route` and `POST /v1/evaluations` accept `semantic_rejection: "calibrated" | "off"`, defaulting to `calibrated`. The setting affects method `e5` only. Existing semantic clients that need the previous baseline must send `off`; otherwise they need a fit first. Lexical and hybrid runs do not require calibration. Clients cannot supply arbitrary thresholds or credentials.
 
-## English interface
+## English interface and multilingual inputs
 
-The switch covers navigation, forms, model descriptions, decision labels, metric names and definitions, progress, common service errors, dates, percentages and duration units. Switching language preserves the current page, selections and in-flight conversation request. The browser persists the choice; blocked local storage does not prevent switching.
+The interface, current bundled catalogs/cases, model instructions, and server responses are English. Old Turkish interface preferences do not restore a Turkish UI. User-owned utterances, descriptions, examples, source answers, and model-generated conversation text remain unchanged; interface translation is not part of inference.
 
-Customer utterances, catalog names/descriptions/examples, source answers and model-generated conversation content retain their original language. Model identifiers, workflow IDs, API decision values, dataset labels and exported JSON keys also stay stable. The sample conversation and deterministic slot handling remain Turkish; switching the UI is not an English banking benchmark or a translation step in inference.
+Identifiers, decision values, workflow IDs, labels, and JSON keys stay stable. Historical Turkish labels stored by earlier releases can be displayed through a compatibility translation layer. English confirmation/cancellation and supported banking amount parsing are exercised through the full request flow; Turkish inputs remain supported by existing deterministic rules. That compatibility is not a claim of equal model accuracy across languages.
+
+Banking's separate seed calibration set contains 72 cases. Airline, insurance, and e-commerce each have 80: 40 route and 40 OOS. All current starter utterances are English synthetic software examples. Calibrate against reviewed data representative of the target catalog, language, and speech-transcript conditions; an OOS banking example may become in scope for another sector, and a previously excluded operation may become in scope after expansion.
 
 ## Verification
 
@@ -112,4 +117,12 @@ npm --prefix apps/web test
 npm --prefix apps/web run build
 ```
 
-Provider tests use controlled network responses. Interface tests use React and jsdom with simulated responses and events. They check language switching during a request, stable request contents, calibration controls, evaluation controls, metric definitions, original text, and saved preferences. They do not measure model accuracy, live latency, browser layout, or rendering speed. Fit live thresholds separately using your configured model connection.
+Provider tests use controlled network responses. Interface tests use React and jsdom with simulated responses and events. They check English defaults, workspace isolation during requests, stable request contents, calibration/evaluation controls, metric definitions, original text, and saved workspace preferences. They do not measure model accuracy, live latency, browser layout, or rendering speed. Fit live thresholds separately using your configured model connection.
+
+## Pitfalls
+
+- An English interface does not create an English benchmark. Check retrieval instructions, prompts, source cases, response text, confirmation/cancellation, numeric formats, and field continuation through public requests.
+- Do not carry seed calibration data across sector catalogs. Review both in-scope labels and OOS exclusions when replacing a catalog.
+- Normalize all catalog example, test, and calibration utterances when checking duplicate leakage. Distinct IDs or different punctuation do not make repeated wording independent data.
+- Recheck every OOS example against the expanded operation set. Preserving an old OOS label does not prove the request remains outside the new scope.
+- Calibration estimates an empirical score threshold, not a calibrated probability or a guarantee on unseen traffic. Keep final tests independent of threshold selection.

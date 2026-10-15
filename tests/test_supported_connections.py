@@ -53,6 +53,6 @@ def test_unsupported_saved_connection_is_hidden_and_unusable_without_deleting_pr
             assert private_value not in response.text
     assert client.post(f"/v1/model-registry/{model_id}/check").status_code == 404
     assert client.patch(f"/v1/model-registry/{model_id}", json=body).status_code == 404
-    with pytest.raises(ValueError, match="Bilinmeyen"):
+    with pytest.raises(ValueError, match="Unknown"):
         studio.model_catalog.resolve("llm", model_id)
     assert studio.store.model_registration("demo", model_id) == record

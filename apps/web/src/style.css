@@ -1948,7 +1948,7 @@ dialog.overlay::backdrop {
 }
 
 .topbar-actions { display: flex; align-items: center; gap: 14px; }
-.language-select select { min-width: 105px; padding: 6px 28px 6px 10px; border: 1px solid var(--border, #dfe5ef); border-radius: 7px; background: white; color: inherit; font: inherit; }
+.sector-select select { min-width: 105px; padding: 6px 28px 6px 10px; border: 1px solid var(--border, #dfe5ef); border-radius: 7px; background: white; color: inherit; font: inherit; }
 .rejection-control { border-top: 1px solid #e5eaf2; margin-top: 16px; padding-top: 16px; }
 .rejection-control label { display: flex; flex-direction: column; gap: 8px; max-width: 400px; }
 .rejection-control select { min-height: 38px; border: 1px solid #dfe5ef; border-radius: 6px; padding: 8px; color: inherit; background: white; font: inherit; }
@@ -1965,3 +1965,33 @@ dialog.overlay::backdrop {
 .comparison-table abbr { text-decoration: underline dotted; text-underline-offset: 4px; cursor: help; }
 .comparison-table abbr:focus { outline: 2px solid #2856ef; outline-offset: 3px; }
 @media (max-width: 650px) { .topbar-actions > .badge { display: none; } .topbar-actions { gap: 6px; } }
+
+.sector-select { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.sector-select select { min-height: 36px; max-width: 180px; }
+.add-intent { margin-bottom: 24px; }
+.intent-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.intent-form-options { display: grid; gap: 12px; margin-top: 12px; }
+.add-intent .actions { margin-top: 16px; }
+.add-intent .notice { display: grid; gap: 8px; }
+.add-intent .notice p { margin: 0; }
+.add-intent .channel-options { display: flex; gap: 18px; }
+.add-intent .channel-options label { flex-direction: row; align-items: center; }
+.add-intent .channel-options input { width: auto; }
+.add-intent select { padding: 9px; border: 1px solid #dce4f1; border-radius: 6px; color: inherit; background: white; }
+@media (max-width: 650px) { .sector-select > span { display: none; } .intent-form-grid { grid-template-columns: 1fr; } }
+
+/* Model setup keeps credential values on the server and readiness scoped to a selection. */
+.settings-panel:has(.setup-content) { width: min(880px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow-y: auto; }
+.setup-content { display: grid; gap: 16px; }
+.setup-content h2, .setup-content h3, .setup-content p { margin: 0; }
+.setup-content p, .setup-content li { line-height: 1.55; }
+.setup-content h3 { font-size: 15px; }
+.setup-instructions, .setup-model, .setup-readiness section { padding: 16px; border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 10px; min-width: 0; }
+.setup-instructions ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.setup-content code { overflow-wrap: anywhere; }
+.setup-toolbar, .setup-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.setup-models, .setup-readiness { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.setup-model .model-select, .setup-model select { min-width: 0; width: 100%; }
+.setup-model small, .setup-model p { overflow-wrap: anywhere; }
+.setup-content .config-example { white-space: pre-wrap; }
+@media (max-width: 640px) { .setup-models, .setup-readiness { grid-template-columns: 1fr; } }

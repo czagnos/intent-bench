@@ -1,7 +1,7 @@
+import { useWorkspaceApi } from "./workspace";
 import { useCallback, useEffect, useState } from "react";
 import { ArrowDownToLine, LoaderCircle, SlidersHorizontal } from "lucide-react";
 import {
-  api,
   download,
   type CalibrationStatus,
   type CalibrationJob,
@@ -17,10 +17,10 @@ export function RejectionSummary({ value }: { value?: Rejection | null }) {
   return (
     <small className="rejection-summary">
       {value.calibrated
-        ? t("Kalibre edilmiş · eşik {threshold}", {
+        ? t("Calibrated · threshold {threshold}", {
             threshold: value.threshold.toFixed(4),
           })
-        : t("OOS reddetme kapalı")}
+        : t("OOS rejection off")}
       {value.calibrated && (
         <span title={value.id}> · {value.id.slice(0, 8)}</span>
       )}
@@ -42,33 +42,34 @@ export function RejectionControl({
   return (
     <div className="rejection-control">
       <label>
-        {t("Semantik OOS reddetme")}
+        {t("Semantic OOS rejection")}
         <select
           value={value}
           disabled={disabled}
           onChange={(e) => onChange(e.target.value as "calibrated" | "off")}
         >
-          <option value="calibrated">{t("Kalibre edilmiş eşik")}</option>
-          <option value="off">{t("Kapalı · önceki referans")}</option>
+          <option value="calibrated">{t("Calibrated threshold")}</option>
+          <option value="off">{t("Off · previous baseline")}</option>
         </select>
       </label>
       <p className="field-hint">
         {value === "calibrated"
           ? experiment
             ? t(
-                "Her katalog büyüklüğü ve embedding modeli için eşik ayrı kalibrasyon verisiyle bu deneyde hesaplanır. Hazırlık süresi p95'e dahil edilmez.",
+                "Each catalog size and embedding model gets a threshold fitted on separate calibration data within this experiment. Preparation time is excluded from p95.",
               )
             : t(
-                "Önce Kalibrasyon ekranında seçili embedding modelleri için eşik hesaplayın. Ek LLM çağrısı yapılmaz.",
+                "First fit thresholds for the selected embedding models on the Calibration page. No additional LLM call is made.",
               )
           : t(
-              "En yakın aday seçilir; semantik benzerlik için OOS eşiği uygulanmaz.",
+              "The nearest candidate is selected without an OOS similarity threshold.",
             )}
       </p>
     </div>
   );
 }
 export default function Calibration({ status }: { status: Status }) {
+  const { api } = useWorkspaceApi();
   const { t, pct, tag } = useI18n();
   const [data, setData] = useState<CalibrationStatus>();
   const [models, setModels] = useState(() =>
@@ -135,11 +136,11 @@ export default function Calibration({ status }: { status: Status }) {
     <div className="page-pad">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">{t("KALİBRASYON")}</p>
-          <h1>{t("Her embedding için ölçülmüş bir reddetme eşiği.")}</h1>
+          <p className="eyebrow">{t("CALIBRATION")}</p>
+          <h1>{t("A measured rejection threshold for every embedding model.")}</h1>
           <p>
             {t(
-              "Ayrı etiketli veriyle OOS yanlış kabulünü ve geçerli taleplerin kaybını dengele.",
+              "Balance OOS false acceptance and rejection of valid requests using a separate labelled dataset.",
             )}
           </p>
         </div>
@@ -147,20 +148,20 @@ export default function Calibration({ status }: { status: Status }) {
       <section className="panel experiment-setup">
         <div className="experiment-controls">
           <label>
-            {t("Kalibrasyon kümesi")}
+            {t("Calibration set")}
             <select
               value={source}
               disabled={busy}
               onChange={(e) => setSource(e.target.value)}
             >
-              <option value="seed">{t("Demo kalibrasyon vakaları")}</option>
+              <option value="seed">{t("Demo calibration cases")}</option>
               <option value="customer">
-                {t("Doğrulanmış müşteri kalibrasyon vakaları")}
+                {t("Reviewed customer calibration cases")}
               </option>
             </select>
           </label>
           <label>
-            {t("En fazla OOS yanlış kabul (%)")}
+            {t("Maximum OOS false acceptance (%)")}
             <input
               type="number"
               min={0}
@@ -190,11 +191,11 @@ export default function Calibration({ status }: { status: Status }) {
             ) : (
               <SlidersHorizontal size={17} />
             )}
-            {t("Eşikleri hesapla")}
+            {t("Fit thresholds")}
           </button>
         </div>
         <ModelChecklist
-          label={t("Embedding modelleri")}
+          label={t("Embedding models")}
           options={status.models.embedding}
           selected={models}
           disabled={busy}
@@ -203,7 +204,7 @@ export default function Calibration({ status }: { status: Status }) {
         <p className="field-hint">
           {counts &&
             t(
-              "{inside} kapsam içi · {outside} kapsam dışı · {total} kalibrasyon vakası",
+              "{inside} in scope · {outside} out of scope · {total} calibration cases",
               {
                 inside: counts.in_scope,
                 outside: counts.oos,
@@ -213,18 +214,18 @@ export default function Calibration({ status }: { status: Status }) {
         </p>
         <p className="field-hint">
           {t(
-            "En az 10 kapsam içi ve 10 kapsam dışı doğrulanmış vaka gerekir. Müşteri vakalarını Vakalar ekranında Kalibrasyon bölümüne atayın.",
+            "At least 10 reviewed in-scope and 10 OOS cases are required. Assign customer cases to the Calibration split on the Cases page.",
           )}
         </p>
         <p className="field-hint">
           {t(
-            "İndeks hazırlığı ve her vaka için embedding çağrısı yapılır. LLM kullanılmaz. Modeller sırayla çalışır.",
+            "This prepares the index and makes an embedding call for each case. No LLM is used. Models run sequentially.",
           )}
         </p>
       </section>
       <div className="notice">
         {t(
-          "Bu oran kalibrasyon kümesindeki hedeftir; yeni istekler için garanti değildir. Demo kümesi elle yazılmıştır. Sonuçları ayrı test vakalarında Deneyler ekranından doğrulayın.",
+          "This is a target on the calibration set, not a guarantee for new requests. The demo set is handwritten. Validate results on separate test cases on the Experiments page.",
         )}
       </div>
       {error && (
@@ -242,12 +243,12 @@ export default function Calibration({ status }: { status: Status }) {
           <div>
             <LoaderCircle className="spin" size={17} />
             <span>
-              {t("{done} / {total} vaka işlendi", {
+              {t("{done} / {total} cases processed", {
                 done: job.progress,
                 total: job.total,
               })}
               <small className="active-variant">
-                {job.active_model || t("Sırada")}
+                {job.active_model || t("Queued")}
               </small>
             </span>
           </div>
@@ -263,32 +264,32 @@ export default function Calibration({ status }: { status: Status }) {
             key={r.model}
           >
             {r.model} ·{" "}
-            {r.status === "failed" ? t(r.error) : t("Kalibrasyon kaydedildi")}
+            {r.status === "failed" ? t(r.error) : t("Calibration saved")}
           </div>
         ))}
       <section className="panel">
         <div className="panel-heading">
-          <h2>{t("Aktif katalog için kalibrasyonlar")}</h2>
+          <h2>{t("Calibrations for the active catalog")}</h2>
           <button
             className="button"
             disabled={!data}
             onClick={() => download("calibration-profiles.json", data)}
           >
             <ArrowDownToLine size={16} />
-            {t("Dışa aktar")}
+            {t("Export")}
           </button>
         </div>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>{t("Embedding modeli")}</th>
-                <th>{t("Durum / kaynak")}</th>
-                <th>{t("Cosine eşiği")}</th>
-                <th>{t("Kapsam içi kabul")}</th>
-                <th>{t("Kapsam içi yanlış ret")}</th>
-                <th>{t("OOS yanlış kabul")}</th>
-                <th>{t("Vaka sayısı")}</th>
+                <th>{t("Embedding model")}</th>
+                <th>{t("Status / source")}</th>
+                <th>{t("Cosine threshold")}</th>
+                <th>{t("In-scope retention")}</th>
+                <th>{t("In-scope false rejection")}</th>
+                <th>{t("OOS false acceptance")}</th>
+                <th>{t("Case count")}</th>
               </tr>
             </thead>
             <tbody>
@@ -298,11 +299,11 @@ export default function Calibration({ status }: { status: Status }) {
                   <td>
                     {p.calibration ? (
                       <>
-                        <span className="badge green">{t("Hazır")}</span>
+                        <span className="badge green">{t("Ready")}</span>
                         <div className="field-hint">
                           {p.calibration.source === "seed"
                             ? t("Demo")
-                            : t("Müşteri")}{" "}
+                            : t("Customer")}{" "}
                           ·{" "}
                           {new Date(
                             p.calibration.created * 1000,
@@ -315,7 +316,7 @@ export default function Calibration({ status }: { status: Status }) {
                     ) : (
                       <span className="field-hint">
                         {!p.available
-                          ? t("Model bağlantısı gerekli")
+                          ? t("Model connection required")
                           : t(p.reason)}
                       </span>
                     )}
@@ -341,12 +342,12 @@ export default function Calibration({ status }: { status: Status }) {
       </section>
       <p className="field-hint">
         {t(
-          "Tablodaki oranlar eşik seçilen kalibrasyon verisine aittir; intent doğruluğu değildir. Turuncu değer, kapsam içi vakaların %10’dan fazlasının reddedildiğini gösterir.",
+          "These rates describe the threshold on its calibration data, not intent accuracy. Orange indicates rejection of more than 10% of in-scope cases.",
         )}
       </p>
       <p className="field-hint">
         {t(
-          "Model, sağlayıcı, embedding ayarları, katalog veya etiketler değişirse eşik yeniden hesaplanmalıdır. Test ifadeleri ve katalog örnekleri kalibrasyonda kullanılamaz.",
+          "Refit when the model, provider, embedding settings, catalog or labels change. Test utterances and catalog examples cannot be used for calibration.",
         )}
       </p>
     </div>

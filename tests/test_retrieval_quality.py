@@ -247,7 +247,10 @@ def test_catalog_audit_exposes_eft_conflict_without_changing_labels(settings):
         report = client.get("/v1/catalog/audit").json()
         eft = next(i for i in report["issues"] if set(i["intent_ids"]) == {"transfer.status", "bank.transfer.eft.status"})
         assert any(c["case_id"] == "seed-011" for c in eft["cases"])
-        assert report["tested_intent_count"] == 26 and report["untested_intent_count"] == 774
+        tested_ids = {case["expected_intent_id"] for case in before
+                      if case["split"] == "test" and case["expected_decision"] == "route"}
+        assert report["tested_intent_count"] == len(tested_ids) == 58
+        assert report["untested_intent_count"] == 742
         assert report["automatic_label_changes"] is False
         assert studio.store.cases("demo") == before and studio.store.catalog("demo")["version"] == version
 

@@ -113,7 +113,7 @@ def test_unknown_model_and_request_endpoint_injection_rejected_before_claiming_t
     with TestClient(create_app(settings)) as client:
         requests = install_transports(client.app.state.studio)
         sid = client.post("/v1/sessions").json()["session_id"]
-        body = {"session_id": sid, "turn_revision": 1, "user_text": "Kart limitimi artır", "method": "hybrid_llm"}
+        body = {"session_id": sid, "turn_revision": 1, "user_text": "Increase my credit card limit", "method": "hybrid_llm"}
         assert client.post("/v1/route", json={**body, "llm_id": "does-not-exist"}).status_code == 422
         assert client.post("/v1/route", json={**body, "llm_base_url": "https://elsewhere.example"}).status_code == 422
         assert not requests
@@ -177,7 +177,7 @@ def test_concurrent_demo_requests_keep_model_and_embedding_selection(settings):
         selections = [("default", "gpt-oss-20b"), ("bge-m3", "qwen3-30b-instruct")]
         def run(pair):
             sid = client.post("/v1/sessions").json()["session_id"]
-            response = client.post("/v1/route", json={"session_id": sid, "turn_revision": 1, "user_text": "Kart limitimi artırmak istiyorum", "method": "hybrid_llm", "embedding_id": pair[0], "llm_id": pair[1]})
+            response = client.post("/v1/route", json={"session_id": sid, "turn_revision": 1, "user_text": "I want to increase my credit card limit", "method": "hybrid_llm", "embedding_id": pair[0], "llm_id": pair[1]})
             assert response.status_code == 202
             return wait_job(client, "/v1/requests/" + response.json()["request_id"])
         with ThreadPoolExecutor(max_workers=2) as pool:

@@ -4,7 +4,7 @@ import { type EvalRecord, type EvaluationResult } from "./api";
 
 function Outcome({ record }: { record?: EvalRecord }) {
   const { t, locale, tag, ms, pct } = useI18n();
-  if (!record) return <span>{t("Sonuç yok")}</span>;
+  if (!record) return <span>{t("No result")}</span>;
   return (
     <div
       className={
@@ -12,7 +12,7 @@ function Outcome({ record }: { record?: EvalRecord }) {
       }
     >
       <strong>
-        {record.correct ? t("Doğru") : t("İncelenmeli")} · {record.decision}
+        {record.correct ? t("Correct") : t("Needs review")} · {record.decision}
       </strong>
       <code>{record.intent_id || "—"}</code>
       <small>
@@ -54,10 +54,10 @@ export function CaseComparison({
   });
   return (
     <details className="panel case-comparison">
-      <summary>{t("İki kombinasyonu vaka bazında karşılaştır")}</summary>
+      <summary>{t("Compare two combinations case by case")}</summary>
       <div className="case-compare-controls">
         <label>
-          {t("Birinci kombinasyon")}
+          {t("First combination")}
           <select
             value={leftId}
             onChange={(event) => setLeft(event.target.value)}
@@ -70,7 +70,7 @@ export function CaseComparison({
           </select>
         </label>
         <label>
-          {t("İkinci kombinasyon")}
+          {t("Second combination")}
           <select
             value={rightId}
             onChange={(event) => setRight(event.target.value)}
@@ -90,7 +90,7 @@ export function CaseComparison({
             checked={onlyDifferent}
             onChange={(event) => setOnlyDifferent(event.target.checked)}
           />
-          {t("Yalnız farklı kararlar (")}
+          {t("Only different decisions (")}
           {rows.length})
         </label>
       </div>
@@ -98,7 +98,7 @@ export function CaseComparison({
         <table>
           <thead>
             <tr>
-              <th>{t("Vaka / beklenen")}</th>
+              <th>{t("Case / expected")}</th>
               <th>{labels[leftId]}</th>
               <th>{labels[rightId]}</th>
             </tr>
@@ -124,7 +124,7 @@ export function CaseComparison({
         </table>
         {!rows.length && (
           <p className="no-differences">
-            {t("Seçili kombinasyonlar aynı kararları üretmiş.")}
+            {t("The selected combinations produced identical decisions.")}
           </p>
         )}
       </div>

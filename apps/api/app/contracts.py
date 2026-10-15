@@ -29,7 +29,7 @@ class RetrievalProfile(BaseModel):
     """An experiment recipe. Credentials and arbitrary endpoints cannot enter requests."""
     model_config = ConfigDict(extra="forbid")
     id: ModelId = "hybrid"
-    name: str = Field(default="Mevcut hibrit", min_length=1, max_length=100)
+    name: str = Field(default="Current hybrid", min_length=1, max_length=100)
     source: Literal["hybrid", "semantic"] = "hybrid"
     representation: Literal["combined", "separate"] = "combined"
     source_k: int = Field(default=40, ge=2, le=100)
@@ -41,13 +41,19 @@ class RetrievalProfile(BaseModel):
     @model_validator(mode="after")
     def budgets(self):
         if self.candidate_k > self.pool_k or self.pool_k > self.source_k:
-            raise ValueError("Aday sayısı ≤ havuz sayısı ≤ kaynak arama sayısı olmalı.")
+            raise ValueError("Candidate count must be ≤ pool count ≤ source count.")
         return self
 
 
 class IntentEdit(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expected_version: str = Field(min_length=1, max_length=64)
+    intent: Intent
+
+
+class IntentSaved(BaseModel):
+    version: str
+    intent_count: int
     intent: Intent
 
 
@@ -79,7 +85,7 @@ class RouteRequest(BaseModel):
     @classmethod
     def text_not_blank(cls, value: str) -> str:
         if not value.strip():
-            raise ValueError("Mesaj boş olamaz.")
+            raise ValueError("The message cannot be blank.")
         return value.strip()
 
 
@@ -108,9 +114,9 @@ class RoutingSelection(BaseModel):
     def clarification_is_about_intent(self):
         if self.decision == "clarify":
             if self.intent_id is not None or not (self.question or "").strip():
-                raise ValueError("Intent netleştirmede tek bir intent seçilmez ve ayırt edici soru gerekir.")
+                raise ValueError("Intent clarification must not select one intent and requires a distinguishing question.")
             if len(set(self.mentioned_intent_ids)) == 1:
-                raise ValueError("Tek bilinen intentin işlem bilgilerini workflow toplar.")
+                raise ValueError("The workflow collects transaction fields for a single known intent.")
         return self
 
 
@@ -140,10 +146,10 @@ class EvaluationRequest(BaseModel):
     def profiles_for_llm(self):
         if self.retrieval_profiles is not None:
             if "hybrid_llm" not in self.methods:
-                raise ValueError("Arama stratejileri için Hibrit arama + LLM yöntemini seçin.")
+                raise ValueError("Select Hybrid retrieval + LLM to use retrieval profiles.")
             ids = [p.id for p in self.retrieval_profiles]
             if len(ids) != len(set(ids)):
-                raise ValueError("Arama stratejisi kimlikleri benzersiz olmalı.")
+                raise ValueError("Retrieval profile IDs must be unique.")
         return self
 
 

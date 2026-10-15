@@ -25,6 +25,24 @@ export type ModelCatalog = {
   max_variants: number;
   verified_on: string;
 };
+export type ConnectionProbe = {
+  ok: boolean;
+  model: string;
+  accuracy_benchmark: false;
+  error?: string;
+  elapsed_ms: number;
+  dimensions?: number;
+};
+export type SetupConnection = { id: string; model: string; configured: boolean; reason: string | null };
+export type SetupStatus = {
+  workspace: string;
+  catalog_version: string;
+  shared_openrouter_key_present: boolean;
+  embedding: SetupConnection;
+  llm: SetupConnection;
+  index: { state: "present" | "missing" | "invalid" | "unavailable"; representation: "combined" | "separate"; reason: string | null };
+  calibration: { state: "current" | "missing_or_stale" | "unavailable"; reason: string | null };
+};
 export type Candidate = {
   intent_id: string;
   name: string;
@@ -46,7 +64,8 @@ export type Intent = {
   workflow_id: string;
   required_slots: string[];
   slot_questions: Record<string, string>;
-  kind: string;
+  kind: "information" | "transaction";
+  channels: ("chat" | "voice")[];
   selection_rule?: string;
 };
 export type RetrievalProfile = {
@@ -312,94 +331,108 @@ export type Evaluation = {
   results?: Record<string, EvaluationResult>;
 };
 
-export const workspace = "demo";
-export function url(path: string) {
-  return (
-    "/v1" + path + (path.includes("?") ? "&" : "?") + "workspace=" + workspace
-  );
-}
-export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url(path), {
-    ...init,
-    headers: {
-      ...(init?.body instanceof FormData
-        ? {}
-        : { "Content-Type": "application/json" }),
-      ...init?.headers,
-    },
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const detail = data.detail;
-    throw new Error(
-      typeof detail === "string"
-        ? detail
-        : Array.isArray(detail)
-          ? detail.map((e: { msg: string }) => e.msg).join(" ")
-          : "İstek tamamlanamadı.",
+export function createWorkspaceClient(workspace: string) {
+  function url(path: string) {
+    return (
+      "/v1" + path + (path.includes("?") ? "&" : "?") + "workspace=" + encodeURIComponent(workspace)
     );
   }
-  return data;
-}
-export function waitForRoute(
-  id: string,
-  onStage: (stage: Stage) => void,
-  signal: AbortSignal,
-): Promise<Job> {
-  return new Promise((resolve, reject) => {
-    const source = new EventSource(url("/requests/" + id + "/events"));
-    let poll: ReturnType<typeof setInterval> | undefined;
-    const cleanup = () => {
-      source.close();
-      clearInterval(poll);
-      clearTimeout(timeout);
-      signal.removeEventListener("abort", aborted);
-    };
-    const done = (job: Job) => {
-      cleanup();
-      resolve(job);
-    };
-    const aborted = () => {
-      cleanup();
-      reject(new DOMException("Aborted", "AbortError"));
-    };
-    const timeout = setTimeout(() => {
-      cleanup();
-      reject(
-        new Error(
-          "Yanıt bekleme süresi doldu. İstek durumu sunucuda korunuyor.",
-        ),
+  async function api<T>(path: string, init?: RequestInit): Promise<T> {
+    const response = await fetch(url(path), {
+      ...init,
+      headers: {
+        ...(init?.body instanceof FormData
+          ? {}
+          : { "Content-Type": "application/json" }),
+        ...init?.headers,
+      },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = data.detail;
+      throw new Error(
+        typeof detail === "string"
+          ? detail
+          : Array.isArray(detail)
+            ? detail.map((e: { msg: string }) => e.msg).join(" ")
+            : "The request could not be completed.",
       );
-    }, 120000);
-    signal.addEventListener("abort", aborted);
-    if (signal.aborted) {
-      aborted();
-      return;
     }
-    source.addEventListener("stage", (e) =>
-      onStage(JSON.parse((e as MessageEvent).data)),
-    );
-    source.addEventListener("result", (e) =>
-      done(JSON.parse((e as MessageEvent).data)),
-    );
-    source.onerror = () => {
-      source.close();
-      if (!poll)
-        poll = setInterval(() => {
-          api<Job>("/requests/" + id)
-            .then((job) => {
-              job.events.forEach(onStage);
-              if (["completed", "failed", "superseded"].includes(job.status))
-                done(job);
-            })
-            .catch((error) => {
-              cleanup();
-              reject(error);
-            });
-        }, 750);
-    };
-  });
+    return data;
+  }
+  function waitForRoute(
+    id: string,
+    onStage: (stage: Stage) => void,
+    signal: AbortSignal,
+  ): Promise<Job> {
+    return new Promise((resolve, reject) => {
+      const source = new EventSource(url("/requests/" + id + "/events"));
+      let poll: ReturnType<typeof setInterval> | undefined;
+      let settled = false;
+      let polling = false;
+      const cleanup = () => {
+        settled = true;
+        source.close();
+        clearInterval(poll);
+        clearTimeout(timeout);
+        signal.removeEventListener("abort", aborted);
+      };
+      const done = (job: Job) => {
+        if (settled) return;
+        cleanup();
+        resolve(job);
+      };
+      const aborted = () => {
+        if (settled) return;
+        cleanup();
+        reject(new DOMException("Aborted", "AbortError"));
+      };
+      const timeout = setTimeout(() => {
+        cleanup();
+        reject(
+          new Error(
+            "The response timed out. The request status is preserved on the server.",
+          ),
+        );
+      }, 120000);
+      signal.addEventListener("abort", aborted);
+      if (signal.aborted) {
+        aborted();
+        return;
+      }
+      source.addEventListener("stage", (e) =>
+        { if (!settled) onStage(JSON.parse((e as MessageEvent).data)); },
+      );
+      source.addEventListener("result", (e) =>
+        done(JSON.parse((e as MessageEvent).data)),
+      );
+      source.onerror = () => {
+        if (settled) return;
+        source.close();
+        if (!poll)
+          poll = setInterval(() => {
+            if (settled || polling) return;
+            polling = true;
+            api<Job>("/requests/" + id, { signal })
+              .then((job) => {
+                if (settled) return;
+                job.events.forEach(onStage);
+                if (["completed", "failed", "superseded"].includes(job.status))
+                  done(job);
+              })
+              .catch((error) => {
+                if (settled) return;
+                cleanup();
+                reject(error);
+              })
+              .finally(() => { polling = false; });
+          }, 750);
+      };
+    });
+  }
+  return { workspace, api, waitForRoute };
 }
+
 export function download(filename: string, value: unknown) {
   const address = URL.createObjectURL(
     new Blob([JSON.stringify(value, null, 2)], { type: "application/json" }),
@@ -411,12 +444,12 @@ export function download(filename: string, value: unknown) {
   URL.revokeObjectURL(address);
 }
 export const pct = (value: number | null | undefined) =>
-  value == null ? "—" : "%" + (value * 100).toFixed(1);
+  value == null ? "—" : (value * 100).toFixed(1) + "%";
 export const ms = (value: number | null | undefined) =>
   value == null
     ? "—"
     : value >= 1000
-      ? (value / 1000).toFixed(2) + " sn"
+      ? (value / 1000).toFixed(2) + " s"
       : Math.round(value) + " ms";
 
 export type CalibrationMetrics = {

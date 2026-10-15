@@ -1,3 +1,4 @@
+import { useWorkspaceApi } from "./workspace";
 import { memo, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   Check,
@@ -10,7 +11,6 @@ import {
   ZoomOut,
 } from "lucide-react";
 import {
-  api,
   type Candidate,
   type Decision,
   type Intent,
@@ -33,26 +33,26 @@ import {
 } from "./routing-map";
 
 const decisionLabels: Record<string, string> = {
-  route: "Yönlendirildi",
-  continue: "Akış sürüyor",
-  clarify: "Netleştirme gerekli",
-  out_of_scope: "Kapsam dışı",
-  handoff: "Temsilciye aktarım",
-  cancel: "İptal edildi",
-  error: "Bağlantı hatası",
+  route: "Routed",
+  continue: "Workflow in progress",
+  clarify: "Clarification needed",
+  out_of_scope: "Out of scope",
+  handoff: "Agent handoff",
+  cancel: "Cancelled",
+  error: "Connection error",
 };
 const stageLabels: Record<string, string> = {
-  context: "Konuşma bağlamı",
-  retrieval: "Aday arama",
-  reranking: "Adayları yeniden sıralama",
-  selection: "Intent seçimi",
-  policy: "Karar kontrolü",
+  context: "Conversation context",
+  retrieval: "Candidate retrieval",
+  reranking: "Reranking candidates",
+  selection: "Intent selection",
+  policy: "Decision validation",
 };
 const mapLabels: Record<MapView, string> = {
-  workflow: "Workflow haritası",
-  radial: "Dairesel harita",
-  galaxy: "Intent galaksisi",
-  mosaic: "Intent mozaiği",
+  workflow: "Workflow map",
+  radial: "Radial map",
+  galaxy: "Intent galaxy",
+  mosaic: "Intent mosaic",
 };
 
 type Props = {
@@ -304,13 +304,13 @@ function RoutingMap({
         height={height}
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label={t("{view}: {count} intent", {
+        aria-label={t("{view}: {count} intents", {
           view: t(mapLabels[view]),
           count,
         })}
       >
         <desc>
-          {t("Bağlantılar yönlendirmeyi, alanlar katalog gruplarını gösterir.")}
+          {t("Connections show routing; domains group the catalog.")}
         </desc>
         <defs>
           <pattern
@@ -399,7 +399,7 @@ function RoutingMap({
               />
               {view === "workflow" && (
                 <text x={g.x + 10} y={g.y + 40} className="routing-muted">
-                  {t("{count} intent", { count: g.count })}
+                  {t("{count} intents", { count: g.count })}
                 </text>
               )}
             </g>
@@ -421,7 +421,7 @@ function RoutingMap({
           />
           <circle cx={layout.source.x} cy={layout.source.y} r="24" />
           <text x={layout.source.x} y={layout.source.y + 4} textAnchor="middle">
-            {t("Giriş")}
+            {t("Entry")}
           </text>
         </g>
         {terminal && (
@@ -463,14 +463,14 @@ function RoutingMap({
       <div className="routing-map-legend">
         <span>
           {focusDomain
-            ? `${focusDomain} · ${t("{count} intent", { count: groups.find((g) => g.name === focusDomain)?.intents.length || 0 })}`
-            : t("{count} alan", { count: groups.length })}
+            ? `${focusDomain} · ${t("{count} intents", { count: groups.find((g) => g.name === focusDomain)?.intents.length || 0 })}`
+            : t("{count} domains", { count: groups.length })}
         </span>
         <span>
           <i className="candidate" />
-          {t("Aday")}
+          {t("Candidate")}
           <i className="selected" />
-          {t("Seçilen intent")}
+          {t("Selected intent")}
         </span>
       </div>
     </div>
@@ -493,9 +493,9 @@ function WorkflowPreview({
       ...Object.fromEntries(result.missing_slots.map((id) => [id, ""])),
     });
   const slotLabels: Record<string, string> = {
-    new_limit: "Yeni limit",
-    card_last4: "Kartın son dört hanesi",
-    transfer_reference: "Transfer referansı",
+    new_limit: "New limit",
+    card_last4: "Last four card digits",
+    transfer_reference: "Transfer reference",
   };
   return (
     <div className="routing-workflow" data-workflow={result.workflow_id!}>
@@ -503,7 +503,7 @@ function WorkflowPreview({
         <Workflow size={18} />
         <div>
           <strong>{result.intent_name || intent?.name}</strong>
-          <small>{t("İşlem simülasyonu")}</small>
+          <small>{t("Workflow simulation")}</small>
         </div>
       </div>
       <ol>
@@ -521,7 +521,7 @@ function WorkflowPreview({
               <div>
                 <strong>{t(slotLabels[slot] || slot)}</strong>
                 <small>
-                  {value || (missing ? t("Bekleniyor") : t("Tamamlandı"))}
+                  {value || (missing ? t("Pending") : t("Completed"))}
                 </small>
               </div>
             </li>
@@ -542,8 +542,8 @@ function WorkflowPreview({
               {result.simulation_complete && <Check size={11} />}
             </span>
             <div>
-              <strong>{t("Müşteri onayı")}</strong>
-              {result.pending_confirmation && <small>{t("Bekleniyor")}</small>}
+              <strong>{t("Customer confirmation")}</strong>
+              {result.pending_confirmation && <small>{t("Pending")}</small>}
             </div>
           </li>
         )}
@@ -563,10 +563,10 @@ function WorkflowPreview({
             <strong>
               {t(
                 result.simulation_complete
-                  ? "Simülasyon tamamlandı"
+                  ? "Simulation completed"
                   : required.length
-                    ? "Simülasyonu tamamla"
-                    : "Akış önizlemesi hazır",
+                    ? "Complete simulation"
+                    : "Workflow preview ready",
               )}
             </strong>
           </div>
@@ -588,6 +588,7 @@ export default function RoutingVisualization({
   error,
   turnId,
 }: Props) {
+  const { api } = useWorkspaceApi();
   const { t, ms } = useI18n();
   const targetVersion =
     result?.catalog_version ||
@@ -645,7 +646,7 @@ export default function RoutingVisualization({
       .then((value) => {
         if (controller.signal.aborted) return;
         if (value.version !== targetVersion)
-          throw new Error("Katalog sürümü eşleşmiyor.");
+          throw new Error("Catalog version does not match.");
         setSnapshot(value);
       })
       .catch((e) => {
@@ -689,12 +690,12 @@ export default function RoutingVisualization({
   const statusText = shownResult
     ? t(decisionLabels[shownResult.decision] || shownResult.decision)
     : shownError
-      ? t("Bağlantı hatası")
+      ? t("Connection error")
       : shownStages.length
         ? t(shownStages.at(-1)!.label)
         : busy || replaying
-          ? t("İstek işleniyor")
-          : t("İlk mesajı bekliyor");
+          ? t("Processing request")
+          : t("Waiting for the first message");
   const canFocus =
     !!selectedIntentId(shownResult) ||
     candidates.length > 0 ||
@@ -703,15 +704,15 @@ export default function RoutingVisualization({
   return (
     <section
       className="panel routing-visualization"
-      aria-label={t("Canlı yönlendirme görünümü")}
+      aria-label={t("Live routing view")}
     >
       <div className="panel-heading routing-visual-heading">
         <div>
           <h2>{t(mapLabels[view])}</h2>
           <small>
             {actualCatalog
-              ? t("{count} intent", { count: actualCatalog.length })
-              : t("Katalog yükleniyor…")}
+              ? t("{count} intents", { count: actualCatalog.length })
+              : t("Loading catalog…")}
           </small>
         </div>
         <div className="routing-map-actions">
@@ -720,10 +721,10 @@ export default function RoutingVisualization({
             className="button subtle"
             onClick={() => setFocus((value) => !value)}
             disabled={!canFocus}
-            title={t(focus ? "Tüm katalog" : "Adaylara yaklaş")}
+            title={t(focus ? "Full catalog" : "Focus on candidates")}
           >
             {focus ? <ZoomOut size={15} /> : <ZoomIn size={15} />}
-            <span>{t(focus ? "Tüm katalog" : "Yakın görünüm")}</span>
+            <span>{t(focus ? "Full catalog" : "Focus view")}</span>
           </button>
           <button
             type="button"
@@ -749,9 +750,9 @@ export default function RoutingVisualization({
             {t(
               replaying
                 ? replay!.paused
-                  ? "Devam et"
-                  : "Duraklat"
-                : "Tekrar oynat",
+                  ? "Resume"
+                  : "Pause"
+                : "Replay",
             )}
           </button>
         </div>
@@ -759,7 +760,7 @@ export default function RoutingVisualization({
       <div className="routing-statusbar">
         <span aria-live="polite">{statusText}</span>
         <span>
-          {replaying ? t("TEKRAR OYNATMA") : t("CANLI")}
+          {replaying ? t("REPLAY") : t("LIVE")}
           {result ? ` · ${ms(result.timings_ms.total)}` : ""}
         </span>
       </div>
@@ -770,7 +771,7 @@ export default function RoutingVisualization({
           ) : (
             <>
               <LoaderCircle className="spin" size={22} />
-              <p>{t("İsteğin katalog sürümü yükleniyor…")}</p>
+              <p>{t("Loading the catalog version used by this request…")}</p>
             </>
           )}
         </div>
@@ -787,7 +788,7 @@ export default function RoutingVisualization({
           eventKey={sampleKey}
         />
       )}
-      <div className="routing-trace" aria-label={t("Gerçek işlem aşamaları")}>
+      <div className="routing-trace" aria-label={t("Actual processing stages")}>
         {shownStages
           .filter((event) => stageLabels[event.stage])
           .map((event) => (
@@ -797,7 +798,7 @@ export default function RoutingVisualization({
             </span>
           ))}
         {!shownStages.length && (
-          <span>{t("İşlem aşamaları burada görünecek.")}</span>
+          <span>{t("Processing stages will appear here.")}</span>
         )}
       </div>
       {shownResult && <WorkflowPreview result={shownResult} intent={intent} />}
@@ -815,9 +816,9 @@ export default function RoutingVisualization({
         </p>
       )}
       <div className="routing-caption">
-        <small>{t("Animasyon süresi ölçümlere dahil değildir.")}</small>
+        <small>{t("Animation duration is not included in measurements.")}</small>
         <small>
-          {t("Katalog ")}
+          {t("Catalog ")}
           {targetVersion?.slice(0, 8)}
         </small>
       </div>

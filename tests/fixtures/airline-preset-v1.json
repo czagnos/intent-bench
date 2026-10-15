@@ -1,0 +1,2432 @@
+{
+  "intents": [
+    {
+      "intent_id": "airline.search.flights",
+      "name": "Search flights",
+      "domain": "Flight discovery",
+      "description": "Find flights for a route, travel dates, and passenger party.",
+      "examples": [
+        "Which flights go from London to Rome next Friday?",
+        "I would like to find flights for a route, travel dates, and passenger party."
+      ],
+      "exclusions": [
+        "Compare fare brands and included benefits before booking."
+      ],
+      "confusable_with": [
+        "airline.search.fares"
+      ],
+      "workflow_id": "workflow.airline.search.flights",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Find flights for a route, travel dates, and passenger party. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.search.fares",
+      "name": "Compare flight fares",
+      "domain": "Flight discovery",
+      "description": "Compare fare brands and included benefits before booking.",
+      "examples": [
+        "What is the difference between the basic and flexible fares?",
+        "I would like to compare fare brands and included benefits before booking."
+      ],
+      "exclusions": [
+        "Explain the change and cancellation conditions of a fare."
+      ],
+      "confusable_with": [
+        "airline.booking.rules"
+      ],
+      "workflow_id": "workflow.airline.search.fares",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Compare fare brands and included benefits before booking. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.search.flexible",
+      "name": "Flexible travel dates",
+      "domain": "Flight discovery",
+      "description": "Compare flights across nearby travel dates.",
+      "examples": [
+        "Can I see cheaper flights a few days either side of my dates?",
+        "I would like to compare flights across nearby travel dates."
+      ],
+      "exclusions": [
+        "Find flights for a route, travel dates, and passenger party."
+      ],
+      "confusable_with": [
+        "airline.search.flights"
+      ],
+      "workflow_id": "workflow.airline.search.flexible",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Compare flights across nearby travel dates. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.search.route",
+      "name": "Airline route availability",
+      "domain": "Flight discovery",
+      "description": "Check whether the airline serves a destination or route.",
+      "examples": [
+        "Do you fly directly to Lisbon?",
+        "I would like to check whether the airline serves a destination or route."
+      ],
+      "exclusions": [
+        "Find flights for a route, travel dates, and passenger party."
+      ],
+      "confusable_with": [
+        "airline.search.flights"
+      ],
+      "workflow_id": "workflow.airline.search.route",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check whether the airline serves a destination or route. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.booking.rules",
+      "name": "Ticket fare conditions",
+      "domain": "Bookings",
+      "description": "Explain the change and cancellation conditions of a fare.",
+      "examples": [
+        "Does my fare allow a date change?",
+        "I would like to explain the change and cancellation conditions of a fare."
+      ],
+      "exclusions": [
+        "Request a different date, time, or route for an existing booking.",
+        "Request cancellation of an existing flight reservation."
+      ],
+      "confusable_with": [
+        "airline.change.flight",
+        "airline.cancel.booking"
+      ],
+      "workflow_id": "workflow.airline.booking.rules",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Explain the change and cancellation conditions of a fare. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.booking.create",
+      "name": "Create flight booking",
+      "domain": "Bookings",
+      "description": "Start a new reservation for selected flights.",
+      "examples": [
+        "I am ready to book two return tickets.",
+        "I would like to start a new reservation for selected flights."
+      ],
+      "exclusions": [
+        "Place an eligible reservation on temporary hold before payment."
+      ],
+      "confusable_with": [
+        "airline.booking.hold"
+      ],
+      "workflow_id": "workflow.airline.booking.create",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Start a new reservation for selected flights. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.booking.hold",
+      "name": "Hold a reservation",
+      "domain": "Bookings",
+      "description": "Place an eligible reservation on temporary hold before payment.",
+      "examples": [
+        "Can you hold these flights while I confirm my plans?",
+        "I would like to place an eligible reservation on temporary hold before payment."
+      ],
+      "exclusions": [
+        "Start a new reservation for selected flights."
+      ],
+      "confusable_with": [
+        "airline.booking.create"
+      ],
+      "workflow_id": "workflow.airline.booking.hold",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Place an eligible reservation on temporary hold before payment. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.booking.retrieve",
+      "name": "Retrieve booking",
+      "domain": "Bookings",
+      "description": "Find an existing booking using reservation details.",
+      "examples": [
+        "Please bring up my flight reservation.",
+        "I would like to find an existing booking using reservation details."
+      ],
+      "exclusions": [
+        "Obtain a missing booking confirmation or itinerary email."
+      ],
+      "confusable_with": [
+        "airline.booking.confirmation"
+      ],
+      "workflow_id": "workflow.airline.booking.retrieve",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Find an existing booking using reservation details. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.booking.confirmation",
+      "name": "Resend booking confirmation",
+      "domain": "Bookings",
+      "description": "Obtain a missing booking confirmation or itinerary email.",
+      "examples": [
+        "My itinerary email never arrived; can you resend it?",
+        "I would like to obtain a missing booking confirmation or itinerary email."
+      ],
+      "exclusions": [
+        "Find an existing booking using reservation details."
+      ],
+      "confusable_with": [
+        "airline.booking.retrieve"
+      ],
+      "workflow_id": "workflow.airline.booking.confirmation",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Obtain a missing booking confirmation or itinerary email. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.booking.ticket_status",
+      "name": "Ticket issuance status",
+      "domain": "Bookings",
+      "description": "Check whether a paid booking has been ticketed.",
+      "examples": [
+        "I paid but have no ticket number; was my ticket issued?",
+        "I would like to check whether a paid booking has been ticketed."
+      ],
+      "exclusions": [
+        "Investigate a rejected or incomplete ticket payment."
+      ],
+      "confusable_with": [
+        "airline.payment.failed"
+      ],
+      "workflow_id": "workflow.airline.booking.ticket_status",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check whether a paid booking has been ticketed. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.booking.group",
+      "name": "Group booking inquiry",
+      "domain": "Bookings",
+      "description": "Request a quote or assistance for a group reservation.",
+      "examples": [
+        "We need flights for a group of fifteen people.",
+        "I would like to request a quote or assistance for a group reservation."
+      ],
+      "exclusions": [
+        "Start a new reservation for selected flights."
+      ],
+      "confusable_with": [
+        "airline.booking.create"
+      ],
+      "workflow_id": "workflow.airline.booking.group",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Request a quote or assistance for a group reservation. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.payment.methods",
+      "name": "Flight payment methods",
+      "domain": "Payments",
+      "description": "Explain accepted payment methods, installments, or payment currencies.",
+      "examples": [
+        "Can I pay for the ticket by bank transfer?",
+        "I would like to explain accepted payment methods, installments, or payment currencies."
+      ],
+      "exclusions": [
+        "Investigate a rejected or incomplete ticket payment."
+      ],
+      "confusable_with": [
+        "airline.payment.failed"
+      ],
+      "workflow_id": "workflow.airline.payment.methods",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Explain accepted payment methods, installments, or payment currencies. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.payment.failed",
+      "name": "Failed flight payment",
+      "domain": "Payments",
+      "description": "Investigate a rejected or incomplete ticket payment.",
+      "examples": [
+        "My card was declined when I tried to buy the flight.",
+        "I would like to investigate a rejected or incomplete ticket payment."
+      ],
+      "exclusions": [
+        "Check whether a paid booking has been ticketed."
+      ],
+      "confusable_with": [
+        "airline.booking.ticket_status"
+      ],
+      "workflow_id": "workflow.airline.payment.failed",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Investigate a rejected or incomplete ticket payment. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.payment.duplicate",
+      "name": "Duplicate flight charge",
+      "domain": "Payments",
+      "description": "Report a duplicate airline booking payment.",
+      "examples": [
+        "The airline charged me twice for the same booking.",
+        "I would like to report a duplicate airline booking payment."
+      ],
+      "exclusions": [
+        "Check the progress of an already requested airline refund."
+      ],
+      "confusable_with": [
+        "airline.refund.status"
+      ],
+      "workflow_id": "workflow.airline.payment.duplicate",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Report a duplicate airline booking payment. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.payment.receipt",
+      "name": "Ticket invoice or receipt",
+      "domain": "Payments",
+      "description": "Obtain a receipt or invoice for a purchased ticket.",
+      "examples": [
+        "I need the invoice for my business flight.",
+        "I would like to obtain a receipt or invoice for a purchased ticket."
+      ],
+      "exclusions": [
+        "Obtain a missing booking confirmation or itinerary email."
+      ],
+      "confusable_with": [
+        "airline.booking.confirmation"
+      ],
+      "workflow_id": "workflow.airline.payment.receipt",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Obtain a receipt or invoice for a purchased ticket. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.passenger.name",
+      "name": "Correct passenger name",
+      "domain": "Passenger details",
+      "description": "Request correction of a passenger name on an existing ticket.",
+      "examples": [
+        "My surname has a spelling mistake on the ticket.",
+        "I would like to request correction of a passenger name on an existing ticket."
+      ],
+      "exclusions": [
+        "Add or correct passport and advance passenger information."
+      ],
+      "confusable_with": [
+        "airline.passenger.documents"
+      ],
+      "workflow_id": "workflow.airline.passenger.name",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request correction of a passenger name on an existing ticket. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.passenger.contact",
+      "name": "Update booking contact details",
+      "domain": "Passenger details",
+      "description": "Change the email address or phone number on a reservation.",
+      "examples": [
+        "Please update the contact email on my booking.",
+        "I would like to change the email address or phone number on a reservation."
+      ],
+      "exclusions": [
+        "Request correction of a passenger name on an existing ticket."
+      ],
+      "confusable_with": [
+        "airline.passenger.name"
+      ],
+      "workflow_id": "workflow.airline.passenger.contact",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Change the email address or phone number on a reservation. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.passenger.documents",
+      "name": "Update travel documents",
+      "domain": "Passenger details",
+      "description": "Add or correct passport and advance passenger information.",
+      "examples": [
+        "I renewed my passport and need to update the booking details.",
+        "I would like to add or correct passport and advance passenger information."
+      ],
+      "exclusions": [
+        "Find the carrier's guidance on passports, visas, and entry documentation."
+      ],
+      "confusable_with": [
+        "airline.passenger.requirements"
+      ],
+      "workflow_id": "workflow.airline.passenger.documents",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Add or correct passport and advance passenger information. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.passenger.requirements",
+      "name": "Travel document requirements",
+      "domain": "Passenger details",
+      "description": "Find the carrier's guidance on passports, visas, and entry documentation.",
+      "examples": [
+        "What travel documents does the airline require for this route?",
+        "I would like to find the carrier's guidance on passports, visas, and entry documentation."
+      ],
+      "exclusions": [
+        "Add or correct passport and advance passenger information."
+      ],
+      "confusable_with": [
+        "airline.passenger.documents"
+      ],
+      "workflow_id": "workflow.airline.passenger.requirements",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Find the carrier's guidance on passports, visas, and entry documentation. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.passenger.add_infant",
+      "name": "Add infant to booking",
+      "domain": "Passenger details",
+      "description": "Request addition of an infant to an existing reservation.",
+      "examples": [
+        "I need to add my baby to my booked flight.",
+        "I would like to request addition of an infant to an existing reservation."
+      ],
+      "exclusions": [
+        "Ask about or arrange service for a child travelling without an adult."
+      ],
+      "confusable_with": [
+        "airline.assistance.child"
+      ],
+      "workflow_id": "workflow.airline.passenger.add_infant",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request addition of an infant to an existing reservation. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.change.flight",
+      "name": "Change booked flight",
+      "domain": "Booking changes",
+      "description": "Request a different date, time, or route for an existing booking.",
+      "examples": [
+        "I want to move my flight to next Monday.",
+        "I would like to request a different date, time, or route for an existing booking."
+      ],
+      "exclusions": [
+        "Request an alternative after an airline cancellation or schedule disruption."
+      ],
+      "confusable_with": [
+        "airline.disruption.rebook"
+      ],
+      "workflow_id": "workflow.airline.change.flight",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request a different date, time, or route for an existing booking. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.change.upgrade",
+      "name": "Upgrade cabin",
+      "domain": "Booking changes",
+      "description": "Request a cabin upgrade on an existing reservation.",
+      "examples": [
+        "Can I upgrade my booking to business class?",
+        "I would like to request a cabin upgrade on an existing reservation."
+      ],
+      "exclusions": [
+        "Select or change a seat assignment without changing flights."
+      ],
+      "confusable_with": [
+        "airline.seat.select"
+      ],
+      "workflow_id": "workflow.airline.change.upgrade",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request a cabin upgrade on an existing reservation. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.change.split",
+      "name": "Split booking party",
+      "domain": "Booking changes",
+      "description": "Separate passengers into different booking records.",
+      "examples": [
+        "One person needs a different itinerary; can we split the reservation?",
+        "I would like to separate passengers into different booking records."
+      ],
+      "exclusions": [
+        "Request a different date, time, or route for an existing booking."
+      ],
+      "confusable_with": [
+        "airline.change.flight"
+      ],
+      "workflow_id": "workflow.airline.change.split",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Separate passengers into different booking records. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.change.no_show",
+      "name": "Missed flight or no-show",
+      "domain": "Booking changes",
+      "description": "Ask about options after missing a flight or not boarding.",
+      "examples": [
+        "I missed my departure; what happens to the remaining ticket?",
+        "I would like to ask about options after missing a flight or not boarding."
+      ],
+      "exclusions": [
+        "Get assistance when a disrupted inbound flight causes a missed connection."
+      ],
+      "confusable_with": [
+        "airline.disruption.connection"
+      ],
+      "workflow_id": "workflow.airline.change.no_show",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about options after missing a flight or not boarding. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.cancel.booking",
+      "name": "Cancel flight booking",
+      "domain": "Cancellations",
+      "description": "Request cancellation of an existing flight reservation.",
+      "examples": [
+        "I no longer want to travel; cancel my ticket.",
+        "I would like to request cancellation of an existing flight reservation."
+      ],
+      "exclusions": [
+        "Request repayment for a ticket or unused eligible service."
+      ],
+      "confusable_with": [
+        "airline.refund.request"
+      ],
+      "workflow_id": "workflow.airline.cancel.booking",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request cancellation of an existing flight reservation. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.cancel.partial",
+      "name": "Cancel one passenger or segment",
+      "domain": "Cancellations",
+      "description": "Request cancellation of only part of a reservation.",
+      "examples": [
+        "Cancel only my companion's ticket and keep mine.",
+        "I would like to request cancellation of only part of a reservation."
+      ],
+      "exclusions": [
+        "Request cancellation of an existing flight reservation."
+      ],
+      "confusable_with": [
+        "airline.cancel.booking"
+      ],
+      "workflow_id": "workflow.airline.cancel.partial",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request cancellation of only part of a reservation. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.refund.request",
+      "name": "Request ticket refund",
+      "domain": "Refunds",
+      "description": "Request repayment for a ticket or unused eligible service.",
+      "examples": [
+        "I cancelled my flight and want to apply for a refund.",
+        "I would like to request repayment for a ticket or unused eligible service."
+      ],
+      "exclusions": [
+        "Check the progress of an already requested airline refund.",
+        "Request cancellation of an existing flight reservation."
+      ],
+      "confusable_with": [
+        "airline.refund.status",
+        "airline.cancel.booking"
+      ],
+      "workflow_id": "workflow.airline.refund.request",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request repayment for a ticket or unused eligible service. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.refund.status",
+      "name": "Track airline refund",
+      "domain": "Refunds",
+      "description": "Check the progress of an already requested airline refund.",
+      "examples": [
+        "My ticket refund was approved; when will I receive it?",
+        "I would like to check the progress of an already requested airline refund."
+      ],
+      "exclusions": [
+        "Request repayment for a ticket or unused eligible service."
+      ],
+      "confusable_with": [
+        "airline.refund.request"
+      ],
+      "workflow_id": "workflow.airline.refund.status",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check the progress of an already requested airline refund. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.refund.voucher",
+      "name": "Travel voucher balance and use",
+      "domain": "Refunds",
+      "description": "Check or redeem an airline credit or travel voucher.",
+      "examples": [
+        "How do I use the travel credit from my cancelled trip?",
+        "I would like to check or redeem an airline credit or travel voucher."
+      ],
+      "exclusions": [
+        "Request repayment for a ticket or unused eligible service."
+      ],
+      "confusable_with": [
+        "airline.refund.request"
+      ],
+      "workflow_id": "workflow.airline.refund.voucher",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check or redeem an airline credit or travel voucher. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.checkin.online",
+      "name": "Online check-in",
+      "domain": "Check-in",
+      "description": "Start online check-in for an upcoming flight.",
+      "examples": [
+        "I want to check in for tomorrow's departure.",
+        "I would like to start online check-in for an upcoming flight."
+      ],
+      "exclusions": [
+        "Resolve an error or unavailable online check-in."
+      ],
+      "confusable_with": [
+        "airline.checkin.failure"
+      ],
+      "workflow_id": "workflow.airline.checkin.online",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Start online check-in for an upcoming flight. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.checkin.failure",
+      "name": "Check-in problem",
+      "domain": "Check-in",
+      "description": "Resolve an error or unavailable online check-in.",
+      "examples": [
+        "The website will not let me complete check-in.",
+        "I would like to resolve an error or unavailable online check-in."
+      ],
+      "exclusions": [
+        "Start online check-in for an upcoming flight."
+      ],
+      "confusable_with": [
+        "airline.checkin.online"
+      ],
+      "workflow_id": "workflow.airline.checkin.failure",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Resolve an error or unavailable online check-in. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.checkin.deadline",
+      "name": "Check-in and boarding deadlines",
+      "domain": "Check-in",
+      "description": "Find check-in, bag-drop, and boarding closing times.",
+      "examples": [
+        "How early does bag drop close before departure?",
+        "I would like to find check-in, bag-drop, and boarding closing times."
+      ],
+      "exclusions": [
+        "Find departure or arrival terminal and airport wayfinding information."
+      ],
+      "confusable_with": [
+        "airline.airport.terminal"
+      ],
+      "workflow_id": "workflow.airline.checkin.deadline",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Find check-in, bag-drop, and boarding closing times. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.boarding.pass",
+      "name": "Boarding pass retrieval",
+      "domain": "Boarding",
+      "description": "Download, resend, or print an issued boarding pass.",
+      "examples": [
+        "I checked in but cannot find my boarding pass.",
+        "I would like to download, resend, or print an issued boarding pass."
+      ],
+      "exclusions": [
+        "Start online check-in for an upcoming flight."
+      ],
+      "confusable_with": [
+        "airline.checkin.online"
+      ],
+      "workflow_id": "workflow.airline.boarding.pass",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Download, resend, or print an issued boarding pass. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.boarding.gate",
+      "name": "Boarding gate and boarding status",
+      "domain": "Boarding",
+      "description": "Check the gate or whether boarding has started.",
+      "examples": [
+        "Which gate is my flight boarding at?",
+        "I would like to check the gate or whether boarding has started."
+      ],
+      "exclusions": [
+        "Check whether a flight is on time, delayed, or cancelled."
+      ],
+      "confusable_with": [
+        "airline.disruption.status"
+      ],
+      "workflow_id": "workflow.airline.boarding.gate",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check the gate or whether boarding has started. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.seat.select",
+      "name": "Choose or change seat",
+      "domain": "Seating",
+      "description": "Select or change a seat assignment without changing flights.",
+      "examples": [
+        "Please move me to a window seat on the same flight.",
+        "I would like to select or change a seat assignment without changing flights."
+      ],
+      "exclusions": [
+        "Request a cabin upgrade on an existing reservation."
+      ],
+      "confusable_with": [
+        "airline.change.upgrade"
+      ],
+      "workflow_id": "workflow.airline.seat.select",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Select or change a seat assignment without changing flights. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.seat.fee",
+      "name": "Seat selection fees",
+      "domain": "Seating",
+      "description": "Ask about seat pricing or complimentary seat eligibility.",
+      "examples": [
+        "Why am I being asked to pay for seat selection?",
+        "I would like to ask about seat pricing or complimentary seat eligibility."
+      ],
+      "exclusions": [
+        "Select or change a seat assignment without changing flights."
+      ],
+      "confusable_with": [
+        "airline.seat.select"
+      ],
+      "workflow_id": "workflow.airline.seat.fee",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about seat pricing or complimentary seat eligibility. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.seat.together",
+      "name": "Sit together request",
+      "domain": "Seating",
+      "description": "Arrange adjacent seating for a party or family.",
+      "examples": [
+        "Can our family sit together on the plane?",
+        "I would like to arrange adjacent seating for a party or family."
+      ],
+      "exclusions": [
+        "Select or change a seat assignment without changing flights."
+      ],
+      "confusable_with": [
+        "airline.seat.select"
+      ],
+      "workflow_id": "workflow.airline.seat.together",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Arrange adjacent seating for a party or family. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.baggage.allowance",
+      "name": "Baggage allowance",
+      "domain": "Baggage",
+      "description": "Check included cabin or checked baggage weight and size limits.",
+      "examples": [
+        "How much checked luggage is included in my ticket?",
+        "I would like to check included cabin or checked baggage weight and size limits."
+      ],
+      "exclusions": [
+        "Purchase an additional checked bag or extra weight allowance."
+      ],
+      "confusable_with": [
+        "airline.baggage.extra"
+      ],
+      "workflow_id": "workflow.airline.baggage.allowance",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check included cabin or checked baggage weight and size limits. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.baggage.extra",
+      "name": "Buy extra baggage",
+      "domain": "Baggage",
+      "description": "Purchase an additional checked bag or extra weight allowance.",
+      "examples": [
+        "I want to add another checked suitcase.",
+        "I would like to purchase an additional checked bag or extra weight allowance."
+      ],
+      "exclusions": [
+        "Check included cabin or checked baggage weight and size limits."
+      ],
+      "confusable_with": [
+        "airline.baggage.allowance"
+      ],
+      "workflow_id": "workflow.airline.baggage.extra",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Purchase an additional checked bag or extra weight allowance. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.baggage.special",
+      "name": "Special baggage",
+      "domain": "Baggage",
+      "description": "Arrange transport of sports equipment, instruments, or oversized baggage.",
+      "examples": [
+        "Can I bring my bicycle as checked baggage?",
+        "I would like to arrange transport of sports equipment, instruments, or oversized baggage."
+      ],
+      "exclusions": [
+        "Check whether an item may be carried in cabin or checked baggage."
+      ],
+      "confusable_with": [
+        "airline.baggage.restricted"
+      ],
+      "workflow_id": "workflow.airline.baggage.special",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Arrange transport of sports equipment, instruments, or oversized baggage. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.baggage.restricted",
+      "name": "Restricted baggage items",
+      "domain": "Baggage",
+      "description": "Check whether an item may be carried in cabin or checked baggage.",
+      "examples": [
+        "Can a spare lithium battery go in my checked bag?",
+        "I would like to check whether an item may be carried in cabin or checked baggage."
+      ],
+      "exclusions": [
+        "Arrange transport of sports equipment, instruments, or oversized baggage."
+      ],
+      "confusable_with": [
+        "airline.baggage.special"
+      ],
+      "workflow_id": "workflow.airline.baggage.restricted",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check whether an item may be carried in cabin or checked baggage. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.baggage.delayed",
+      "name": "Report delayed baggage",
+      "domain": "Baggage",
+      "description": "Report checked baggage that did not arrive.",
+      "examples": [
+        "My checked suitcase is missing from the carousel.",
+        "I would like to report checked baggage that did not arrive."
+      ],
+      "exclusions": [
+        "Check an existing delayed baggage report or delivery status."
+      ],
+      "confusable_with": [
+        "airline.baggage.trace"
+      ],
+      "workflow_id": "workflow.airline.baggage.delayed",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Report checked baggage that did not arrive. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.baggage.trace",
+      "name": "Track missing baggage",
+      "domain": "Baggage",
+      "description": "Check an existing delayed baggage report or delivery status.",
+      "examples": [
+        "Where is the suitcase from my open baggage report?",
+        "I would like to check an existing delayed baggage report or delivery status."
+      ],
+      "exclusions": [
+        "Report checked baggage that did not arrive."
+      ],
+      "confusable_with": [
+        "airline.baggage.delayed"
+      ],
+      "workflow_id": "workflow.airline.baggage.trace",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check an existing delayed baggage report or delivery status. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.baggage.damaged",
+      "name": "Report damaged baggage",
+      "domain": "Baggage",
+      "description": "Report a suitcase damaged during carriage.",
+      "examples": [
+        "My suitcase arrived with a broken wheel.",
+        "I would like to report a suitcase damaged during carriage."
+      ],
+      "exclusions": [
+        "Request reimbursement for eligible baggage loss, delay, or damage costs."
+      ],
+      "confusable_with": [
+        "airline.baggage.compensation"
+      ],
+      "workflow_id": "workflow.airline.baggage.damaged",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Report a suitcase damaged during carriage. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.baggage.compensation",
+      "name": "Baggage expense claim",
+      "domain": "Baggage",
+      "description": "Request reimbursement for eligible baggage loss, delay, or damage costs.",
+      "examples": [
+        "How do I claim essential purchases made while my bag was delayed?",
+        "I would like to request reimbursement for eligible baggage loss, delay, or damage costs."
+      ],
+      "exclusions": [
+        "Report a suitcase damaged during carriage."
+      ],
+      "confusable_with": [
+        "airline.baggage.damaged"
+      ],
+      "workflow_id": "workflow.airline.baggage.compensation",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request reimbursement for eligible baggage loss, delay, or damage costs. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.baggage.cabin_lost",
+      "name": "Lost property on aircraft",
+      "domain": "Baggage",
+      "description": "Look for a personal item left in the cabin or lounge.",
+      "examples": [
+        "I left my tablet in the seat pocket.",
+        "I would like to look for a personal item left in the cabin or lounge."
+      ],
+      "exclusions": [
+        "Report checked baggage that did not arrive."
+      ],
+      "confusable_with": [
+        "airline.baggage.delayed"
+      ],
+      "workflow_id": "workflow.airline.baggage.cabin_lost",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Look for a personal item left in the cabin or lounge. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.baggage.transfer",
+      "name": "Baggage through-check",
+      "domain": "Baggage",
+      "description": "Check whether bags transfer automatically on a connecting itinerary.",
+      "examples": [
+        "Must I collect my suitcase during the connection?",
+        "I would like to check whether bags transfer automatically on a connecting itinerary."
+      ],
+      "exclusions": [
+        "Check included cabin or checked baggage weight and size limits."
+      ],
+      "confusable_with": [
+        "airline.baggage.allowance"
+      ],
+      "workflow_id": "workflow.airline.baggage.transfer",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check whether bags transfer automatically on a connecting itinerary. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.disruption.status",
+      "name": "Flight operating status",
+      "domain": "Flight disruption",
+      "description": "Check whether a flight is on time, delayed, or cancelled.",
+      "examples": [
+        "Is tonight's flight still departing on time?",
+        "I would like to check whether a flight is on time, delayed, or cancelled."
+      ],
+      "exclusions": [
+        "Check the gate or whether boarding has started."
+      ],
+      "confusable_with": [
+        "airline.boarding.gate"
+      ],
+      "workflow_id": "workflow.airline.disruption.status",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check whether a flight is on time, delayed, or cancelled. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.disruption.rebook",
+      "name": "Rebook disrupted flight",
+      "domain": "Flight disruption",
+      "description": "Request an alternative after an airline cancellation or schedule disruption.",
+      "examples": [
+        "The airline cancelled my flight; put me on another departure.",
+        "I would like to request an alternative after an airline cancellation or schedule disruption."
+      ],
+      "exclusions": [
+        "Request a different date, time, or route for an existing booking."
+      ],
+      "confusable_with": [
+        "airline.change.flight"
+      ],
+      "workflow_id": "workflow.airline.disruption.rebook",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request an alternative after an airline cancellation or schedule disruption. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.disruption.connection",
+      "name": "Missed connection assistance",
+      "domain": "Flight disruption",
+      "description": "Get assistance when a disrupted inbound flight causes a missed connection.",
+      "examples": [
+        "My late arrival made me miss the connecting flight.",
+        "I would like to get assistance when a disrupted inbound flight causes a missed connection."
+      ],
+      "exclusions": [
+        "Ask about options after missing a flight or not boarding."
+      ],
+      "confusable_with": [
+        "airline.change.no_show"
+      ],
+      "workflow_id": "workflow.airline.disruption.connection",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Get assistance when a disrupted inbound flight causes a missed connection. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.disruption.care",
+      "name": "Delay care and accommodation",
+      "domain": "Flight disruption",
+      "description": "Request carrier assistance such as meals, hotel, or transport during disruption.",
+      "examples": [
+        "My flight is delayed overnight; can I get hotel assistance?",
+        "I would like to request carrier assistance such as meals, hotel, or transport during disruption."
+      ],
+      "exclusions": [
+        "Submit a claim for compensation related to a cancelled or delayed flight."
+      ],
+      "confusable_with": [
+        "airline.disruption.compensation"
+      ],
+      "workflow_id": "workflow.airline.disruption.care",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Request carrier assistance such as meals, hotel, or transport during disruption. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.disruption.compensation",
+      "name": "Disruption compensation claim",
+      "domain": "Flight disruption",
+      "description": "Submit a claim for compensation related to a cancelled or delayed flight.",
+      "examples": [
+        "I want to file a compensation claim for the long delay.",
+        "I would like to submit a claim for compensation related to a cancelled or delayed flight."
+      ],
+      "exclusions": [
+        "Request repayment for a ticket or unused eligible service."
+      ],
+      "confusable_with": [
+        "airline.refund.request"
+      ],
+      "workflow_id": "workflow.airline.disruption.compensation",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Submit a claim for compensation related to a cancelled or delayed flight. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.airport.terminal",
+      "name": "Airport terminal and directions",
+      "domain": "Airport services",
+      "description": "Find departure or arrival terminal and airport wayfinding information.",
+      "examples": [
+        "Which terminal should I go to for this airline?",
+        "I would like to find departure or arrival terminal and airport wayfinding information."
+      ],
+      "exclusions": [
+        "Check the gate or whether boarding has started."
+      ],
+      "confusable_with": [
+        "airline.boarding.gate"
+      ],
+      "workflow_id": "workflow.airline.airport.terminal",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Find departure or arrival terminal and airport wayfinding information. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.airport.lounge",
+      "name": "Lounge access",
+      "domain": "Airport services",
+      "description": "Check lounge eligibility, location, or paid entry options.",
+      "examples": [
+        "Does my ticket include access to an airport lounge?",
+        "I would like to check lounge eligibility, location, or paid entry options."
+      ],
+      "exclusions": [
+        "Request a cabin upgrade on an existing reservation."
+      ],
+      "confusable_with": [
+        "airline.change.upgrade"
+      ],
+      "workflow_id": "workflow.airline.airport.lounge",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check lounge eligibility, location, or paid entry options. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.airport.transfer",
+      "name": "Airport transfer service",
+      "domain": "Airport services",
+      "description": "Ask about airline-linked airport transfers or shuttle arrangements.",
+      "examples": [
+        "Does the airline offer a shuttle from the city to the airport?",
+        "I would like to ask about airline-linked airport transfers or shuttle arrangements."
+      ],
+      "exclusions": [
+        "Find departure or arrival terminal and airport wayfinding information."
+      ],
+      "confusable_with": [
+        "airline.airport.terminal"
+      ],
+      "workflow_id": "workflow.airline.airport.transfer",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about airline-linked airport transfers or shuttle arrangements. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.assistance.mobility",
+      "name": "Mobility assistance",
+      "domain": "Assistance",
+      "description": "Request wheelchair or reduced-mobility assistance.",
+      "examples": [
+        "I need wheelchair assistance at both airports.",
+        "I would like to request wheelchair or reduced-mobility assistance."
+      ],
+      "exclusions": [
+        "Ask about medical clearance, oxygen, or fitness-to-fly procedures."
+      ],
+      "confusable_with": [
+        "airline.assistance.medical"
+      ],
+      "workflow_id": "workflow.airline.assistance.mobility",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request wheelchair or reduced-mobility assistance. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.assistance.medical",
+      "name": "Medical travel assistance",
+      "domain": "Assistance",
+      "description": "Ask about medical clearance, oxygen, or fitness-to-fly procedures.",
+      "examples": [
+        "What is the process for travelling with approved medical oxygen?",
+        "I would like to ask about medical clearance, oxygen, or fitness-to-fly procedures."
+      ],
+      "exclusions": [
+        "Request wheelchair or reduced-mobility assistance."
+      ],
+      "confusable_with": [
+        "airline.assistance.mobility"
+      ],
+      "workflow_id": "workflow.airline.assistance.medical",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about medical clearance, oxygen, or fitness-to-fly procedures. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.assistance.child",
+      "name": "Unaccompanied minor service",
+      "domain": "Assistance",
+      "description": "Ask about or arrange service for a child travelling without an adult.",
+      "examples": [
+        "My child will fly alone; how do I arrange supervision?",
+        "I would like to ask about or arrange service for a child travelling without an adult."
+      ],
+      "exclusions": [
+        "Request addition of an infant to an existing reservation."
+      ],
+      "confusable_with": [
+        "airline.passenger.add_infant"
+      ],
+      "workflow_id": "workflow.airline.assistance.child",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about or arrange service for a child travelling without an adult. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.assistance.pet",
+      "name": "Pet transport",
+      "domain": "Assistance",
+      "description": "Ask about booking a pet or service animal for travel.",
+      "examples": [
+        "Can I add my small dog to the flight reservation?",
+        "I would like to ask about booking a pet or service animal for travel."
+      ],
+      "exclusions": [
+        "Arrange transport of sports equipment, instruments, or oversized baggage."
+      ],
+      "confusable_with": [
+        "airline.baggage.special"
+      ],
+      "workflow_id": "workflow.airline.assistance.pet",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about booking a pet or service animal for travel. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.assistance.meal",
+      "name": "Special meal request",
+      "domain": "Assistance",
+      "description": "Request a dietary meal for an eligible flight.",
+      "examples": [
+        "Please request a gluten-free meal for my flight.",
+        "I would like to request a dietary meal for an eligible flight."
+      ],
+      "exclusions": [
+        "Ask about medical clearance, oxygen, or fitness-to-fly procedures."
+      ],
+      "confusable_with": [
+        "airline.assistance.medical"
+      ],
+      "workflow_id": "workflow.airline.assistance.meal",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request a dietary meal for an eligible flight. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.assistance.pregnancy",
+      "name": "Travel during pregnancy",
+      "domain": "Assistance",
+      "description": "Ask about airline pregnancy travel documentation and procedures.",
+      "examples": [
+        "Do I need a medical letter to fly while pregnant?",
+        "I would like to ask about airline pregnancy travel documentation and procedures."
+      ],
+      "exclusions": [
+        "Ask about medical clearance, oxygen, or fitness-to-fly procedures."
+      ],
+      "confusable_with": [
+        "airline.assistance.medical"
+      ],
+      "workflow_id": "workflow.airline.assistance.pregnancy",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Ask about airline pregnancy travel documentation and procedures. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.loyalty.enroll",
+      "name": "Join frequent flyer program",
+      "domain": "Loyalty",
+      "description": "Create a new airline loyalty membership.",
+      "examples": [
+        "I want to join your frequent flyer program.",
+        "I would like to create a new airline loyalty membership."
+      ],
+      "exclusions": [
+        "Recover access to or update a frequent flyer profile."
+      ],
+      "confusable_with": [
+        "airline.loyalty.account"
+      ],
+      "workflow_id": "workflow.airline.loyalty.enroll",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Create a new airline loyalty membership. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.loyalty.account",
+      "name": "Loyalty account access and profile",
+      "domain": "Loyalty",
+      "description": "Recover access to or update a frequent flyer profile.",
+      "examples": [
+        "I cannot log in to my frequent flyer account.",
+        "I would like to recover access to or update a frequent flyer profile."
+      ],
+      "exclusions": [
+        "Create a new airline loyalty membership."
+      ],
+      "confusable_with": [
+        "airline.loyalty.enroll"
+      ],
+      "workflow_id": "workflow.airline.loyalty.account",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Recover access to or update a frequent flyer profile. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.loyalty.balance",
+      "name": "Miles balance and expiry",
+      "domain": "Loyalty",
+      "description": "Check available miles and their expiration dates.",
+      "examples": [
+        "How many miles will expire this year?",
+        "I would like to check available miles and their expiration dates."
+      ],
+      "exclusions": [
+        "Request credit for eligible flights missing from a loyalty account."
+      ],
+      "confusable_with": [
+        "airline.loyalty.missing"
+      ],
+      "workflow_id": "workflow.airline.loyalty.balance",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check available miles and their expiration dates. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.loyalty.missing",
+      "name": "Claim missing miles",
+      "domain": "Loyalty",
+      "description": "Request credit for eligible flights missing from a loyalty account.",
+      "examples": [
+        "The miles from my last flight never appeared.",
+        "I would like to request credit for eligible flights missing from a loyalty account."
+      ],
+      "exclusions": [
+        "Check available miles and their expiration dates."
+      ],
+      "confusable_with": [
+        "airline.loyalty.balance"
+      ],
+      "workflow_id": "workflow.airline.loyalty.missing",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Request credit for eligible flights missing from a loyalty account. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.loyalty.redeem",
+      "name": "Redeem miles for travel",
+      "domain": "Loyalty",
+      "description": "Use miles for an award ticket or travel benefit.",
+      "examples": [
+        "I want to book a flight using my accumulated miles.",
+        "I would like to use miles for an award ticket or travel benefit."
+      ],
+      "exclusions": [
+        "Check or redeem an airline credit or travel voucher."
+      ],
+      "confusable_with": [
+        "airline.refund.voucher"
+      ],
+      "workflow_id": "workflow.airline.loyalty.redeem",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Use miles for an award ticket or travel benefit. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.loyalty.status",
+      "name": "Membership tier and benefits",
+      "domain": "Loyalty",
+      "description": "Check loyalty tier, qualification progress, or associated benefits.",
+      "examples": [
+        "How many qualifying points do I need for the next tier?",
+        "I would like to check loyalty tier, qualification progress, or associated benefits."
+      ],
+      "exclusions": [
+        "Check available miles and their expiration dates."
+      ],
+      "confusable_with": [
+        "airline.loyalty.balance"
+      ],
+      "workflow_id": "workflow.airline.loyalty.status",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Check loyalty tier, qualification progress, or associated benefits. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.support.complaint",
+      "name": "Airline complaint",
+      "domain": "Customer support",
+      "description": "Submit a general airline service complaint.",
+      "examples": [
+        "I want to complain about how staff handled my journey.",
+        "I would like to submit a general airline service complaint."
+      ],
+      "exclusions": [
+        "Send a suggestion, compliment, or general service feedback."
+      ],
+      "confusable_with": [
+        "airline.support.feedback"
+      ],
+      "workflow_id": "workflow.airline.support.complaint",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "transaction",
+      "selection_rule": "Select only when the user requests this operation: Submit a general airline service complaint. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "airline.support.feedback",
+      "name": "Airline feedback",
+      "domain": "Customer support",
+      "description": "Send a suggestion, compliment, or general service feedback.",
+      "examples": [
+        "I would like to compliment the cabin crew.",
+        "I would like to send a suggestion, compliment, or general service feedback."
+      ],
+      "exclusions": [
+        "Submit a general airline service complaint."
+      ],
+      "confusable_with": [
+        "airline.support.complaint"
+      ],
+      "workflow_id": "workflow.airline.support.feedback",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Select only when the user requests this operation: Send a suggestion, compliment, or general service feedback. Distinguish the adjacent operations listed in exclusions. Missing execution details belong to the destination workflow; do not invent a completed transaction."
+    },
+    {
+      "intent_id": "service.human",
+      "name": "Speak to a representative",
+      "domain": "Customer support",
+      "description": "Request a conversation with a human service representative.",
+      "examples": [
+        "Please connect me to a human agent.",
+        "I want to speak with a customer service representative."
+      ],
+      "exclusions": [
+        "A service complaint without an explicit request to speak with a human."
+      ],
+      "confusable_with": [
+        "airline.support.complaint"
+      ],
+      "workflow_id": "workflow.service.human",
+      "required_slots": [],
+      "slot_questions": {},
+      "channels": [
+        "chat",
+        "voice"
+      ],
+      "kind": "information",
+      "selection_rule": "Choose handoff when the user explicitly requests a human representative; do not require a particular service issue."
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "airline-test-v1-001",
+      "conversation_id": "airline-test-v1-001",
+      "question": "Find a flight from Berlin to Madrid this Saturday.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.search.flights",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-002",
+      "conversation_id": "airline-test-v1-002",
+      "question": "What change restrictions apply to the fare I bought?",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.booking.rules",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-003",
+      "conversation_id": "airline-test-v1-003",
+      "question": "The surname printed on my ticket is misspelled; I need a correction.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.passenger.name",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-004",
+      "conversation_id": "airline-test-v1-004",
+      "question": "Move my existing ticket to the evening departure on the same day.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.change.flight",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-005",
+      "conversation_id": "airline-test-v1-005",
+      "question": "Please cancel the reservation because I cannot travel anymore.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.cancel.booking",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-006",
+      "conversation_id": "airline-test-v1-006",
+      "question": "My booking is cancelled; I would now like to submit a refund application.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.refund.request",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-007",
+      "conversation_id": "airline-test-v1-007",
+      "question": "I submitted the ticket refund last week; has it been processed?",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.refund.status",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-008",
+      "conversation_id": "airline-test-v1-008",
+      "question": "Start check-in for the flight I am taking this afternoon.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.checkin.online",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-009",
+      "conversation_id": "airline-test-v1-009",
+      "question": "Change my allocated aisle seat to a window seat without changing my flight.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.seat.select",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-010",
+      "conversation_id": "airline-test-v1-010",
+      "question": "What weight of checked luggage does my fare include?",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.baggage.allowance",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-011",
+      "conversation_id": "airline-test-v1-011",
+      "question": "Purchase one more checked bag for my reservation.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.baggage.extra",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-012",
+      "conversation_id": "airline-test-v1-012",
+      "question": "My suitcase never came onto the belt after arrival; open a missing baggage report.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.baggage.delayed",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-013",
+      "conversation_id": "airline-test-v1-013",
+      "question": "I already have a baggage report number; check where the bag is now.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.baggage.trace",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-014",
+      "conversation_id": "airline-test-v1-014",
+      "question": "You cancelled tomorrow's departure; arrange a replacement flight for me.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.disruption.rebook",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-015",
+      "conversation_id": "airline-test-v1-015",
+      "question": "Check whether my scheduled departure is delayed.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.disruption.status",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-016",
+      "conversation_id": "airline-test-v1-016",
+      "question": "Please arrange a wheelchair from check-in to the gate.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.assistance.mobility",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-017",
+      "conversation_id": "airline-test-v1-017",
+      "question": "Please credit the frequent flyer miles missing from my recent journey.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.loyalty.missing",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-018",
+      "conversation_id": "airline-test-v1-018",
+      "question": "Send another copy of the boarding pass I have already issued.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.boarding.pass",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-019",
+      "conversation_id": "airline-test-v1-019",
+      "question": "Can you change that for me?",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "clarify",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-020",
+      "conversation_id": "airline-test-v1-020",
+      "question": "I would prefer to discuss this with a live airline adviser.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "handoff",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-021",
+      "conversation_id": "airline-test-v1-021",
+      "question": "Increase the spending limit on my bank credit card.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-022",
+      "conversation_id": "airline-test-v1-022",
+      "question": "I need to open a home insurance water damage claim.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-023",
+      "conversation_id": "airline-test-v1-023",
+      "question": "Send me a return label for the sweater I bought.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-test-v1-024",
+      "conversation_id": "airline-test-v1-024",
+      "question": "Explain how to make sourdough bread.",
+      "source": "seed",
+      "dataset_version": "airline-test-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "test",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-001",
+      "conversation_id": "airline-calibration-v1-001",
+      "question": "Before choosing a ticket, compare the benefits of your fare bundles.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.search.fares",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-002",
+      "conversation_id": "airline-calibration-v1-002",
+      "question": "Please resend the reservation itinerary to my registered email address.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.booking.confirmation",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-003",
+      "conversation_id": "airline-calibration-v1-003",
+      "question": "I need proof of payment for the ticket I purchased for work.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.payment.receipt",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-004",
+      "conversation_id": "airline-calibration-v1-004",
+      "question": "My passport number has changed since I reserved; update the travel document record.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.passenger.documents",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-005",
+      "conversation_id": "airline-calibration-v1-005",
+      "question": "I would like to move from economy to a premium cabin on the booked service.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.change.upgrade",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-006",
+      "conversation_id": "airline-calibration-v1-006",
+      "question": "Remove just one traveler from our three-person flight reservation.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.cancel.partial",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-007",
+      "conversation_id": "airline-calibration-v1-007",
+      "question": "Online check-in displays an error each time I submit my details.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.checkin.failure",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-008",
+      "conversation_id": "airline-calibration-v1-008",
+      "question": "Where is boarding taking place for this departure?",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.boarding.gate",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-009",
+      "conversation_id": "airline-calibration-v1-009",
+      "question": "What arrangements are required to check in a musical instrument?",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.baggage.special",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-010",
+      "conversation_id": "airline-calibration-v1-010",
+      "question": "My checked bag reached me with its handle torn off; log the damage.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.baggage.damaged",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-011",
+      "conversation_id": "airline-calibration-v1-011",
+      "question": "The disruption leaves me stranded overnight; I need meal and hotel assistance.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.disruption.care",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-012",
+      "conversation_id": "airline-calibration-v1-012",
+      "question": "Show my current mileage balance and when those miles will expire.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "route",
+      "expected_intent_id": "airline.loyalty.balance",
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-013",
+      "conversation_id": "airline-calibration-v1-013",
+      "question": "Open a bank savings account for me.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-014",
+      "conversation_id": "airline-calibration-v1-014",
+      "question": "I want to appeal a rejected insurance claim.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-015",
+      "conversation_id": "airline-calibration-v1-015",
+      "question": "Track the refund for a returned pair of shoes.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-016",
+      "conversation_id": "airline-calibration-v1-016",
+      "question": "Cancel my mobile phone data plan.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-017",
+      "conversation_id": "airline-calibration-v1-017",
+      "question": "What is the capital city of Peru?",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-018",
+      "conversation_id": "airline-calibration-v1-018",
+      "question": "Recommend a recipe for vegetable soup.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-019",
+      "conversation_id": "airline-calibration-v1-019",
+      "question": "Explain the history of the Roman Empire.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-020",
+      "conversation_id": "airline-calibration-v1-020",
+      "question": "Translate this poem into French.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-021",
+      "conversation_id": "airline-calibration-v1-021",
+      "question": "Debug a syntax error in my JavaScript loop.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-022",
+      "conversation_id": "airline-calibration-v1-022",
+      "question": "Create a weekly marathon training schedule.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-023",
+      "conversation_id": "airline-calibration-v1-023",
+      "question": "Tell me the score of yesterday's football match.",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    },
+    {
+      "case_id": "airline-calibration-v1-024",
+      "conversation_id": "airline-calibration-v1-024",
+      "question": "How do I grow basil on my balcony?",
+      "source": "seed",
+      "dataset_version": "airline-calibration-english-v1",
+      "source_flag": null,
+      "reviewed": true,
+      "split": "calibration",
+      "expected_decision": "out_of_scope",
+      "expected_intent_id": null,
+      "context": {},
+      "label_origin": "curated_synthetic_starter"
+    }
+  ]
+}

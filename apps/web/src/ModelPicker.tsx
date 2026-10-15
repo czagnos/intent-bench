@@ -38,7 +38,7 @@ export function ModelSelect({
             disabled={!option.available}
           >
             {t(option.name)}
-            {!option.available ? t(" · bağlantı gerekli") : ""}
+            {!option.available ? t(" · connection required") : ""}
           </option>
         ))}
       </select>
@@ -72,7 +72,7 @@ export function ModelChecklist({
         {t(label)}{" "}
         <span>
           {selected.length}
-          {t(" seçili")}
+          {t(" selected")}
         </span>
       </legend>
       <div className="model-options">
@@ -113,7 +113,7 @@ export function ModelChecklist({
             {option.weights_url && (
               <a href={option.weights_url} target="_blank" rel="noreferrer">
                 {option.license}
-                {t(" · model kartı ↗")}
+                {t(" · model card ↗")}
               </a>
             )}
           </div>
