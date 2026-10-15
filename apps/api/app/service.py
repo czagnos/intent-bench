@@ -11,6 +11,9 @@ from .calibration import Calibrator, data_fingerprint, public_calibration
 from .catalog_scope import core_ids, select_catalogs
 from .catalog_presets import workspace_preset
 from .contracts import Intent
+from .case_context import PreTurnContext, validate_case_context
+from .importer import parse_benchmark
+from .transcript_data import StoredImportReportData
 from .evaluation import summarize, diagnose
 from .evaluation_types import EvaluationCheckpoint, EvaluationMetrics, EvaluationResult
 from .execution import EvaluationController, EvaluationStopped, ExecutionAccounting, ExecutionLimits, activate_execution, execution_checkpoint, execution_stage
@@ -92,6 +95,16 @@ class Studio:
     def close(self):
         self.router_pool.shutdown(wait=True, cancel_futures=True)
         self.evaluation_pool.shutdown(wait=True, cancel_futures=True)
+
+    def import_benchmark(self, workspace: str, content: bytes,
+                         filename: str = "benchmark.csv") -> StoredImportReportData:
+        self.ensure_workspace(workspace)
+        cases, report = parse_benchmark(content, filename)
+        catalog = self.store.catalog(workspace)
+        intents = {item["intent_id"]: Intent.model_validate(item) for item in catalog["intents"]}
+        for case in cases:
+            validate_case_context(PreTurnContext.model_validate(case["context"]), intents)
+        return self.store.import_cases(workspace, cases, report, expected_catalog_version=catalog["version"])
 
     def ensure_workspace(self, workspace):
         with self.lock:
@@ -315,6 +328,7 @@ class Studio:
         cases = [c for c in all_cases if c["reviewed"]][:options.limit]
         if not cases:
             raise ValueError("No reviewed labeled cases match this selection. Save expected decisions on the Cases page first.")
+        self.store.validate_conversation_separation(workspace, (case.get("conversation_id") for case in cases))
         catalog = self.store.catalog(workspace)
         scale_fit = options.catalog_sizes is not None and options.semantic_rejection == "calibrated" and any(v.method == "e5" for v in variants)
         fit_cases = self.calibrator.cases(workspace, options.scale_calibration_source) if scale_fit else []
@@ -464,7 +478,7 @@ class Studio:
                     with execution_stage("cases"):
                         output, _ = self.compute(case["question"], state, method, retriever, variant=variant, preparation_error=preparation_error, calibration=calibrations.get(group_id), reranker=reranker)
                     expected = case["expected_decision"]
-                    correct = output["decision"] == expected and (expected != "route" or output["intent_id"] == case["expected_intent_id"])
+                    correct = output["decision"] == expected and (expected not in ("route", "continue", "cancel") or output["intent_id"] == case["expected_intent_id"])
                     record = {"case_id": case["case_id"], "question": case["question"], "expected_decision": expected, "expected_intent_id": case["expected_intent_id"], "decision": output["decision"], "intent_id": output["intent_id"], "correct": correct, "candidate_hit": case["expected_intent_id"] in [c["intent_id"] for c in output["candidates"]], "total_ms": output["timings_ms"]["compute_total"], "timings_ms": output["timings_ms"], "usage": output["usage"], "reason_code": output["reason_code"], "message": output["message"], "diagnostics": output.get("diagnostics"), "rejection_score": output.get("rejection_score"), "error": output["message"] if output["decision"] == "error" else None,
                               "error_stage": output.get("error_stage"), "index_preparation": output["index_preparation"], "retrieval_trace": output["retrieval_trace"],
                               "candidates": output["candidates"], "retrieval_candidates": output["retrieval_candidates"]}

@@ -326,11 +326,16 @@ class Store:
                     int(case["reviewed"]), case["split"], json.dumps(case, ensure_ascii=False)))
 
     def import_cases(self, workspace: str, cases: list[ImportedCaseData],
-                     report: ImportReportData) -> StoredImportReportData:
+                     report: ImportReportData, *, expected_catalog_version: str | None = None) -> StoredImportReportData:
         """Persist parsed cases and their actual insertion counts together."""
         result: StoredImportReportData = {**report, "inserted": 0, "already_present": 0}
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
+            if expected_catalog_version is not None:
+                current = db.execute("SELECT version FROM catalogs WHERE workspace=? ORDER BY created DESC LIMIT 1",
+                                     (workspace,)).fetchone()
+                if not current or current[0] != expected_catalog_version:
+                    raise ValueError("The catalog changed during import. Retry with the current workspace catalog.")
             current_splits = self._conversation_splits(db, workspace, {case["conversation_id"] for case in cases})
             for splits in current_splits.values():
                 if len(splits) > 1:

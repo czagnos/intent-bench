@@ -1,5 +1,7 @@
 """Typed persistence results and structural views of legacy case payloads."""
-from typing import NotRequired, TypedDict
+from typing import NotRequired
+
+from typing_extensions import TypedDict
 
 from .case_context import PreTurnData
 from .importer import CaseSplit, HistoricalTrace, ImportedCaseData, ImportReportData

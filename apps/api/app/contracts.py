@@ -124,9 +124,14 @@ class RoutingSelection(BaseModel):
 
 class Review(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    expected_decision: Literal["route", "clarify", "out_of_scope", "handoff"]
+    expected_decision: Literal["route", "continue", "cancel", "clarify", "out_of_scope", "handoff"]
     expected_intent_id: str | None = None
     split: Literal["dev", "calibration", "test"] = "test"
+
+
+class ConversationSplit(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    split: Literal["dev", "calibration", "test"]
 
 
 class EvaluationRequest(BaseModel):

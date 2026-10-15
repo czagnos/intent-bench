@@ -14,9 +14,9 @@ from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import ROOT, Settings
-from .contracts import CalibrationRequest, EvaluationRequest, Intent, IntentEdit, IntentSaved, Review, RouteRequest
+from .contracts import CalibrationRequest, ConversationSplit, EvaluationRequest, Intent, IntentEdit, IntentSaved, Review, RouteRequest
 from .catalog_quality import audit_catalog
-from .importer import import_benchmark
+from .case_context import PreTurnContext, validate_case_context
 from .model_catalog import embedding_runtime_key, llm_metadata
 from .model_routes import model_routes
 from .retrieval import ModelUnavailable
@@ -25,6 +25,7 @@ from .service import Studio
 from .catalog_scope import core_ids
 from .catalog_presets import PresetMetadata, catalog_presets
 from .store import fingerprint
+from .transcript_data import ConversationSplitData
 from .setup import SetupStatus, setup_status
 
 Workspace = Annotated[str, Query(pattern=r"^[a-zA-Z0-9_-]{1,64}$")]
@@ -211,18 +212,20 @@ def create_app(settings: Settings | None = None):
             studio.retrievers[(workspace, version, embedding_runtime_key(settings))] = prepared
         return {"version": version, "intent_count": len(intents)}
 
+    @app.get("/v1/cases/template")
+    def cases_template() -> FileResponse:
+        return FileResponse(ROOT / "data/demo/transcript-example.csv", media_type="text/csv",
+                            filename="synthetic-demo-banking-transcripts.csv")
+
     @app.post("/v1/cases/import")
     async def cases_import(file: Annotated[UploadFile, File()], workspace: Workspace = "demo"):
         ensure(workspace)
         content = await file.read(100*1024*1024+1)
         await file.close()
         try:
-            cases, report = await asyncio.to_thread(import_benchmark, content, Path(file.filename or "benchmark.csv").name)
+            return await asyncio.to_thread(studio.import_benchmark, workspace, content, Path(file.filename or "benchmark.csv").name)
         except (ValueError, UnicodeDecodeError) as exc:
             raise HTTPException(422, str(exc)) from exc
-        studio.store.save_cases(workspace, cases)
-        studio.store.save_import(workspace, report)
-        return report
 
     @app.get("/v1/cases")
     def cases(workspace: Workspace = "demo", source: str = "all", q: str = "", reviewed: bool | None = None, split: str | None = None, offset: int = Query(0, ge=0), limit: int = Query(20, ge=1, le=100)):
@@ -237,7 +240,15 @@ def create_app(settings: Settings | None = None):
             selected.append({**case, "suggestions": [c.model_dump() for c in suggestion]})
         return {"items": selected, "total": len(rows), "offset": offset, "limit": limit}
 
-    @app.get("/v1/cases/{case_id}/versions")
+    @app.patch("/v1/conversations/{conversation_id:path}/split")
+    def conversation_split(conversation_id: str, body: ConversationSplit, workspace: Workspace = "demo") -> ConversationSplitData:
+        ensure(workspace)
+        try:
+            return studio.store.update_conversation_split(workspace, conversation_id, body.split)
+        except KeyError as exc:
+            raise HTTPException(404, "Conversation not found.") from exc
+
+    @app.get("/v1/cases/{case_id:path}/versions")
     def case_versions(case_id: str, workspace: Workspace = "demo"):
         ensure(workspace)
         try:
@@ -245,18 +256,26 @@ def create_app(settings: Settings | None = None):
         except KeyError as exc:
             raise HTTPException(404, "Case not found.") from exc
 
-    @app.patch("/v1/cases/{case_id}/review")
+    @app.patch("/v1/cases/{case_id:path}/review")
     def review_case(case_id: str, review: Review, workspace: Workspace = "demo"):
         ensure(workspace)
-        ids = {i["intent_id"] for i in studio.store.catalog(workspace)["intents"]}
-        if review.expected_decision == "route" and review.expected_intent_id not in ids:
-            raise HTTPException(422, "Select an intent from the catalog for routing.")
-        if review.expected_decision != "route" and review.expected_intent_id is not None:
-            raise HTTPException(422, "This decision type requires an empty intent label.")
         try:
+            case = studio.store.case_versions(workspace, case_id)["current"]
+            intents = {item["intent_id"]: Intent.model_validate(item) for item in studio.store.catalog(workspace)["intents"]}
+            if review.expected_decision in ("route", "continue", "cancel"):
+                if review.expected_intent_id not in intents:
+                    raise ValueError("Select an intent from the workspace catalog for this decision.")
+                if review.expected_decision in ("continue", "cancel"):
+                    context = validate_case_context(PreTurnContext.model_validate(case.get("context", {})), intents)
+                    if not context.active_intent or review.expected_intent_id != context.active_intent:
+                        raise ValueError("Continue and cancel require an active context intent and a matching expected intent label.")
+            elif review.expected_intent_id is not None:
+                raise ValueError("This decision type requires an empty intent label.")
             return studio.store.review_case(workspace, case_id, review.model_dump())
         except KeyError as exc:
             raise HTTPException(404, "Case not found.") from exc
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
 
     @app.post("/v1/sessions", status_code=201)
     def session(workspace: Workspace = "demo"):

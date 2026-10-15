@@ -86,6 +86,7 @@ class Calibrator:
                 "records": records, "question_hashes": [question_hash(c["question"]) for c in cases]}
 
     def validate_cases(self, workspace, cases, catalog):
+        self.store.validate_conversation_separation(workspace, (case.get("conversation_id") for case in cases))
         if any(c.get("context") or c["expected_decision"] not in ("route", "handoff", "out_of_scope") for c in cases):
             raise ValueError("Use context-free in-scope or OOS cases for calibration.")
         hashes = [question_hash(c["question"]) for c in cases]
@@ -112,6 +113,7 @@ class Calibrator:
         current = self.cases(workspace, artifact["source"])
         if data_fingerprint(current) != artifact["dataset_fingerprint"]:
             raise ValueError("Calibration data has changed. Refit the threshold.")
+        self.store.validate_conversation_separation(workspace, (case.get("conversation_id") for case in current))
         if evaluation_cases and set(artifact["question_hashes"]) & {question_hash(c["question"]) for c in evaluation_cases}:
             raise ValueError("Cases used for calibration cannot be tested with that threshold. Choose a separate test split.")
         return public_calibration(artifact)

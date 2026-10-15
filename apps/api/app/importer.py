@@ -122,6 +122,20 @@ def _stable_identity(kind: str, parts: tuple[str, ...]) -> str:
 
 
 def import_benchmark(content: bytes, filename: str = "benchmark.csv") -> tuple[list[ImportedCaseData], ImportReportData]:
+    """Parse a standalone file with no persisted conversation split to reconcile."""
+    cases, report = parse_benchmark(content, filename)
+    conversation_splits: dict[str, CaseSplit] = {}
+    for case in cases:
+        if case["split_explicit"]:
+            previous = conversation_splits.get(case["conversation_id"])
+            if previous is not None and previous != case["split"]:
+                raise ValueError("The conversation has conflicting explicit splits.")
+            conversation_splits[case["conversation_id"]] = case["split"]
+    return cases, report
+
+
+def parse_benchmark(content: bytes, filename: str = "benchmark.csv") -> tuple[list[ImportedCaseData], ImportReportData]:
+    """Parse valid turns; persistence reconciles conversation splits after identifying replays."""
     if len(content) > 100 * 1024 * 1024:
         raise ValueError("The file exceeds the 100 MB limit.")
     text = content.decode("utf-8-sig")
@@ -133,7 +147,6 @@ def import_benchmark(content: bytes, filename: str = "benchmark.csv") -> tuple[l
         raise ValueError("The CSV header must contain Question. UTF-8 and comma/semicolon delimiters are supported.")
     dataset = hashlib.sha256(content).hexdigest()[:16]
     seen: dict[str, ParsedTranscriptCase] = {}
-    conversation_splits: dict[str, CaseSplit] = {}
     report: ImportReportData = {
         "dataset_version": dataset, "filename": filename, "source": "customer", "rows": 0,
         "imported": 0, "skipped_empty_question": 0, "duplicates": 0, "valid_traces": 0,
@@ -197,16 +210,14 @@ def import_benchmark(content: bytes, filename: str = "benchmark.csv") -> tuple[l
             historical_trace=trace, dataset_version=dataset, context=context,
             split=raw_split or "test", split_explicit=bool(raw_split),
         )
-        if parsed.split_explicit:
-            if conversation_id in conversation_splits and conversation_splits[conversation_id] != parsed.split:
-                raise ValueError(f"The conversation in row {report['rows']} has conflicting explicit splits.")
-            conversation_splits[conversation_id] = parsed.split
         previous = seen.get(case_id)
         if previous is not None:
             compared_fields = {"split", "split_explicit"}
             if (previous.model_dump(exclude=compared_fields) != parsed.model_dump(exclude=compared_fields)
                     or previous.context.as_data() != parsed.context.as_data()):
                 raise ValueError(f"Conflicting source turn identity in row {report['rows']}.")
+            if previous.split_explicit and parsed.split_explicit and previous.split != parsed.split:
+                raise ValueError(f"The same turn in row {report['rows']} has conflicting explicit splits.")
             # An implicit default must not hide a duplicate's explicit split choice.
             if parsed.split_explicit:
                 previous.split = parsed.split
