@@ -926,6 +926,131 @@ async function sendText(value) {
   await click(document.querySelector('button[aria-label="Send message"]'));
 }
 
+test("the first live request displays its completed result when the event stream silently stalls", async (context) => {
+  const originalFetch = globalThis.fetch;
+  const result = liveDecision();
+  globalThis.fetch = async (input, init = {}) => {
+    if (new URL(input, "http://localhost").pathname === "/v1/requests/route-1")
+      return response({ id: "route-1", status: "completed", result, events: liveStages });
+    return originalFetch(input, init);
+  };
+  context.mock.timers.enable({ apis: ["setTimeout", "setInterval"] });
+  await act(async () => {
+    button(question).dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  });
+  await act(async () => streams[0].emit("stage", liveStages[0]));
+  assert.match(document.querySelector(".typing").textContent, /Conversation context ready/);
+
+  // A connected stream can stop delivering events without raising an error.
+  for (let second = 0; second < 10; second++)
+    await act(async () => context.mock.timers.tick(1000));
+
+  assert.ok(document.querySelector(".chat-body").textContent.includes(result.message));
+  assert.equal(document.querySelector(".typing"), null);
+  assert.equal(document.getElementById("message").disabled, false);
+  assert.equal(requests.filter(request => request.path === "/v1/route").length, 1);
+});
+
+test("the first live request waits for server-confirmed index preparation beyond two minutes", async (context) => {
+  const originalFetch = globalThis.fetch;
+  const result = liveDecision();
+  let job = { id: "route-1", status: "running", events: [liveStages[0]] };
+  globalThis.fetch = async (input, init = {}) => {
+    if (new URL(input, "http://localhost").pathname === "/v1/requests/route-1")
+      return response(job);
+    return originalFetch(input, init);
+  };
+  context.mock.timers.enable({ apis: ["setTimeout", "setInterval"] });
+  await act(async () => {
+    button(question).dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  });
+  await act(async () => streams[0].emit("stage", liveStages[0]));
+  for (let second = 0; second < 125; second++)
+    await act(async () => context.mock.timers.tick(1000));
+
+  assert.ok(document.querySelector(".typing"), "a confirmed running request remains active");
+  assert.equal(document.querySelector('[role="alert"]'), null);
+  job = { id: "route-1", status: "completed", result, events: liveStages };
+  await act(async () => context.mock.timers.tick(1000));
+
+  assert.ok(document.querySelector(".chat-body").textContent.includes(result.message));
+  assert.equal(document.querySelector(".typing"), null);
+  assert.equal(document.getElementById("message").disabled, false);
+  assert.equal(requests.filter(request => request.path === "/v1/route").length, 1);
+});
+
+test("a new conversation cancels a silent request before recovery can fetch or display its result", async (context) => {
+  const originalFetch = globalThis.fetch;
+  let statusReads = 0;
+  globalThis.fetch = async (input, init = {}) => {
+    if (new URL(input, "http://localhost").pathname === "/v1/requests/route-1") {
+      statusReads++;
+      return response({ id: "route-1", status: "completed", result: liveDecision(), events: liveStages });
+    }
+    return originalFetch(input, init);
+  };
+  context.mock.timers.enable({ apis: ["setTimeout", "setInterval"] });
+  await act(async () => {
+    button(question).dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  });
+  await act(async () => {
+    button("New conversation").dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  });
+  for (let second = 0; second < 130; second++)
+    await act(async () => context.mock.timers.tick(1000));
+  await act(async () => streams[0].emit("result", {
+    status: "completed", result: liveDecision(), events: liveStages,
+  }));
+
+  assert.equal(statusReads, 0);
+  assert.equal(document.querySelector(".chat-message"), null);
+  assert.equal(document.querySelector('[role="alert"]'), null);
+  assert.equal(document.getElementById("message").disabled, false);
+});
+
+test("an unavailable request status reports the server error and releases the live composer", async (context) => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init = {}) => {
+    if (new URL(input, "http://localhost").pathname === "/v1/requests/route-1")
+      return { ok: false, json: async () => ({ detail: "Request status is unavailable." }) };
+    return originalFetch(input, init);
+  };
+  context.mock.timers.enable({ apis: ["setTimeout", "setInterval"] });
+  await act(async () => {
+    button(question).dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  });
+  for (let second = 0; second < 10; second++)
+    await act(async () => context.mock.timers.tick(1000));
+
+  assert.match(document.querySelector('[role="alert"]').textContent, /Request status is unavailable/);
+  assert.equal(document.querySelector(".typing"), null);
+  assert.equal(document.getElementById("message").disabled, false);
+});
+
+test("a live request still times out when both the stream and status request stop responding", async (context) => {
+  const originalFetch = globalThis.fetch;
+  const pendingStatus = deferred();
+  globalThis.fetch = async (input, init = {}) => {
+    if (new URL(input, "http://localhost").pathname === "/v1/requests/route-1")
+      return pendingStatus.promise;
+    return originalFetch(input, init);
+  };
+  context.mock.timers.enable({ apis: ["setTimeout", "setInterval"] });
+  await act(async () => {
+    button(question).dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  });
+  for (let second = 0; second < 130; second++)
+    await act(async () => context.mock.timers.tick(1000));
+
+  assert.match(document.querySelector('[role="alert"]').textContent, /The response timed out/);
+  assert.equal(document.querySelector(".typing"), null);
+  assert.equal(document.getElementById("message").disabled, false);
+  await act(async () => pendingStatus.resolve(response({
+    id: "route-1", status: "completed", result: liveDecision(), events: liveStages,
+  })));
+  assert.equal(document.querySelector(".chat-message.assistant"), null);
+});
+
 test("all live views share one request, show early candidates and select the actual decision", async () => {
   const conversation = document.querySelector(".conversation");
   await click(button("Workflow map"));

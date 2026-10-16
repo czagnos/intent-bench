@@ -498,12 +498,15 @@ export function createWorkspaceClient(workspace: string) {
     return new Promise((resolve, reject) => {
       const source = new EventSource(url("/requests/" + id + "/events"));
       let poll: ReturnType<typeof setInterval> | undefined;
+      let inactivity: ReturnType<typeof setTimeout> | undefined;
+      let timeout: ReturnType<typeof setTimeout> | undefined;
       let settled = false;
       let polling = false;
       const cleanup = () => {
         settled = true;
         source.close();
         clearInterval(poll);
+        clearTimeout(inactivity);
         clearTimeout(timeout);
         signal.removeEventListener("abort", aborted);
       };
@@ -517,27 +520,26 @@ export function createWorkspaceClient(workspace: string) {
         cleanup();
         reject(new DOMException("Aborted", "AbortError"));
       };
-      const timeout = setTimeout(() => {
-        cleanup();
-        reject(
-          new Error(
-            "The response timed out. The request status is preserved on the server.",
-          ),
-        );
-      }, 120000);
+      const watchResponse = () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          cleanup();
+          reject(
+            new Error(
+              "The response timed out. The request status is preserved on the server.",
+            ),
+          );
+        }, 120000);
+      };
+      watchResponse();
       signal.addEventListener("abort", aborted);
       if (signal.aborted) {
         aborted();
         return;
       }
-      source.addEventListener("stage", (e) =>
-        { if (!settled) onStage(JSON.parse((e as MessageEvent).data)); },
-      );
-      source.addEventListener("result", (e) =>
-        done(JSON.parse((e as MessageEvent).data)),
-      );
-      source.onerror = () => {
+      const startPolling = () => {
         if (settled) return;
+        clearTimeout(inactivity);
         source.close();
         if (!poll)
           poll = setInterval(() => {
@@ -549,6 +551,7 @@ export function createWorkspaceClient(workspace: string) {
                 job.events.forEach(onStage);
                 if (["completed", "failed", "superseded"].includes(job.status))
                   done(job);
+                else watchResponse();
               })
               .catch((error) => {
                 if (settled) return;
@@ -558,6 +561,21 @@ export function createWorkspaceClient(workspace: string) {
               .finally(() => { polling = false; });
           }, 750);
       };
+      const watchStream = () => {
+        clearTimeout(inactivity);
+        if (!settled && !poll) inactivity = setTimeout(startPolling, 5000);
+      };
+      source.addEventListener("stage", (e) => {
+        if (settled) return;
+        watchResponse();
+        watchStream();
+        onStage(JSON.parse((e as MessageEvent).data));
+      });
+      source.addEventListener("result", (e) =>
+        done(JSON.parse((e as MessageEvent).data)),
+      );
+      source.onerror = startPolling;
+      watchStream();
     });
   }
   return { workspace, api, waitForRoute };

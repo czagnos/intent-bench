@@ -54,6 +54,8 @@ Backend tests cover early candidates, event replay, catalog snapshots, workspace
 
 ## Pitfalls
 
+- An SSE connection can stop delivering events without raising `error`. After five seconds without a stage, the live demo switches to request-status polling so a completed first request still appears without navigating away. Keep this inactivity timer covered by the same completion and abort cleanup as the stream and polling timer.
+- Cold vector-index preparation can take longer than two minutes. The response timeout measures time without a stage or successful status response, not the total lifetime of an accepted request; a server-confirmed queued/running job must remain active until its result arrives.
 - Closing SSE and clearing its polling timer do not cancel an already pending fetch callback. Pass the abort signal to polling, suppress overlapping polls, and gate all callbacks after completion/abort.
 - Bind each request client to an immutable workspace. A global mutable workspace can send an old request's fallback poll to the newly selected sector.
 - Remount workspace state and guard stale catalog refreshes. Keeping only the page view isolated can leave old model dialogs, sessions, or delayed refresh results active.
