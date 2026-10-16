@@ -2,7 +2,7 @@ from typing import Literal, TypedDict
 
 import pytest
 
-from apps.api.app.evaluation import summarize
+from app.evaluation import summarize
 
 
 Decision = Literal["route", "continue", "cancel"]

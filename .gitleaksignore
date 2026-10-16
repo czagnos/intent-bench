@@ -1,0 +1,5 @@
+# Reviewed historical false positives only; new occurrences remain scanned.
+# UI metric name for the 95th percentile latency.
+7dc39ef558261fb02a0d1db8a6b1acc1418fcd87:apps/web/src/components/RepeatSummary.tsx:generic-api-key:21
+# Catalog migration checksum in previous_catalog_hashes, not a credential.
+5a126fba1bf381a77699c820d3ac36667926286e:data/presets/ecommerce/migrations/case-depth-v1.json:generic-api-key:88
