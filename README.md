@@ -6,23 +6,81 @@ The workbench accepts **text and conversation context**. It does not ingest audi
 
 A local React interface and Python CLI share the same evaluation engine. Compare a lexical baseline, embedding retrieval, and retrieval followed by constrained model selection; optionally add reranking and calibrated semantic rejection. The application, guides, and bundled starter data are English. Imported data and user utterances retain their original language.
 
+[Start locally](#start-locally) · [Architecture](#how-the-decision-pipeline-works) · [Strategy](#design-the-decision-before-choosing-a-model) · [Benchmark](#run-a-benchmark) · [Research](#research-behind-the-design)
+
 **License:** the project's own code, documentation, and bundled synthetic examples are licensed under [Apache-2.0](LICENSE), unless a file states otherwise. Third-party libraries, model weights, datasets, and hosted services retain their own licenses and terms. Read the [security guidance](SECURITY.md) before connecting services or importing data; this is a trusted local-operator application without user authentication.
 
 ## How the decision pipeline works
 
 ```mermaid
 flowchart LR
-    A[Transcript or typed request + context] --> B[Retrieve candidate intents]
-    B --> C[Optional reranking]
-    C --> D[Constrained decision model]
-    D --> E[Validate decision + apply policy]
-    E --> F[Workflow preview]
-    E --> G[Clarify / reject / hand off / cancel]
+    Speech[External ASR] --> Input[Transcript or text]
+    Context[Pre-turn context] --> Check{Workflow reply?}
+    Input --> Check
+    Check -->|Yes| Policy[Policy]
+    Check -->|No| Method[Routing method]
+    Catalog[Intent catalog] --> Method
+    Method --> Policy
+    Policy --> Output[Decision preview]
+    Output -. Integration .-> Business[External workflow]
 ```
 
-The lexical and semantic baselines make their decision without an LLM. The hybrid method gives the decision model a bounded candidate list with descriptions and disambiguation rules. Its output is validated against the allowed decisions and candidate IDs. Existing conversation state can resolve supported workflow replies directly, without another retrieval or model call.
+Intent recognition is a **routing decision**, with conversation state as part of the input. Supported confirmations, cancellations, and demo workflow-field replies can bypass retrieval and model selection. Other requests use the chosen method. The final result can be `route`, `continue`, `cancel`, `clarify`, `out_of_scope`, or `handoff`; infrastructure and invalid model responses are recorded as `error`.
 
-Intent selection and collecting workflow fields are separate tasks. “Change my flight” identifies a goal even if the booking reference and new date are missing. The selected workflow collects those fields later. Ask an intent clarification only when the goal itself is ambiguous, such as changing a ticket versus canceling it. The included simulator handles a few banking fields; other workflows remain previews for integration with a real workflow engine.
+### Design the decision before choosing a model
+
+Define each intent around an atomic business goal and destination workflow, with a stable ID, description, examples, exclusions, and rules distinguishing nearby intents. Keep “Claims” as a domain; separate reporting a claim from checking its status when they route differently. Split product or channel variants only when routing requires it.
+
+Intent selection and collecting workflow fields are separate tasks:
+
+| Request and context | Intended behavior |
+|---|---|
+| “Change my flight” without a booking reference | Route to ticket change; the workflow collects the reference and new date |
+| “Where is my refund?” | Select refund status, rather than initiating a return |
+| “Don't cancel my policy; change the address” | Select address change; respect negation and correction |
+| “Close my card” when temporary blocking and permanent cancellation are available | Clarify which operation the user means |
+| “Cancel” during an active workflow | Cancel that workflow; distinguish this from a new request to cancel a ticket |
+| A request outside the catalog's domain, or an explicit request for a person | Use `out_of_scope` or `handoff`, respectively |
+
+Supply pre-turn context for replies and topic switches. Missing fields do not make a clear goal ambiguous; multiple distinct goals require choosing which to start. The simulator handles a few banking fields; other workflows remain previews for integration. See [taxonomy and routing](docs/taxonomy-and-routing.md).
+
+### Compare methods with different responsibilities
+
+| Method | Candidate retrieval | Decision mechanism | Main tradeoff to measure |
+|---|---|---|---|
+| `lexical` | Character n-gram TF-IDF cosine blended with a BM25 component | Nearest candidate plus baseline/context rules; no LLM | Low inference cost, but terminology and near-neighbor ambiguity can limit quality |
+| `e5` — semantic search | Configured embedding model and cosine similarity | Baseline/context rules, optionally with calibrated rejection; no LLM | Handles semantic similarity, but similarity alone does not establish the right operation |
+| `hybrid_llm` | Lexical + dense fusion by default; semantic-only candidate profiles are also available | Constrained LLM selection after optional reranking | Adds interpretation of context and boundaries, along with latency, cost, and output-contract failures |
+
+`e5` is the method identifier, not a requirement to use an E5-family model. **Hybrid retrieval** means combining lexical and dense rankings. **Retrieval followed by an LLM** means giving a decision model a shortlist; that shortlist may come from hybrid or semantic-only retrieval.
+
+### Inside retrieval followed by model selection
+
+The default hybrid path is:
+
+```mermaid
+%%{init: {"flowchart": {"rankSpacing": 25}}}%%
+flowchart TD
+    Query[Request and context] --> Lexical[Lexical intent ranking]
+    Query --> Dense[Dense intent ranking]
+    Lexical --> Fusion[Weighted reciprocal rank fusion]
+    Dense --> Fusion
+    Fusion --> Pool[Pool plus context and neighbors]
+    Pool --> Choice{Reranker configured?}
+    Choice -->|Yes| Rerank[Reorder the candidate pool]
+    Choice -->|No| Final[Final candidate shortlist]
+    Rerank --> Final
+    Final --> Select[LLM decision and candidate ID]
+    Select --> Validate[Schema and contract checks]
+    Validate -->|Valid| Policy[Apply workflow policy]
+    Validate -->|Invalid| Error[Record a technical error]
+```
+
+Catalog descriptions and examples form the retrieval corpus. Lexical matching captures words and character patterns; embeddings complement it with semantic similarity. Catalog embeddings are prepared and cached for compatible catalog/model/representation versions, while each dense retrieval request needs a query embedding. Rankings are deduplicated by intent before fusion, so repeated examples do not become repeated votes. Reranking can reorder the pool, but cannot recover an absent intent.
+
+The shortlist bounds catalog text sent to the selector: descriptions, evidence, exclusions, and selection rules, alongside bounded conversation context. Validation rejects invented candidate IDs and malformed decisions. An in-domain request whose candidate is absent should trigger clarification with `candidate_not_found`.
+
+Shortlisting can reduce prompt size and make a growing catalog easier to inspect. It also creates a retrieval ceiling: missing candidates cannot be selected. Larger lists, embeddings, and rerankers add work; valid JSON can still express a wrong decision. Measure tradeoffs on identical held-out cases. Cosine and fusion scores are not confidence probabilities. Calibrated semantic rejection applies to `e5`, not an LLM-skipping gate for `hybrid_llm`. See [retrieval controls](docs/retrieval-quality.md) and [calibration](docs/calibration-and-language.md).
 
 ## Ready sector workspaces
 
@@ -127,9 +185,43 @@ For reproducible comparisons:
 5. Report routing and overall decision accuracy, macro-F1, candidate Recall@K, OOS false acceptance, in-scope false rejection, clarification, coverage, and technical errors with their denominators. A correct candidate list does not guarantee a correct final decision.
 6. Report preparation separately from query p50/p95 latency, and include sample counts and token usage. These timings exclude your speech recognition and speech synthesis pipeline.
 
+### Locate the failure before changing the model
+
+```mermaid
+flowchart LR
+    Inputs[Frozen requests and context] --> Router[Router under test]
+    Router --> Evidence[Decisions, traces, timings, usage]
+    Evidence --> Score[Post-hoc scoring]
+    Labels[Expected decisions and intents] --> Score
+    Score --> Quality[Decision and routing accuracy]
+    Score --> Stages[Stage recall and failure categories]
+    Score --> Operations[Latency, cost, and repeat variability]
+```
+
+Per-case gold decisions and intent labels are not router inputs or retrieval queries. Cohort validation can use expected IDs to check catalog-subset coverage. Routing accuracy covers expected-`route` cases; overall decision accuracy also includes clarification, continuation, cancellation, handoff, and rejection. Technical errors remain failures in both denominators.
+
+| Observation | Inspect before changing the decision model |
+|---|---|
+| Expected intent missing from source rankings | Catalog coverage, examples, embedding/query formatting |
+| Present in a source but absent from the pool or final shortlist | Fusion budgets, neighbor additions, reranker/candidate cutoffs |
+| Present in the final shortlist but decision is wrong | Selector behavior, intent boundaries, context, and workflow policy |
+| Provider or schema failure | Error stage and safe diagnostics; keep it separate from a semantic miss |
+
+Stage recall uses eligible expected-route cases whose retrieval completed; context bypasses and incomplete retrieval are reported separately. Candidate-conditioned accuracy asks how often the final decision is correct when the expected intent is available. Compare OOS false acceptance, false rejection, coverage, and clarification together: rejecting everything is not a useful router. Repeated runs expose variability; preserve interrupted attempts and their costs when reporting completed-run statistics.
+
 The bundled cases support development and regression checks. They are not an independent held-out benchmark or evidence of production accuracy. Historical measurements in the guides used earlier Turkish banking catalogs and prompt versions; rerun comparisons on a fixed current dataset instead of treating translation as an accuracy improvement.
 
 [Synthetic conversation samples](data/samples/synthetic-v1/README.md) · [Experiment controls and transcript review](docs/benchmark-experiments.md) · [Model comparison](docs/model-comparison.md) · [Catalog sizes](docs/catalog-scaling.md) · [Calibration](docs/calibration-and-language.md) · [Retrieval and reranking](docs/retrieval-quality.md)
+
+## Research behind the design
+
+These papers explain relevant ideas; their results are not accuracy or latency claims for IntentBench:
+
+- **Sentence-BERT — Reimers and Gurevych (2019):** introduces sentence embeddings suitable for semantic similarity with cosine comparison. It provides background for embedding retrieval, without implying that every configured model uses SBERT or performs equally on intent catalogs. [Paper](https://aclanthology.org/D19-1410/)
+- **Reciprocal Rank Fusion — Cormack, Clarke, and Buettcher (2009):** combines ranked retrieval lists using reciprocal ranks. Its TREC/LETOR experiments motivate rank aggregation; gains in those settings do not guarantee gains for this project's lexical/dense intent fusion. [Paper](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf)
+- **Retrieval-Augmented Generation — Lewis et al. (2020):** combines neural retrieval and generation for knowledge-intensive language tasks. It offers a conceptual connection to conditioning a model on retrieved evidence. IntentBench selects intents; it does not implement the paper's trained RAG architecture or question-answering system. [Paper](https://proceedings.neurips.cc/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html)
+- **An Evaluation Dataset for Intent Classification and Out-of-Scope Prediction — Larson et al. (2019):** evaluates 150 intents across ten domains and highlights the difficulty of OOS detection despite strong in-scope classification. This motivates separate rejection metrics; CLINC150 is not the bundled dataset. [Paper](https://aclanthology.org/D19-1131/)
+- **Lost in the Middle — Liu et al. (2024):** finds sensitivity to information position in long contexts on question-answering and key-value retrieval tasks. This motivates testing shortlist size and presentation; it does not establish an optimal candidate count for intent routing. [Paper](https://aclanthology.org/2024.tacl-1.9/)
 
 ## Use your own data
 

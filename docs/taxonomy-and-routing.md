@@ -109,6 +109,7 @@ After all historical releases, `<sector>-case-depth-v1` uses an immutable manife
 
 ## Pitfalls
 
+- Distinguish out-of-domain requests from in-domain requests missing a candidate: the latter need clarification. Per-case gold labels are not inference inputs, although cohort validation uses expected IDs to check catalog-subset coverage.
 - Ambiguous benchmark requests should sound like natural underspecified speech. Avoid meta commentary that tells a classifier which ambiguity or expected label the author intended; record the challenge category separately.
 - Check product aliases as well as canonical product names when assigning benchmark labels. In the banking catalog, “bank card” explicitly aliases a debit card, so a core lost-card or delivery example must use an unqualified “card” unless it is labeled with the specific debit-card operation.
 - Keep supplemental cases out of historical migration inputs. Otherwise an older migration may publish them prematurely or recreate them before the depth revision's completion marker can protect intentional deletions. Restrict historical revision discovery to its release filename pattern and apply the explicit depth revision last.
