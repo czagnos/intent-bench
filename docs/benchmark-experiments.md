@@ -107,13 +107,15 @@ New evaluations use `latency_protocol=sequential-warm-index-v3`. Case compute/st
 
 ## Import transcripts without changing their meaning
 
-Use **Cases → Import benchmark CSV** or:
+Keep private files under `data/private/` or outside the repository. In the selected workspace, use **Cases → Import benchmark CSV** or:
 
 ```bash
 python3 scripts/import_benchmark.py data/private/benchmark.csv --workspace airline
 # Synthetic banking template; review it before evaluation:
 python3 scripts/import_benchmark.py data/demo/transcript-example.csv --workspace demo
 ```
+
+The API's source name `customer` is an import category, not verified provenance. Review labels and assign splits before evaluating imported cases. Database files, raw imports, credentials, vector indexes, and case-level outputs remain local; Git ignore rules do not anonymize data or protect copies elsewhere. An English interface does not validate multilingual routing.
 
 The fixed template is also available at `GET /v1/cases/template`. Its four turns across three conversations illustrate standalone, clarification, continuation, and cancellation snapshots. It is explicitly synthetic, is never seeded automatically, and is intended for the banking demo catalog. There is no audio ingestion, automatic ASR, rolling replay, or automatic history reconstruction.
 

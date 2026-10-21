@@ -15,6 +15,11 @@ Distinguish information requests, starting an operation, changing it, checking i
 | “What does my policy cover?” | Coverage information, not reporting a claim |
 | “Close my card” | Clarify temporary blocking versus permanent cancellation if both are available |
 | “Book a flight and cancel my insurance” | Multiple goals require clarification or an explicit supported multi-goal policy |
+| “Don't cancel my policy; change the address” | Select address change; respect negation and correction |
+| “Cancel” during an active workflow | Cancel that workflow; distinguish this from a new ticket-cancellation request |
+| A request outside the catalog or an explicit request for a person | Use `out_of_scope` or `handoff`, respectively |
+
+Supply pre-turn context for replies and topic switches. Missing fields do not make a clear goal ambiguous; multiple distinct goals require choosing which to start. Keep “Claims” as a domain and separate reporting a claim from checking its status when they route differently.
 
 Review these boundaries against actual operations. Starter catalogs cover common lifecycles but cannot define every organization's products or permissions. Add realistic paraphrases and speech-transcript noise to reviewed test data without copying held-out questions into catalog examples.
 
@@ -47,13 +52,28 @@ Banking-specific deterministic rules apply only when their relevant intents are 
 
 ## Sector workspaces and custom intents
 
-`GET /v1/catalog/presets` returns an array of `id`, `name`, `description`, `workspace`, and `intent_count`. Banking uses `demo`; the other named workspaces are `airline`, `insurance`, and `ecommerce`. Their catalogs, cases, calibration, sessions, registrations, and jobs are isolated.
+Choose **Sector workspace** in the application. Each sector keeps its own catalog, cases, calibration, sessions, model registrations, and experiment history. Switching sectors retains custom additions and starts a fresh live conversation. Server-level `.env` defaults remain available across workspaces; registered model connections belong to the selected workspace.
+
+| Sector | Workspace ID | Starter intents | Main operation families |
+|---|---|---:|---|
+| Banking | `demo` | 800 | Accounts, cards, transfers, loans, deposits, investments, digital banking, merchant services, bank-distributed insurance |
+| Airline | `airline` | 200 | Booking and ticket servicing, payments and credits, check-in, seats, baggage and claims, disruptions, accessibility, family travel, airport/onboard services, loyalty, account and privacy |
+| Insurance | `insurance` | 200 | General and specialist quotes, applications, coverage and renewals, policy servicing, billing, claims and appeals, beneficiaries, health/provider services, assistance, account support |
+| E-commerce | `ecommerce` | 200 | Shopping and checkout, orders and delivery, returns and after-sales, digital goods, home services, gifts, recurring purchases, marketplace selling, business purchasing, rentals, safety and loyalty |
+
+These synthetic catalogs cover common service lifecycles with explicit operation boundaries. Review them against your product scope; they do not include every business-specific operation. Banking also provides a larger distractor catalog for scaling experiments. Functional categories such as “Baggage” remain `domain` values inside a sector.
+
+`GET /v1/catalog/presets` returns an array of `id`, `name`, `description`, `workspace`, and `intent_count`.
 
 The three nonbank catalogs each contain 200 English definitions. The expansion adds 130 airline, 126 insurance, and 116 e-commerce operations while retaining original IDs. Broad intents remain valid for general requests; explicit specialist operations select their own workflow. For example, an ordinary flight-date change stays with ticket change. Same-day change requires an explicit request for today's flight or the named same-day-change facility; merely mentioning another flight on the same calendar date is insufficient.
 
-**Intent catalog → Add intent** submits `POST /v1/catalog/intents?workspace=airline` with `{ "expected_version": "…", "intent": { ... } }`. The complete intent follows the shared schema, including channels and optional workflow fields. It appends to the existing catalog after validation; duplicate IDs, invalid neighbors, missing field questions, excessive size, or a stale version are rejected. A successful response includes `version`, `intent_count`, and `intent`.
+Each nonbank sector has 400 catalog example utterances, 430 separate test cases (205 original plus 225 supplemental), and 80 separate calibration cases. Every nonhuman intent has at least two route examples, alongside negation, correction, synthetic noisy transcript, ambiguity, out-of-scope, handoff, and context challenges. Banking has 153 test cases and 72 calibration cases; its supplement covers all 47 routable core definitions and selected specific operations, not every generated banking intent. These are curated synthetic checks, not recorded ASR output or independent evidence of model accuracy.
 
-The form retains edits after an error. **Refresh catalog** loads the latest version before retrying a conflict. **Export** saves the whole catalog; **Import JSON** replaces it with a complete list. Versioned definition editing from audit findings changes names, descriptions, examples, exclusions, and selection boundaries while retaining workflow mappings. It does not relabel cases automatically.
+Use **Intent catalog → Add intent** to supply a stable ID, name, functional domain, description, examples, and workflow ID; add exclusions, confusable neighbors, a selection rule, channels, and workflow fields where needed. The form submits `POST /v1/catalog/intents?workspace=airline` with `{ "expected_version": "…", "intent": { ... } }`. The complete intent follows the shared schema, including channels and optional workflow fields. It appends to the existing catalog after validation; duplicate IDs, invalid neighbors, missing field questions, excessive size, or a stale version are rejected. A successful response includes `version`, `intent_count`, and `intent`.
+
+The form retains edits after an error. **Refresh catalog** loads the latest version before retrying a conflict. **Export** saves the whole catalog; **Import JSON** replaces it with a complete list. Versioned definition editing from audit findings changes names, descriptions, examples, exclusions, and selection boundaries while retaining workflow mappings. It does not relabel cases automatically. Keep labels and calibration data consistent with a replacement, and refit calibration after catalog changes.
+
+Fresh workspaces receive their matching starter data atomically. Existing starter workspaces receive the conservative, versioned migrations described below, preserving custom definitions, existing cases, intentional deletions, snapshots, and experiment results. Trimmed or unrecognized catalogs are not expanded automatically. See [data provenance and handling](../data/README.md) for preservation rules.
 
 ## Historical taxonomy v2 and current English migration
 

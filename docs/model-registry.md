@@ -2,9 +2,15 @@
 
 Open **Model catalog** to add, edit, test, or disable LLM, embedding, and reranker connections. Registrations are stored in SQLite for the selected **Sector workspace** and survive restarts. Switching sectors loads that workspace's registrations; it does not copy credentials or model choices. Server `.env` defaults and the bundled model presets remain available.
 
+## Data and credentials
+
+Protect `.env` with `chmod 600 .env` on macOS/Linux and never commit keys. Remote methods send input text and relevant catalog/context to the provider. Index preparation can send the entire selected catalog; reranking sends the query and candidate texts. Review the actual contents, destination, provider policy, and cost before connection tests, indexing, calibration, or evaluation. A workspace named `demo` can contain user data. See [security guidance](../SECURITY.md).
+
+For local embedding choices, read [embedding selection](embedding-selection.md); reranker setup is in [retrieval quality](retrieval-quality.md#connecting-a-reranker).
+
 ## First-run readiness
 
-Open **Model connections** for the setup panel. Create the root `.env` from `.env.example` if absent; otherwise merge the necessary settings into the existing file. The template points both default models at OpenRouter and uses `INTENT_OPENROUTER_API_KEY`. Start with the model-enabled command in the README: the offline command explicitly disables the default connections. Restart the API after changing this shared key or other startup-loaded settings. For Docker `env_file` changes use `docker compose up -d --force-recreate studio`; a restart alone does not replace the container environment.
+Open **Model connections** for the setup panel. Create the root `.env` from `.env.example` if absent; otherwise merge the necessary settings into the existing file. The template points both default models at OpenRouter and uses `INTENT_OPENROUTER_API_KEY`. Start with the [model-enabled startup command](getting-started.md#openrouter-and-other-model-connections): the offline command explicitly disables the default connections. Restart the API after changing this shared key or other startup-loaded settings. For Docker `env_file` changes use `docker compose up -d --force-recreate studio`; a restart alone does not replace the container environment.
 
 The panel shows only whether the shared key is present, never its value. Choose actual LLM and embedding options, including your workspace's registrations. A configured private connection works without either default connection or a shared OpenRouter key. Configuration is not proof of provider access. **Test embedding connection** and **Test LLM connection** explicitly send fixed synthetic probes and can use provider credits. Successful results apply to the current session; changing model selections, refreshing connections, or closing the panel discards them. They do not establish model accuracy.
 
@@ -68,7 +74,7 @@ OpenRouter keys are not sent to private endpoints. No-key connections omit Autho
 .venv/bin/python scripts/check_models.py --llm-only --llm-id model_REPLACE_WITH_ID --workspace airline
 ```
 
-Listing makes no inference call. Connection probes use synthetic text and can incur provider charges; they verify access and protocol behavior, not accuracy.
+Use `.venv/bin/python scripts/check_models.py --workspace demo` to probe the default connections. Listing makes no inference call. Connection probes use synthetic text and can incur provider charges; they verify access and protocol behavior, not accuracy.
 
 ## Persistent vectors and reindexing
 

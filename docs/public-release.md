@@ -20,6 +20,7 @@ If a credential is exposed, revoke or rotate it promptly and review all affected
 
 ## Pitfalls
 
+- Keep the root README focused on project purpose, quick setup, and entry points. Put detailed protocols, research, and operational guidance in `docs/`; update relative links and incoming anchors whenever sections move. Check that each setup path reaches an application URL before unrelated provider configuration.
 - A working-tree scan does not cover earlier commits, author metadata, other refs, or ignored files copied into an archive. Build release archives from a reviewed file list and inspect the resulting contents.
 - Benchmark counts, operational observations, internal process names, and deployment notes can reveal private information without containing raw data. Use reproducible synthetic examples in public documentation.
 - Check frontend defaults, backend routing, tests, fixtures, generated assets, and documentation together when changing or removing a provider. Existing local databases may retain provider registrations, so unsupported records must be handled consistently across list, detail, resolution, and inference paths.
