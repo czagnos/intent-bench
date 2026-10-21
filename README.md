@@ -1,8 +1,12 @@
 # IntentBench
 
+**Evaluating the decision layer behind agent orchestration**
+
 [Getting started](docs/getting-started.md) · [Architecture](docs/architecture.md) · [Strategy](docs/taxonomy-and-routing.md) · [Benchmarking](docs/benchmarking.md) · [Research](docs/research.md) · [All docs](docs/README.md)
 
-IntentBench is a local workbench for benchmarking the **decision models that turn a user's request into the right intent and workflow**. Compare routing quality, latency, and cost through a React interface or Python CLI using the same evaluation engine.
+IntentBench is a local workbench for comparing how models and retrieval strategies interpret requests, use conversation context, choose routes, ask for clarification, and identify out-of-scope requests. Compare decision quality, latency, and cost through a React interface or Python CLI using the same evaluation engine.
+
+Start with ready-to-use banking, airline, insurance, and e-commerce scenarios, and connect your own open-weight models through compatible endpoints.
 
 It accepts text and conversation context, including transcripts from your speech pipeline. It does not process audio or execute real business transactions. The interface, guides, and bundled synthetic data are English; imported utterances retain their original language.
 
